@@ -91,23 +91,21 @@ cross-curve friction that makes bridges expensive:
   **[Halo2-Plutus verifier](../cardano/halo2-plutus-verifier.md)** that verifies
   Halo2/KZG proofs on-chain (porting the optimal pairing check to BLS12-381 to make
   *recursive* proof verification feasible).
-- **Both finality certificates are BLS aggregate signatures:** Midnight's
-  **[BLS-BEEFY](../consensus/beefy.md)** signed commitment and Cardano's
-  **[Mithril / ATMS](../cardano/mithril-bls-certificates.md)** stake-threshold
-  multi-signature. A BLS aggregate verifies in a **single pairing check**.
-- **The ≥2/3 threshold is proven the same way both directions** — the w3f
+- **The target finality certificates can share a BLS substrate:** Cardano's
+  **[Mithril / ATMS](../cardano/mithril-bls-certificates.md)** is BLS-based, and
+  a future Midnight BLS finality certificate would verify with the same BLS12-381
+  pairing machinery. The public Midnight relay today is **BEEFY-ECDSA**, not BLS,
+  so this is a target direction rather than a current fact.
+- **The threshold can be proven the same way in the BLS target mode** — the w3f
   **[committee-key / apk-proofs](../proof-systems/apk-proofs-committee-key.md)**
   scheme, purpose-built as "the cryptographic core for accountable light clients
   bridging PoS blockchains."
 
-**Consequence.** Each chain can verify the *other's* finality certificate and state
-proof with **native BLS12-381 pairing operations** — Cardano via CIP-0381, Midnight
-in its own BLS12-381 circuits — rather than emulating a foreign curve. The recursive
-trustless bridge becomes a **shared-substrate problem**, and Groth16's per-circuit
-trusted setup is **optional** (replaceable by the universal KZG setup both sides
-already rely on — potentially even a *single shared* Powers-of-Tau). Groth16 remains
-useful purely as the *smallest/cheapest* on-chain landing (measured in §2); it is no
-longer a trust requirement.
+**Consequence.** Direction B can already use BLS12-381 through Mithril, while
+Direction A is currently a linear ECDSA-verification problem unless Midnight exposes
+a BLS aggregate finality certificate or the ECDSA checks are zk-wrapped. The bridge
+should still be designed as a **shared-substrate endpoint**, but the current public
+Mode 0 is not O(1) in validator count.
 
 ### 1b. From trusted-at-launch to trustless (what this bridge replaces)
 The corpus makes the starting point explicit: **"at launch, Midnight will rely on
@@ -268,8 +266,9 @@ Verification is then **no headers, no ancestry data**:
 2. Learn the finalized `block_number`/state from the signed **MMR root**; because a
    [Merkle Mountain Range](../consensus/beefy-light-client.md) accumulates every
    header, "with only the MMR root the ancestry of any header can be cheaply
-   verified" — the Midnight **event `E` is proven by a cheap MMR inclusion proof
-   against the already-signed root**.
+   verified." In the public relay code, the separate event/MMR leaf inclusion proof
+   is **not yet serialized** into `RelayChainProof`; it must be added or supplied by
+   a surrounding bridge proof.
 3. Advance the tracked validator set only on a **mandatory block** (each session's
    first block always carries a BEEFY justification), whose commitment is signed by
    the **outgoing** set — this *is* the [§5](#5-recursion-strategy) recursion for
@@ -285,12 +284,13 @@ aggregatable. The **temporary BEEFY relay** side-steps this by having BEEFY re-s
 GRANDPA-finalized blocks with **ECDSA/secp256k1** (standard `sp-consensus-beefy`),
 which Cardano *can* verify. Three landing modes, in increasing scalability:
 
-- **(Mode 0 — CURRENT, implemented):** the `midnight-beefy-relay` submits a
-  BEEFY-**ECDSA** signed commitment + `AuthoritiesProof` + MMR proof as `PlutusData`;
-  a Plutus validator verifies **each ECDSA signature natively** (Cardano has a
-  `verifyEcdsaSecp256k1Signature` builtin), checks signer set-membership, and checks
-  the MMR/state inclusion. Works today; **cost grows linearly with the validator
-  count**, so it is fine for a modest committee but does not scale.
+- **(Mode 0 — CURRENT relay shape, validator unpublished):** the
+  `midnight-beefy-relay` emits a BEEFY-**ECDSA** `RelayChainProof` as `PlutusData`:
+  a signed commitment plus an `AuthoritiesProof`. A Plutus validator would verify
+  **each ECDSA signature natively** (Cardano has a `verifyEcdsaSecp256k1Signature`
+  builtin), check signer set-membership, enforce the current equal-weight quorum,
+  and then verify a separate event/state inclusion proof. The relay object exists;
+  the Cardano on-chain verifier and event inclusion proof are not public.
 - **(Mode 1 — BLS "on both sides", the target):** switch BEEFY to **BLS12-381**
   aggregate signatures (Midnight's stack already has a
   [`bls12_381` in-circuit chip](../midnight/zk-stdlib-gadgets.md) + BLS12-381 curve
@@ -328,19 +328,21 @@ RelayChainProof {
 }
 ```
 
-The commitment **`Payload`** carries up to five keyed items: the **MMR root** plus the
-**current** and **next** BEEFY **stakes** (`[(BeefyId, Stake)]`) and **authority sets**
-(each a merkle `keyset_commitment`) — so validator-set + stake handoff travels in the
-signed payload. The **`AuthoritiesProof`** is a **Merkle multiproof** (against
-`keyset_commitment`) that the signing keys are members of the current authority set.
+The runtime BEEFY payload contains the **MMR root** plus current/next stake and
+authority-set payloads. The Cardano-facing `SignedCommitment` serialization, however,
+filters the commitment payloads to **only `MMR_ROOT_ID`**. The stake and authority-set
+payloads are consumed by the relay to construct `AuthoritiesProof`; they do not appear
+as full stake vectors in the serialized `SignedCommitment`. The `AuthoritiesProof` is a
+Keccak Merkle multiproof (against `keyset_commitment`) over leaf hashes of
+`public_key || stake_le`.
 
 **The Cardano-side on-chain validator that consumes this** must: parse the `PlutusData`
 → verify each ECDSA `Vote` (`verifyEcdsaSecp256k1Signature`) → verify the Merkle
-`AuthoritiesProof` → check the signing **stake meets the ≥2/3 threshold** → read the
-**MMR root** from the payload for event/state inclusion. **That validator is not in the
-`midnight-node` repo** (the repo's `redemption.ak` is an unrelated STAR-vesting
-skeleton) — locating or specifying it is the top open item (§A of the project-root
-`EXAMINATION-CHECKLIST.md`).
+`AuthoritiesProof` → enforce the current **equal-weight** BEEFY threshold (the runtime
+currently assigns stake `1` per validator) → read the **MMR root** from the payload and
+verify an event/state inclusion proof. **That validator is not in the public
+`midnight-node` or archived `partner-chains` repos**; specifying/publishing it remains
+the top open item (§A of the project-root `EXAMINATION-CHECKLIST.md`).
 
 ### Trust caveat
 This direction's soundness depends on a **per-circuit Groth16 trusted setup**
@@ -379,12 +381,10 @@ circuit:
   path unless a BLS vote representation is available.
 - **(B-ii) [Mithril / ATMS](../cardano/mithril-bls-certificates.md)** — a
   **stake-threshold multi-signature** that certifies *any deterministically computable
-  function of Cardano state* (already shipping in SPO infrastructure). This is the
-  natural BLS analogue of Midnight's BLS-BEEFY: Midnight verifies it as a **single
-  aggregate pairing check** plus a committee-key/apk proof for the stake threshold —
-  cheap because Midnight is BLS12-381-native. (Our current source names it "STM"
-  without stating the curve; confirm the BLS12-381 basis from the `mithril-stm`
-  spec — see [§9](#9-open-problems--next-research).) **Recommendation: prefer the
+  function of Cardano state* (already shipping in SPO infrastructure). The
+  `mithril-stm` implementation uses BLS primitives (`blst`, `BlsSigningKey`,
+  `BlsSignature`) and `midnight_curves::Bls12` for its SNARK/IVC work, so this is the
+  natural BLS analogue of the target Midnight aggregate-certificate mode. **Recommendation: prefer the
   Mithril/ATMS certificate for Direction B** — it is purpose-built to certify state
   for external verifiers and keeps both directions on identical BLS machinery.
 
@@ -420,9 +420,9 @@ Recursion/accumulation compresses it:
   proof verification** — verifying a Plonk/KZG proof inside another circuit — made
   practical by **truncated (128-bit) Fiat–Shamir challenges** (halving in-circuit
   scalar-mul cost) and **aPLONK committed instances** (shrinking the public-input
-  surface), with an `aggregator`/IVC toolkit
-  ([midnight-proofs recursion](../midnight/midnight-proofs-recursion.md)) — **no curve
-  cycle is involved.** So a proof that "headers 0..N are valid and block N carries a
+  surface). The public `midnight-zk/aggregation` crate now shows IVC, single-circuit
+  aggregation, and multi-circuit aggregation with `(vk, statement)` claims and a final
+  aggregation proof — **no curve cycle is involved.** So a proof that "headers 0..N are valid and block N carries a
   finality certificate" is folded into a succinct proof; each step recursively verifies
   the previous proof + a small header increment (a Mina-style succinct light client),
   and only the latest recursive proof is verified on Midnight.
@@ -533,41 +533,44 @@ PDF pipeline for academic papers):
    delegated from Cardano SPOs; GRANDPA finality signed with **Ed25519**
    ([signature schemes](../consensus/midnight-signature-schemes.md)). Direction A
    attests a GRANDPA finality justification (§3).
-2. ~~BEEFY deep-dive~~ **RESOLVED (this batch):** BEEFY signed-commitment + MMR is
-   the Direction-A template (§3); authority rotation is handled by BEEFY **mandatory
-   blocks**. Remaining sub-items below.
-3. **Midnight's specific BEEFY signature scheme (Mode 1 vs Mode 2 — the biggest open
-   decision).** BEEFY *today* is ECDSA/secp256k1; the roadmap is BLS+APK. Which does
-   *Midnight* run? BLS12-381 → near-native CIP-0381 verification (cheapest); ECDSA/
-   Ed25519 → zkBEEFY Groth16 wrapper. *Confirm from a Midnight/partner-chains primary
-   source, and push for the BLS variant.*
-4. **zkBEEFY circuit cost on Cardano** — the ecosystem shows secp256k1 zkBEEFY is
+2. ~~BEEFY relay deep-dive~~ **RESOLVED (this batch):** current public relay is
+   BEEFY-ECDSA, tag-121 `PlutusData`, serialized `MMR_ROOT_ID` only, Keccak
+   authorities multiproof, and equal-weight runtime BEEFY stakes. The Cardano
+   verifier and event-inclusion proof remain separate blockers.
+3. **Cardano-side BEEFY verifier is unpublished.** No public Plutus/Aiken/Plutarch
+   validator was found in `midnight-node` or the archived `partner-chains` repo.
+   Until it is published or specified, Mode 0 is an input format, not a buildable
+   settlement path.
+4. **Event/state inclusion under the signed Midnight MMR root.** The relay has an
+   `mmr_generateProof` helper but does not serialize event inclusion. The bridge must
+   define how a public Midnight ledger event/root enters the BEEFY MMR leaf and what
+   Cardano verifies.
+5. **zkBEEFY circuit cost on Cardano** — the ecosystem shows secp256k1 zkBEEFY is
    feasible (<2 s prove); quantify the Groth16-wrapped verifier's *on-chain* Plutus
    cost and proof size for the Midnight validator set size, reusing the
    `proof-zk-recovery` Ed25519/SHA-512 gadgets.
-5. ~~Midnight's exact proving system~~ **RESOLVED:** Midnight is **Plonk + KZG over
+6. ~~Midnight's exact proving system and aggregation path~~ **RESOLVED:** Midnight is **Plonk + KZG over
    BLS12-381** (+JubJub), a PSE-halo2 fork with a **universal** setup
-   ([proving system](../midnight/proving-system-curves.md)). *Still open:* whether
-   Midnight's GRANDPA/BEEFY *signatures* are configured as BLS (vs Ed25519/ECDSA) —
-   the Mode-1-vs-2 lever — and the exact recursion/proof-aggregation construction
-   (the `midnight-zk` README names an `aggregator` component but gives no details).
-6. **Direction-A landing choice** — measure and compare the two options on Cardano:
+   ([proving system](../midnight/proving-system-curves.md)); public aggregation code
+   provides IVC and multi-circuit aggregation. *Still open:* ceremony provenance and
+   bridge-specific proving benchmarks.
+7. **Direction-A landing choice** — measure and compare the two options on Cardano:
    (a) verify Midnight's Halo2/KZG proof directly ([Halo2-Plutus verifier](../cardano/halo2-plutus-verifier.md),
    universal setup, larger proof) vs (b) wrap to Groth16 (smallest proof, per-circuit
    setup). No measured on-chain ex-units exist yet for (a).
-7. **Cardano finality certificate for Direction B** — confirm the **Mithril/ATMS**
-   BLS12-381 basis (`mithril-stm` spec) and whether Peras votes can be represented as
-   BLS; pick B-i vs B-ii.
-8. **In-circuit cost of the committee-key/apk proof** at Midnight's / Cardano's real
+8. **Mithril/SCLS deployment path for Direction B.** Mithril BLS and certificate-chain
+   mechanics are confirmed; still needed is a concrete SCLS certification module
+   deployed by Mithril signers/aggregators/clients.
+9. **In-circuit cost of the committee-key/apk proof** at Midnight's / Cardano's real
    validator-set sizes (recovery repo has Ed25519/SHA-512 gadgets to reuse).
-9. **Precedent designs** — zkBridge, Mina/Plumo succinct light clients, IBC
+10. **Precedent designs** — zkBridge, Mina/Plumo succinct light clients, IBC
    trust-minimized clients (PDF-pipeline batch).
-10. **Data availability** for BEEFY/Mithril certificates (off-chain; supplied as
+11. **Data availability** for BEEFY/Mithril certificates (off-chain; supplied as
     circuit witness) and **EUTxO concurrency/batching** UX for Cardano-side settlement.
 
 ## 10. Provenance
 
-Synthesized from 38 verbatim-gated sources (534 claims) in this knowledge base; see
+Synthesized from 46 source records in this knowledge base; see
 the [source records](../sources/index.md) and the [index](../index.md). Cardano-side
 cost and the working-deployment claims derive from the `proof-zk-recovery` project
 (src-0011…src-0015), the strongest evidence in the corpus because it is *measured
@@ -578,6 +581,9 @@ consensus, Ed25519/ECDSA/sr25519 signature roles, midnight-proofs recursion, ZkS
 gadgets); the Direction-A verifier blueprint (BEEFY signed commitments, MMR,
 mandatory-block handoff, zkBEEFY) from the BEEFY sources (src-0019…src-0021); the
 **unified BLS12-381 substrate** (Halo2-Plutus verifier, Midnight KZG/BLS12-381,
-Mithril ATMS, apk-proofs) from src-0022…src-0025; and the **ledger / state model**
+Mithril ATMS, apk-proofs) from src-0022…src-0025; the **ledger / state model**
 (CMST trusted-at-launch interface, ZKIR v3 circuit IR, transaction types & wire
-format) from `midnight-ledger` + PR #617 (src-0030…src-0033).
+format) from `midnight-ledger` + PR #617 (src-0030…src-0033); and the current
+full-sweep corrections from src-0039…src-0046, especially the public relay's
+actual `RelayChainProof` serialization, c2m approval gate, Mithril BLS evidence,
+Midnight aggregation code, and ledger asset/root formats.
