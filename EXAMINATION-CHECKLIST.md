@@ -8,7 +8,8 @@ Each item: *what to examine — where (repo/file/source) — the question it ans
 
 Cloned repos live in ignored `_external/`: `midnight-zk`, `midnight-docs`, `midnight-ledger`,
 `midnight-node`, `mithril`, `partner-chains`, `CIPs`, `plutus`, `cardano-ledger`,
-and `apk-proofs`.
+`apk-proofs`, and `deep-research-toolkit`. The current source sweep is also
+captured as a deep-research-toolkit run under `research-runs/`.
 
 ---
 

@@ -570,7 +570,7 @@ PDF pipeline for academic papers):
 
 ## 10. Provenance
 
-Synthesized from 46 source records in this knowledge base; see
+Synthesized from 48 source records in this knowledge base; see
 the [source records](../sources/index.md) and the [index](../index.md). Cardano-side
 cost and the working-deployment claims derive from the `proof-zk-recovery` project
 (src-0011…src-0015), the strongest evidence in the corpus because it is *measured
@@ -586,4 +586,6 @@ Mithril ATMS, apk-proofs) from src-0022…src-0025; the **ledger / state model**
 format) from `midnight-ledger` + PR #617 (src-0030…src-0033); and the current
 full-sweep corrections from src-0039…src-0046, especially the public relay's
 actual `RelayChainProof` serialization, c2m approval gate, Mithril BLS evidence,
-Midnight aggregation code, and ledger asset/root formats.
+Midnight aggregation code, and ledger asset/root formats. The follow-up
+deep-research-toolkit integration is recorded in src-0047…src-0048, with the
+source sweep also represented as a gated `research-runs/` claim corpus.

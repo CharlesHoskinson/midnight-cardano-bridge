@@ -1,0 +1,35 @@
+version: 1
+
+knowledge_base:
+  path: knowledge_base
+  pdf_runs_dir: pdf-runs
+  research_runs_dir: research-runs
+  index_dir: .deepresearch/index
+
+topic:
+  name: "Midnight Cardano recursive trustless bridge"
+  scope_hint: >
+    Evidence-backed design and implementation research for a recursive
+    trustless bridge between Midnight and Cardano, including finality
+    certificates, bridge message proofs, verifier costs, ledger state,
+    and operational trust assumptions.
+  tags:
+    - cardano
+    - midnight
+    - bridge
+    - finality
+    - zero-knowledge
+
+features:
+  web_research: true
+  pdf_ingestion: true
+  knowledge_compiler: true
+
+llm:
+  provider: agent
+  model: gpt-5-codex
+  embedding_model: all-MiniLM-L6-v2
+
+scrapling:
+  default_mode: http
+  rate_limit_seconds: 1.0

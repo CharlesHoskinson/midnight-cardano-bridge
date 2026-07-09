@@ -1,1 +1,4 @@
 _external/
+.deepresearch/index/
+.deepresearch/duckdb-home/
+.venv-drt/

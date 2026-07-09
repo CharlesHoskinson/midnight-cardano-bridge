@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "producer": "web",
+  "document_id": "midnight-cardano-bridge-source-sweep-20260709",
+  "source_url": "local://midnight-cardano-bridge/full-scope-source-sweep/2026-07-09",
+  "content_hash": "sha256:1458b0a424678a55",
+  "fetched_at": "2026-07-09T20:30:00Z",
+  "chunk_count": 8
+}

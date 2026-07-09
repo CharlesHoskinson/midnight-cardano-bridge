@@ -1,0 +1,29 @@
+{"schema_version":"1.0","entity_id":"midnight-beefy-relay","name":"Midnight BEEFY Relay","aliases":["relay"],"type":"component","mentions":["midnight-cardano-bridge-source-sweep-20260709:c01","midnight-cardano-bridge-source-sweep-20260709:c04"]}
+{"schema_version":"1.0","entity_id":"plutus-data","name":"PlutusData","aliases":["Plutus data"],"type":"format","mentions":["midnight-cardano-bridge-source-sweep-20260709:c01","midnight-cardano-bridge-source-sweep-20260709:c04"]}
+{"schema_version":"1.0","entity_id":"relay-chain-proof","name":"RelayChainProof","aliases":["relay chain proof"],"type":"format","mentions":["midnight-cardano-bridge-source-sweep-20260709:c01","midnight-cardano-bridge-source-sweep-20260709:c04"]}
+{"schema_version":"1.0","entity_id":"signed-commitment","name":"SignedCommitment","aliases":["signed commitment"],"type":"format","mentions":["midnight-cardano-bridge-source-sweep-20260709:c01"]}
+{"schema_version":"1.0","entity_id":"authorities-proof","name":"AuthoritiesProof","aliases":["authorities proof"],"type":"format","mentions":["midnight-cardano-bridge-source-sweep-20260709:c01","midnight-cardano-bridge-source-sweep-20260709:c02"]}
+{"schema_version":"1.0","entity_id":"mmr-root-id","name":"MMR_ROOT_ID","aliases":["MMR root payload id"],"type":"constant","mentions":["midnight-cardano-bridge-source-sweep-20260709:c01"]}
+{"schema_version":"1.0","entity_id":"ecdsa-vote","name":"ECDSA Vote","aliases":["BEEFY ECDSA vote"],"type":"format","mentions":["midnight-cardano-bridge-source-sweep-20260709:c01"]}
+{"schema_version":"1.0","entity_id":"keccak256","name":"Keccak256","aliases":[],"type":"hash","mentions":["midnight-cardano-bridge-source-sweep-20260709:c02"]}
+{"schema_version":"1.0","entity_id":"beefy-stake","name":"BEEFY Stake","aliases":["BeefyStake"],"type":"concept","mentions":["midnight-cardano-bridge-source-sweep-20260709:c02","midnight-cardano-bridge-source-sweep-20260709:c03"]}
+{"schema_version":"1.0","entity_id":"midnight-runtime","name":"Midnight Runtime","aliases":[],"type":"component","mentions":["midnight-cardano-bridge-source-sweep-20260709:c03"]}
+{"schema_version":"1.0","entity_id":"beefy-mmr","name":"BEEFY MMR","aliases":["pallet_beefy_mmr"],"type":"component","mentions":["midnight-cardano-bridge-source-sweep-20260709:c03","midnight-cardano-bridge-source-sweep-20260709:c04"]}
+{"schema_version":"1.0","entity_id":"mmr-proof","name":"MMR Proof","aliases":["mmr_generateProof"],"type":"proof","mentions":["midnight-cardano-bridge-source-sweep-20260709:c04"]}
+{"schema_version":"1.0","entity_id":"c2m-bridge","name":"Cardano to Midnight Bridge Pallet","aliases":["c2m bridge"],"type":"component","mentions":["midnight-cardano-bridge-source-sweep-20260709:c05"]}
+{"schema_version":"1.0","entity_id":"approval-batch","name":"Approval Batch","aliases":[],"type":"concept","mentions":["midnight-cardano-bridge-source-sweep-20260709:c05"]}
+{"schema_version":"1.0","entity_id":"governance","name":"Governance","aliases":["GovernanceOrigin"],"type":"actor","mentions":["midnight-cardano-bridge-source-sweep-20260709:c05"]}
+{"schema_version":"1.0","entity_id":"approved-mainchain-transaction-hash","name":"Approved Mainchain Transaction Hash","aliases":["ApprovedMcTxHashes"],"type":"state","mentions":["midnight-cardano-bridge-source-sweep-20260709:c05"]}
+{"schema_version":"1.0","entity_id":"treasury","name":"Treasury","aliases":[],"type":"account","mentions":["midnight-cardano-bridge-source-sweep-20260709:c05"]}
+{"schema_version":"1.0","entity_id":"mithril-stm","name":"Mithril STM","aliases":["mithril-stm"],"type":"library","mentions":["midnight-cardano-bridge-source-sweep-20260709:c06"]}
+{"schema_version":"1.0","entity_id":"bls-signature","name":"BLS Signature","aliases":["BlsSignature","BlsSigningKey"],"type":"cryptographic-primitive","mentions":["midnight-cardano-bridge-source-sweep-20260709:c06"]}
+{"schema_version":"1.0","entity_id":"midnight-aggregation","name":"Midnight Proof Aggregation","aliases":["multi-circuit aggregation"],"type":"proof-system","mentions":["midnight-cardano-bridge-source-sweep-20260709:c07"]}
+{"schema_version":"1.0","entity_id":"ivc","name":"Incrementally Verifiable Computation","aliases":["IVC"],"type":"proof-system","mentions":["midnight-cardano-bridge-source-sweep-20260709:c07"]}
+{"schema_version":"1.0","entity_id":"verifier-key-governance","name":"Verifier Key Governance","aliases":["VK governance"],"type":"control","mentions":["midnight-cardano-bridge-source-sweep-20260709:c07"]}
+{"schema_version":"1.0","entity_id":"midnight-srs","name":"Midnight SRS","aliases":["SrsSource"],"type":"setup","mentions":["midnight-cardano-bridge-source-sweep-20260709:c07"]}
+{"schema_version":"1.0","entity_id":"bls12-381","name":"BLS12-381","aliases":[],"type":"curve","mentions":["midnight-cardano-bridge-source-sweep-20260709:c07"]}
+{"schema_version":"1.0","entity_id":"cip-0049","name":"CIP-0049","aliases":[],"type":"standard","mentions":["midnight-cardano-bridge-source-sweep-20260709:c08"]}
+{"schema_version":"1.0","entity_id":"plutus-signature-builtins","name":"Plutus Signature Builtins","aliases":["verifyEcdsaSecp256k1Signature","verifySchnorrSecp256k1Signature"],"type":"builtin","mentions":["midnight-cardano-bridge-source-sweep-20260709:c08"]}
+{"schema_version":"1.0","entity_id":"dust","name":"Dust","aliases":["DUST"],"type":"asset","mentions":["midnight-cardano-bridge-source-sweep-20260709:c08"]}
+{"schema_version":"1.0","entity_id":"night","name":"Night","aliases":["NIGHT"],"type":"asset","mentions":["midnight-cardano-bridge-source-sweep-20260709:c08"]}
+{"schema_version":"1.0","entity_id":"token-type","name":"TokenType","aliases":["Midnight token type"],"type":"format","mentions":["midnight-cardano-bridge-source-sweep-20260709:c08"]}
