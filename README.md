@@ -11,13 +11,14 @@ This repository contains the full design document at [`knowledge_base/bridges/mi
 - The [canonical living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md) is the current, source-linked system description with exactly 25 numbered sections.
 - The [council-reviewed program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) defines the 11-sprint, 62-work-package execution program and its proof-of-concept boundaries.
 - The [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the blocked 42 Cardano plus 52 Midnight catalog gate, searched locations, and row-admission rules without inventing entries.
+- The [machine-readable gate roster](protocol/gate-roster-v1.json) is the byte-exact source for all six implementation blockers and eight consensus evidence gates.
 - The [OpenSpec workflow](openspec/config.yaml) carries normative requirements through active proposal, delta-spec, design, task, and review artifacts. The active [Sprint 1 change](openspec/changes/sprint-01-foundation/proposal.md) contains the current deltas. The [`openspec/specs/` landing page](openspec/specs/README.md) lists stable capability specs published by validated archived changes; none are published yet.
 
 ## Why proofs instead of a committee
 
 Most bridges add a set of signers. If those signers collude, or their keys leak, the bridge can authorize a false transfer.
 
-The public trust profiles in this design add no bridge quorum. They instead pin an authenticated source-chain bootstrap, consensus and finality rules, proof-system setup artifacts, verifier keys and deployment domains. Relayers move bytes but do not authorize state changes. Destination validators reconstruct the public statement, verify the registered proof, and update anchor, action and replay state atomically.
+The public trust profiles in this design add no bridge quorum. They instead pin an authenticated source-chain bootstrap, consensus and finality rules, proof-system setup artifacts, verifier keys and deployment domains. Relayers move bytes but do not authorize state changes. Destination validators reconstruct the public statement, verify the registered proof, and update tracked anchor, application, value and replay state atomically.
 
 ## The design in one page
 

@@ -55,18 +55,64 @@ Cardano state-certification path, and deployment governance.
 
 Program results use three labels:
 
-- **live-pass:** both selected public testnets accept claim-authorized
-  transactions under the stated source-consensus and proof assumptions.
-- **degraded-lab:** both directions execute, but at least one direction uses a
-  project-operated certifier, fixture anchor, mock transition, or other trust root
-  that is not part of the selected public testnet.
-- **blocked:** a required proof relation, authenticated state path, execution
-  surface, or public-testnet dependency cannot be completed.
+- **live-pass:** both selected public testnets accept real claim-authorized
+  transactions, every public gate passes, and independent reads confirm both
+  destination state transitions.
+- **degraded-lab:** both real destination transitions are confirmed and every
+  lab-required gate passes, but the run uses the one named lab source-root
+  substitution instead of the public Mithril SCLS root.
+- **blocked:** the roster is invalid, a required gate has not passed, required
+  evidence expired, or either real confirmed destination transition is absent.
 
 Only live-pass satisfies the proof-of-concept success claim. A degraded-lab result
 is useful engineering evidence but cannot be described as a trustless testnet
 bridge. A blocked result records the reproducer, owner, interface boundary, and
 evidence needed to resume.
+
+The sole authoritative `GateRosterV1` is
+[`protocol/gate-roster-v1.json`](../../../protocol/gate-roster-v1.json). Its
+roster member has RFC 8949 deterministic-CBOR SHA-256
+`2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f`.
+It contains exactly six `S01-BLOCK-*` and eight `CONS-*` entries with stable
+owner, interface, evidence, and activation ids. The roster maps the full 94-row
+corpus, at least one end-to-end claim from every proof-template family, and
+predeclared performance policy and threshold receipts into required evidence.
+`RunIntentV1` binds its exact bytes and digest before preflight, endpoint
+discovery, source collection, witness construction, or proving. Prose does not
+relabel or extend it.
+
+`GateDeliverableV1` copies the decoded roster entry's exact ordered `owners[]`,
+`interfaces[]`, `applicability`, `required_evidence[]`, and `activation_ref`.
+Omission, addition, substitution, or reordering rejects before outcome
+evaluation. Other teams are contributors and runtime checks are enforcement
+loci; neither becomes a roster owner.
+
+`public-only` is a recorded lab applicability, not `not-applicable`. All other
+entries are required in both profiles. A lab run must pass catalog completeness
+and the real certificate-to-SCLS mechanics under `CONS-CARDANO-01`; only public
+Mithril SCLS availability is public-only. A proof relation, verifier,
+transaction, destination transition, or receipt cannot be mocked for any
+successful outcome.
+
+`OutcomeClassifierV1` first validates exact roster version and digest, key set,
+uniqueness, owners, interfaces, allowed applicability, evidence schemas,
+activation references, evidence integrity, retention, and selected profile. It
+then selects the first matching row and stops:
+
+| Row | Condition | Result |
+| ---: | --- | --- |
+| 1 | A roster or gate record is invalid, missing, duplicate, unknown, or uses unauthorized `not-applicable`; required outcome evidence is missing or expired | `blocked` |
+| 2 | Any selected-profile required gate is not `passed`, including unresolved, failed, mocked, or returned-to-unresolved status | `blocked` |
+| 3 | Either direction lacks a real destination transition confirmed under its registered profile and independent successor-state read | `blocked` |
+| 4 | The selected profile is `lab` | `degraded-lab` |
+| 5 | The selected profile is `public` | `live-pass` |
+
+Exactly one row is selected by first-match short-circuit evaluation. Later
+conditions can also be true but are not evaluated. Required vectors cover
+overlapping roster and transition failures, a mocked lab gate, a lab run with
+only the named root substitution and two real transitions, a complete public
+pass, bad rosters, expired outcome evidence, and expired unresolved-gate
+evidence.
 
 The design is buildable, and the proof of concept reaches live-pass, when all of
 the following are true:
@@ -96,13 +142,17 @@ the following are true:
 The system has six logical components:
 
 1. A source adapter reads chain data and constructs an authenticated witness.
-2. A query interface selects a predicate, source anchor, destination context, and
-   result schema.
-3. A proof generator executes the correct Halo2 or Groth16 path.
+2. A query interface carries a requested predicate, bounded typed inputs,
+   destination context, and optional constraints only.
+3. The destination registry resolves anchor, finality, statement and result
+   schemas, proof suite, every VK/SRS/setup profile, architecture, operation,
+   artifacts, replay mode, and lifecycle before a proof generator runs the fixed
+   path.
 4. An untrusted relayer transports the claim envelope, proof, and public witness.
-5. A destination verifier reconstructs the public inputs and checks the proof.
-6. A destination application consumes the typed result after freshness, registry,
-   context, and replay checks pass.
+5. A destination verifier canonically decodes the registered typed result,
+   reconstructs public inputs, and checks authorization and proof.
+6. A destination application consumes that same typed result after freshness,
+   context, replay, registry, and proof checks pass.
 
 Relayers, indexers, aggregators, and proof services are data providers. None is a
 root of trust. Under the named source-consensus threshold, proof-soundness,
@@ -121,13 +171,107 @@ several cryptographic artifacts.
 
 | Destination | Foreign consensus root | Proof root | Policy root |
 | --- | --- | --- | --- |
-| Cardano | Midnight checkpoint, BEEFY current-set commitment, and finality-adapter version | Groth16 wrapper VK, every authorized inner/aggregation VK, KZG SRS hashes, and ceremony transcript hashes | Predicate-registry root, deployment policy, and emergency-recovery policy |
-| Midnight | Cardano identity, Mithril genesis verification key or approved certificate checkpoint, and anchor-profile version | Halo2/Plonk operation VKs, aggregation VKs, and accepted Midnight SRS hashes | Predicate-registry root, deployment policy, and emergency-recovery policy |
+| Cardano | Midnight checkpoint, BEEFY current-set commitment, and finality-adapter version | Groth16 wrapper VK, every authorized inner/aggregation VK, KZG SRS hashes, and ceremony transcript hashes | Semantic registry template root, registry activation, deployment policy, and emergency-recovery policy |
+| Midnight | Cardano identity, Mithril genesis verification key or approved certificate checkpoint, and anchor-profile version | Halo2/Plonk operation VKs, aggregation VKs, and accepted Midnight SRS hashes | Semantic registry template root, registry activation, deployment policy, and emergency-recovery policy |
 
 The proof root is an artifact-binding graph. It records which proof suite, circuit
 architecture, statement schema, VK, proving key, SRS prefix, and setup transcript
-belong together. A proof is rejected if any node in that graph is absent from the
-active registry, even when the cryptographic proof verifies.
+belong together. A proof is rejected if any template or domain-bound
+authorization node is absent from the active registry activation, even when the
+cryptographic proof verifies.
+
+### Acyclic deployment-domain construction
+
+Every value reachable from `DeploymentRootSetV1` is domain neutral. The
+pre-domain layer contains semantic registry templates, artifact templates, ABI
+templates, destination verifier or operation template hashes, deployment
+recipes, checkpoint bodies and approved manifests, source identities and
+fingerprints, destination network identities, and replay, freshness, recovery,
+approval, and bridge-hash policy templates. None contains `root_set_digest`,
+`deployment_domain`, a value derived from either, a domain-bound activation or
+authorization, a concrete deployed destination instance, runtime state, a job,
+a proof, a replay key, a transaction, or a receipt.
+
+The digest order is fixed:
+
+```text
+source, catalog, schema, code, setup, and policy bytes
+  -> source fingerprints
+  -> semantic registry template root
+  -> artifact template root
+  -> ABI template digests, verifier or operation template hashes,
+     and deployment recipe digests
+  -> domain-neutral checkpoint body and approval-set digests
+  -> checkpoint manifest digests
+  -> DeploymentRootSetV1
+  -> root_set_digest
+  -> deployment_domain
+```
+
+Only after the domain exists does the system derive
+`RegistryActivationV1`, `ArtifactAuthorizationV1` records and their root,
+then a chain-authenticated `DeploymentObservationV1` for the concrete destination
+deployment. `DestinationAbiInstanceV1` consumes that observation, and
+`RootContextV1` consumes the ABI instance. The controller then authorizes
+initialization with `ActivationDecisionV1`; the final `DeploymentReceiptV1`
+authenticates continuing state. Claim authorization, proof instances,
+construction and runtime payloads, replay keys, and receipts bind those records.
+No post-domain record or digest feeds a checkpoint, template root, or
+`DeploymentRootSetV1`.
+
+`RootContextV1` contains deployment and source fields only: root-set and domain,
+checkpoint, source identity and fingerprint, registry activation, artifact
+authorization root, destination network, and ABI instance. Each registry
+resolution produces `ResolvedProofContextV1` for predicate, suite, architecture,
+role graph, authorized artifacts, result schema, replay policy, and exact
+freshness adapters, units, conversions, integer width, comparisons, era schedule,
+and bounds. A multi-architecture vector keeps one root context fixed, resolves
+two authorized predicates to different proof contexts, accepts each under its
+own graph, and rejects a context swap.
+
+The recursive `Base` relation also reconstructs every field outside
+`RootContextV1` from the approved checkpoint body. `BaseStateEqualityV1` maps all
+Cardano Mithril terminal, certificate, epoch, AVK/parameter, and SCLS fields and
+all Midnight identity, finalized point, MMR root, current/next descriptor, and
+handoff fields to exact body fields. Per-field mutation vectors hold the manifest
+and root context fixed and reject at `recursive-base-manifest-state-equality`;
+two independent decoders reproduce the positive base state.
+
+The post-domain order authenticates concrete deployment before ABI instantiation,
+then continues through an approval-threshold-authorized `ActivationDecisionV1`,
+destination initialization, and final chain-authenticated `DeploymentReceiptV1`.
+A fixed equality matrix compares checkpoint manifest,
+fresh instance id, root-set digest, domain, source identity/fingerprint,
+activation, artifact root, ABI instance, destination identity, and roster digest
+at every producer and consumer. A mismatch cannot be repaired by a receipt.
+
+`DeploymentRootSetV1` includes the bridge program id, fresh deployment instance
+id, source identity/fingerprint pairs, destination network identity templates,
+approved domain-neutral checkpoint-manifest digests, anchor/finality/proof
+templates, semantic registry template root, artifact template root, ABI template
+digests, verifier or operation template hashes, deployment recipes, and replay,
+freshness, recovery, approval, and hash-policy templates. It excludes its own
+digest and domain and every post-domain value named above. Derivation is direct:
+
+```text
+root_set_digest = Digest(
+  "mcb/deployment-root-set/v1",
+  CanonicalEncode(DeploymentRootSetV1))
+
+deployment_domain = Digest(
+  "mcb/deployment-domain/v1",
+  root_set_digest)
+```
+
+Two independent implementations reproduce canonical bytes and every digest in
+topological order, including post-domain records. A mechanical schema walk
+resolves every transitive reference reachable from `DeploymentRootSetV1`, rejects
+forbidden post-domain fields and types, and topologically sorts the digest graph.
+Activation fails on a cycle, back edge, unresolved producer, fixed point, or
+placeholder. Vectors mutate every included root leaf, every excluded post-domain
+record, and the fresh instance id. They require domain changes for included
+mutations, authorization failure for post-domain substitution, a new domain on
+reset, and rejection of every old-domain proof and replay record.
 
 Each tracked consensus state also carries a source-protocol fingerprint. For
 Midnight this binds the runtime code or spec version, consensus configuration,
@@ -148,9 +292,14 @@ The Cardano validator tracks this Midnight state:
 - current BEEFY validator-set id, authority root, and weight model
 - next BEEFY validator-set id and authority root when announced
 - latest accepted mandatory block
-- finality-adapter and proof-suite ids
-- active predicate-registry root
+- finality-adapter id
+- registry activation digest, artifact authorization root, and Cardano ABI
+  instance digest
 - consumed-message or nullifier root
+
+The continuing source state stores no proof-suite, circuit-architecture, VK,
+SRS, setup, transcript, or curve-grammar selector. Each claim obtains those
+values only from authenticated `ResolvedProofContextV1`.
 
 The verifier rules fix the BEEFY commitment encoding, signature domain, quorum
 calculation, authority membership proof, mandatory-block handoff, MMR leaf format,
@@ -174,9 +323,14 @@ The Midnight contract tracks this Cardano state:
 - current and next aggregate verification keys
 - current and next Mithril protocol parameters
 - latest SCLS slot, namespace-set hash, and SCLS root
-- anchor-profile and proof-suite ids
-- active predicate-registry root
+- anchor-profile id
+- registry activation digest, artifact authorization root, and Midnight ABI
+  instance digest
 - consumed-message or nullifier root
+
+The continuing source state stores no proof-suite, circuit-architecture, VK,
+SRS, setup, transcript, or curve-grammar selector. Each claim obtains those
+values only from authenticated `ResolvedProofContextV1`.
 
 The verifier rules fix the Mithril certificate-chain algorithm, accepted security
 parameter floor, signed-message format, SCLS version, namespace definitions, leaf
@@ -193,6 +347,19 @@ membership or nonmembership wire proof. The bridge specification must fix tree
 shape, padding, namespace completeness, ordered-neighbor rules, path encoding, and
 boundary vectors.
 
+`CONS-CARDANO-01` also fixes `CardanoIdentityDescriptorV1` from network magic,
+network id, pinned Byron and Shelley genesis-configuration hashes, era history,
+protocol-parameter transition adapter, Mithril network id, and identity adapter.
+Its `SclsTreeProfileV1` fixes the complete namespace manifest, canonical key/value
+bytes, live/tombstone rule, Blake2b-224 domain bytes, internal child order, empty
+root, odd-node and power-of-two padding, depth and count bounds, direction bits,
+namespace-root leaves, and global tree. Membership authenticates entry-to-
+namespace and namespace-to-global paths. Nonmembership uses an authenticated
+empty namespace or strict before-first, consecutive-neighbor, or after-last
+proof. Identity, descriptor, tree, boundary, tombstone, namespace, padding, and
+certificate equality mutations plus independent message and tree encoders are
+required roster evidence.
+
 ### Checkpoint and genesis modes
 
 The proof of concept uses checkpoint bootstrap. The checkpoint is an explicit
@@ -202,15 +369,19 @@ manifest contains:
 - source network, genesis hash, and chain-spec or era hash
 - checkpoint height or slot, block hash, state or MMR root, and finality proof
 - current and next authority, AVK, and protocol-parameter commitments
-- finality adapter, anchor profile, proof suite, VK, SRS, and registry hashes
-- destination network, deployment domain, verifier hash, and recovery-policy hash
+- finality, anchor, proof-suite, VK, SRS, artifact, and semantic-registry
+  template hashes
+- destination network identity template, ABI template, verifier or operation
+  template hash, deployment recipe, and replay and recovery policy templates
 - derivation inputs, approval policy, and approval signatures
 
 The configured approval threshold selects the checkpoint. At least two
 independently administered full nodes must reproduce its derivable fields before
 approval. This cross-check detects operator error but does not remove the
-checkpoint trust assumption. The deployed verifier binds the complete manifest
-digest.
+checkpoint trust assumption. The checkpoint body, approvals, and manifest are
+domain neutral. The approved manifest feeds `DeploymentRootSetV1`; the deployed
+verifier later binds the complete manifest digest and separately derived domain
+through `RootContextV1`.
 
 Each checkpoint profile fixes the approver keys and threshold, node-independence
 criteria, exact finalized-point agreement rule, maximum checkpoint age and source
@@ -232,15 +403,35 @@ threshold, delay, asset-migration effect, and old-domain shutdown are part of th
 policy root.
 
 All PoC trust roots are immutable within a deployment domain: checkpoint digest,
-finality adapter, anchor profile, proof-suite graph, VK/SRS set, predicate
-registry, and recovery-policy hash. Changing one deploys a new domain. The
-production specification may allow in-place transitions only through a consensus
-state machine that fixes authority, threshold, delay, activation, deactivation,
-in-flight-proof handling, freeze, rollback prohibition, and domain effects.
+finality and anchor templates, proof-suite and artifact template roots, VK/SRS
+templates, semantic registry template root, destination code and ABI templates,
+and replay and recovery templates. Their `RegistryActivationV1`, artifact
+authorization root, ABI instances, and root context are also fixed for that
+domain. Changing a template or replacing a post-domain instance deploys a new
+domain. The production specification may allow in-place transitions only through
+a consensus state machine that fixes authority, threshold, delay, activation,
+deactivation, in-flight-proof handling, freeze, rollback prohibition, and domain
+effects.
 
 A testnet reset changes the deployment domain even if the network name or magic is
 reused. Genesis, chain-spec, certification-root, verifier, registry, and nullifier
 domains are rebound, and the reset drill proves that an old proof is rejected.
+
+A state-bearing domain change uses `DomainMigrationV1` with authenticated old and
+new root contexts, activation decisions, final tracked and replay states,
+application and value import roots, the complete old/new
+`continuity_replay_root`, leaf count, authenticated completeness/translation
+proof, cutover points and transactions, in-flight disposition, monotonic
+sequence, approvals, proposal time, bounded delay and unit, earliest execution
+time, and execution time. Checked arithmetic requires execution at or after the
+earliest time; one unit early rejects and equality passes. The old domain shuts
+down before the new domain exposes imported state. `SourceEventIdentityV1`
+excludes domain values and derives one `continuity_key` consumed atomically under
+`message-id`, `nullifier`, and `both`, so a fresh new-domain proof of an old event
+rejects while an unrelated event passes. Omission of any old continuity leaf
+fails migration. A destructive lab reset declares no continuity,
+imports none of those roots, cancels old jobs, and cannot serve as an asset or
+state migration receipt.
 
 ## Proof suite decisions
 
@@ -280,45 +471,103 @@ bounds.
 
 ## Shared claim protocol
 
-A destination verifier receives four objects:
+A query carries only this bounded record:
 
-1. A typed query and claim envelope.
-2. A proof blob.
-3. Public witness data required outside the circuit.
-4. A registry proof or registry entry selected by predicate id.
+```text
+QueryV1 = (
+  schema_version,
+  requested_predicate,
+  typed_inputs,
+  destination_context,
+  optional_constraints
+)
+```
 
-The claim envelope binds:
+Optional constraints can require equality with resolved values but cannot
+authorize them. Before source collection or proving, the destination registry
+resolves the predicate version, anchor and finality rule, statement and result
+schemas, proof suite, every VK, SRS and setup profile, circuit architecture,
+destination verifier or operation, artifact graph, replay mode, and lifecycle
+state. The canonical resolution record also binds the root-set digest, domain,
+registry activation, artifact authorization root, and ABI instance. A constraint
+mismatch is a permanent resolution failure.
 
-- schema version
-- source system and network
-- source era or runtime version
-- predicate id and predicate version
-- anchor type and anchor digest
-- finality rule and parameters
-- source time scope
-- proof-suite id, circuit-architecture hash, and verifier or program id
-- public input and output hashes
-- destination context hash
-- expiry
-- replay scope
-- nullifier or message id when consumption is stateful
+All common records use the suite-independent
+`mcb.common-cbor.rfc8949-deterministic.v1` profile. `QueryV1` is the five-element
+RFC 8949 deterministic-CBOR array printed above. Resolution, resolved proof
+context, envelope, result, gate, submission, and receipt shapes have fixed CDDL
+and domain separators. Duplicate keys, indefinite or non-preferred forms, tags,
+floats, unknown critical fields, and trailing bytes reject. One
+`SuiteNativeProofProfileV1` solely owns native proof, instance, VK, scalar/field,
+transcript, curve/point, subgroup, and verifier-equation grammar. A destination
+ABI references that profile and embeds its bytes unchanged; it owns only chain
+datum, redeemer, call, state, value, transaction, and receipt wrappers. Neither
+layer can redefine common framing. Schema-walk and nested-byte vectors reject
+normalization or redefinition.
+
+A destination verifier receives the query and resolution, claim envelope, proof
+blob, canonical typed-result bytes, public witness required outside the circuit,
+registry membership proof, artifact authorization records, and ABI-instance
+binding. The claim envelope binds:
+
+- schema version;
+- source system, network, era or runtime version, and protocol fingerprint;
+- root-set digest, deployment domain, registry activation, artifact
+  authorization root, and ABI instance;
+- predicate id and version, statement and result schemas, and the canonical
+  typed-result binding;
+- anchor type and digest, finality rule and parameters, source point, and
+  authenticated freshness scope;
+- proof-suite id, circuit architecture, and resolved verifier or operation;
+- destination context, expiry, replay scope, lane, and the registered message id
+  or nullifier fields.
+
+The common protocol has no generic public-input digest. A suite-native instance
+digest is allowed only when the registered suite profile names its concrete
+producer, canonical preimage, consumers, and constraints, and the dependency
+graph proves that the preimage is acyclic and excludes the claim digest, BSB22
+`pub`, and every value derived from either.
 
 The validation order is fixed:
 
-    decode
-    -> check schema and canonical encoding
-    -> check destination context
-    -> check expiry and freshness
-    -> check replay state
-    -> resolve predicate in the registry
-    -> check verifier and accepted anchor
-    -> reconstruct public inputs
-    -> verify proof
-    -> decode typed output
-    -> apply destination policy
-    -> consume nullifier or message id
+```text
+bounded decode
+-> bind published roster digest and active RootContextV1
+-> authenticate registry activation and resolve QueryV1
+-> construct ResolvedProofContextV1
+-> source collection and proof production under that resolution
+-> registered typed-result decode
+-> typed-result canonical re-encoding and field-binding checks
+-> artifact, anchor, VK, SRS, setup, transcript, and ABI authorization
+-> public-input reconstruction
+-> proof verification
+-> authenticate source time from the verified proof statement
+-> final destination-context, expiry, freshness, and replay checks
+-> destination policy over the same canonical typed result
+-> one atomic tracked-state, application, value, and replay transition
+```
 
-No caller may choose an arbitrary verifier key. The registry is authoritative.
+No other authenticated submission order is allowed. Advisory age or replay
+lookups can save work but cannot accept or permanently reject; the destination
+repeats final checks after proof verification with the resolution-bound source
+and destination time adapters, units, conversion, width, inclusive comparisons,
+era schedule, and numeric bounds. Roster binding and registry resolution precede
+all deployment preflight and source collection.
+
+No caller may choose an authorization field. Malformed-result vectors start from
+a valid registry resolution, name `typed-result-canonicalization` as the expected
+stage, prove that the proof verifier was not invoked, and require `NO_CHANGE` for
+all four state owners. Golden vectors contain byte-exact queries and resolution
+records for both directions. Two independent codecs reproduce their canonical
+bytes and digests and reject query authorization fields, constraint mismatches,
+aliases, duplicate or unknown critical result fields, out-of-range values, and
+trailing data at the declared stage.
+
+The Cardano validator uses that same numbered order without a chain-specific
+shortcut: roster/root and resolution; typed-result canonicalization; artifact
+authorization and public-input reconstruction; proof verification;
+proof-authenticated source-time extraction; final context, expiry, freshness,
+replay, and policy; then one atomic tracked/application/value/replay transition.
 
 ### Proof composition relation
 
@@ -558,8 +807,9 @@ Five work packages:
 3. **S01-W03:** Recover or reconstruct the Cardano 42 and Midnight 52 predicate
    catalogs with source digests.
 4. **S01-W04:** Normalize and mechanically validate all 94 predicate records.
-5. **S01-W05:** Specify checkpoint, genesis, artifact, fixture, and deployment
-   manifest schemas.
+5. **S01-W05:** Specify domain-neutral checkpoint, registry, artifact, ABI, and
+   deployment-root templates plus post-domain activation, fixture, run, and
+   evidence schemas.
 
 Exit gate: the catalog validator reports exactly 42 unique Cardano records and 52
 unique Midnight records with provenance. An incomplete catalog blocks dependent
@@ -568,6 +818,13 @@ registry work.
 ### Sprint 2: Architecture feasibility gates
 
 Six work packages:
+
+Sprint 2 records `FeasibilityDecisionV1 = demonstrated | conditional |
+not-demonstrated`. This engineering enum is not an outcome label:
+`demonstrated` means the rejecting prototype and measurements meet the declared
+gate contract, `conditional` names unmet external or scale conditions, and
+`not-demonstrated` stops dependent packages. Only `OutcomeClassifierV1` may emit
+`live-pass`, `degraded-lab`, or `blocked` after a deployment run.
 
 1. **S02-W01:** Prototype the complete Halo2/KZG-to-Groth16 relation, including
    the final accumulator decider and an invalid-accumulator rejection test.
@@ -581,8 +838,11 @@ Six work packages:
 5. **S02-W05:** Fix the checkpoint eligibility profile, then implement manifest
    generation, approval verification, freshness checks, and independent
    reproduction against two source nodes.
-6. **S02-W06:** Record go, degraded-lab, or blocked decisions for every gate and
-   rebaseline downstream packages without changing claim semantics.
+6. **S02-W06:** Prototype the complete Cardano BSB22/Plutus execution surface,
+   including untrusted proof submission, public-input reconstruction, all four
+   atomic state owners, resource measurement, and rejection vectors; then record
+   one `FeasibilityDecisionV1` for every Sprint 2 gate and rebaseline downstream
+   packages without changing claim semantics.
 
 Exit gate: the program does not proceed to implementation on an assumed proof
 surface. Each required relation has a rejecting prototype, a measured resource
@@ -592,17 +852,22 @@ profile, and a named trust profile.
 
 Five work packages:
 
-1. **S03-W01:** Specify canonical query, envelope, proof-response, result, and
-   artifact records with bounded wire types.
+1. **S03-W01:** Specify `QueryV1`, registry resolution, envelope,
+   proof-response, typed-result, and artifact records with bounded wire types;
+   queries contain only the requested predicate, typed inputs, destination
+   context, and optional constraints.
 2. **S03-W02:** Specify the finality, inclusion, predicate, and envelope
    composition relations with a field-binding matrix.
-3. **S03-W03:** Specify registry membership, nested key/SRS authorization,
-   immutable PoC roots, production lifecycle transitions, freeze, deprecation,
-   and recovery.
-4. **S03-W04:** Specify validation order, time semantics, permanent and retryable
+3. **S03-W03:** Specify the acyclic domain-neutral semantic registry, artifact,
+   ABI, checkpoint, and root-set templates, then the post-domain registry
+   activation, artifact authorization, ABI instance, immutable PoC roots,
+   lifecycle, freeze, deprecation, and recovery records.
+4. **S03-W04:** Specify registry-first validation, typed-result canonicalization
+   before public-input reconstruction, time semantics, permanent and retryable
    failures, idempotency, and replay behavior.
-5. **S03-W05:** Produce cross-language golden transcripts, boundary vectors, and
-   cross-anchor negative vectors.
+5. **S03-W05:** Produce cross-language golden query and resolution bytes,
+   topological root/domain derivations, boundary vectors, malformed-result
+   expected-stage vectors, and cross-anchor and cross-domain negatives.
 
 Exit gate: two independent protocol codecs and public-statement reconstructors
 produce the same bytes and field elements, then reject mixed anchors, key
@@ -652,9 +917,10 @@ Seven work packages:
 
 1. **S06-W01:** Pin versioned Halo2, KZG, aggregation, and Groth16 suite
    identifiers, transcripts, curve rules, and wire formats.
-2. **S06-W02:** Define the artifact-binding graph schema and logical slots for
-   every inner VK, aggregation VK, wrapper VK, proving key, SRS prefix, and setup
-   transcript.
+2. **S06-W02:** Define the domain-neutral artifact template graph and
+   post-domain authorization schema and logical slots for every inner VK,
+   aggregation VK, wrapper VK, proving key, SRS prefix, and setup transcript;
+   run the transitive acyclicity check against `DeploymentRootSetV1`.
 3. **S06-W03:** Map all 94 predicates to formal proof-template relations and
    proof-bound selectors.
 4. **S06-W04:** Select shared architectures and K values, then measure padding
@@ -663,9 +929,10 @@ Seven work packages:
    assumptions, verifier-key equality, and upgrade policy.
 6. **S06-W06:** Write the composed soundness argument, recursion bounds, target
    security level, and benchmark pass/fallback thresholds.
-7. **S06-W07:** Freeze the verifier/application boundary, settlement ABI, message
-   identity, lane, nullifier, retry, refund, asset-identity, and conservation
-   semantics consumed by both destination contracts.
+7. **S06-W07:** Freeze each domain-neutral destination ABI template and
+   deployment recipe, its post-domain ABI instance, verifier/application
+   boundary, message identity, lane, nullifier, retry, refund, asset identity,
+   and conservation semantics consumed by both destination contracts.
 
 Exit gate: an independent implementer can identify every proof relation and trusted
 artifact without inferring a protocol choice from a library name.
@@ -694,8 +961,9 @@ vectors, reject the mutation suite, and meet the feasibility thresholds.
 
 Seven work packages:
 
-1. **S08-W01:** Implement versioned query, prove, verify, submit, and inspect CLI,
-   API, and ABI contracts.
+1. **S08-W01:** Implement versioned query, registry resolution, prove, verify,
+   submit, and inspect CLI, API, and ABI contracts with golden query/resolution
+   bytes and registry-owned authorization.
 2. **S08-W02:** Implement offline-fixture and live-node adapters for both chains.
 3. **S08-W03:** Implement proof orchestration and registry-driven dispatch.
 4. **S08-W04:** Implement Cardano and Midnight submission clients with
@@ -704,7 +972,9 @@ Seven work packages:
    advance-and-consume, consume-current-anchor, concurrency rebasing, message
    identity, lanes, nullifiers, retries, refunds, asset identity, and conservation.
 6. **S08-W06:** Implement relayer persistence, failure classification, data
-   availability, correlation ids, health checks, metrics, and redacted logs.
+   availability, correlation ids, `OperationalProbeMetricProfileV1`, discoverable
+   health/readiness mapping, `EvidenceRetentionProfileV1`, metrics, and redacted
+   logs.
 7. **S08-W07:** Run at least one complete local query-to-settlement transaction
    for every proof-template family, covering both directions with deterministic
    statements and controlled fixtures.
@@ -719,14 +989,17 @@ Six work packages:
 1. **S09-W01:** Complete the 94-row coverage matrix, registry round-trips, and
    per-predicate positive and required negative vectors.
 2. **S09-W02:** Run cross-predicate substitution, mixed-anchor, key/SRS
-   substitution, canonical-encoding, protocol-upgrade, trust-root mutation, and
-   cryptographic mutation suites.
+   substitution, canonical-encoding, malformed-result expected-stage,
+   protocol-upgrade, transitive domain-cycle, root-set and post-domain mutation,
+   classifier-roster, and cryptographic mutation suites.
 3. **S09-W03:** Run fault injection for RPC loss, prover timeout, rotation races,
    stale anchors, duplicate submission, destination rollback, and restart.
 4. **S09-W04:** Measure proof size, proving RAM and latency, verification cost,
    batching, authority bounds, and percentile thresholds on named hardware.
-5. **S09-W05:** Finalize deployment manifests, funded roles, secret references,
-   preflight, smoke, restart, recovery, and evidence-retention procedures.
+5. **S09-W05:** Finalize root template, artifact template, activation, and run
+   manifests, funded roles, secret references, probe and metric discovery,
+   preflight, smoke, restart, recovery, and evidence-retention procedures with
+   deployment-filled durations.
 6. **S09-W06:** Run the predeployment council and security gate, validate the
    populated artifact graph, then freeze suite ids and deployable artifact hashes.
 
@@ -745,8 +1018,10 @@ Five work packages:
    transaction.
 4. **S10-W04:** Execute a Midnight claim that authorizes a finalized Cardano
    transaction.
-5. **S10-W05:** Record benchmarks and public receipts, then run restart, stale
-   proof, duplicate submission, and testnet-reset rejection drills.
+5. **S10-W05:** Record benchmarks and public receipts, run restart, stale proof,
+   duplicate submission, and testnet-reset rejection drills, then execute the
+   exact-roster `OutcomeClassifierV1` vectors and retain evidence through
+   independent review.
 
 Exit gate: the result is labeled live-pass, degraded-lab, or blocked under the
 completion-outcome rules. Only live-pass satisfies the proof-of-concept goal.
@@ -887,18 +1162,82 @@ destination confirmation. Every failure code is classified as permanent,
 retryable, or manual-recovery. Retry policy, backoff, dead-letter state,
 idempotency key, and nullifier effect are testable requirements.
 
+The canonical state table covers `received`, `roster-bound`, `resolved`,
+`source-ready`, `proving`, `result-canonical`, `proof-ready`,
+`locally-verified`, `constructed`, `submitting`, `submission-unknown`,
+`submitted`, `confirmed`, `settled`, `retry-wait`, `permanent-failure`,
+`superseded`, `dead-letter`, and `manual-recovery`, with legal successors,
+durable pre-side-effect evidence, retry owner, and recovery rule for each.
+Every id preimage is a fixed-arity deterministic-CBOR tuple. `relayer_id` hashes
+operator namespace and canonical transport public key; `job_id` hashes domain,
+direction, and canonical query; `settlement_id` hashes the resolved replay policy
+and tuple; `attempt_id` hashes job, relayer, and a canonical counter;
+`submission_id` hashes destination identity and canonical transaction body. Raw
+concatenation is forbidden, and adversarial boundary-split vectors must differ.
+No timestamp, endpoint, process id, or secret enters an id.
+
+`FailureProfileV1` exhaustively maps each failure code to its class, owner,
+budget, backoff, replay effect, and ordered allowed retry targets. `JobResumeV1`,
+distinct from gate lifecycle `GateResumeV1`, binds job and settlement ids, root
+context, prior record and phase, failure code, selected allowed target, evidence,
+policy/approvals, and expected/new job sequence. Compare-and-swap race vectors
+permit one winner and no duplicate proving, submission, or state effect.
+
 A correlation id links the query, source anchor, proof job, relayer attempt,
 destination transaction, registry version, and consumed-message result. Structured
 events expose source-finality lag, queue depth, proving latency, retries,
 destination confirmation, registry mismatch, and conservation failures. Health
-and readiness checks distinguish unavailable dependencies from an unsafe verifier
-state.
+and readiness use a versioned `OperationalProbeMetricProfileV1`. The profile
+binds logical component roles, probe discovery schema, health and readiness
+schemas, status mapping, unsafe recovery, metrics schema and definitions,
+correlation, redaction, and verification. It defines no concrete endpoint.
+Immutable `RunIntentV1` binds the roster, profile digests, component-role
+requirements, endpoint intent, and all policy values before preflight and
+contains no result. `PreflightReceiptV1` binds the intent digest and observed
+`ProbeDiscoveryV1` records and results. `RunEvidenceManifestV1` binds the intent
+and ordered receipt/evidence digests after preflight. Every later receipt binds
+the same intent digest; the schema DAG forbids a receipt or evidence-manifest
+digest in the intent preimage.
+
+A healthy result with available dependencies maps to `healthy/ready`. A timeout,
+transport failure, capacity failure, or stale probe maps to
+`unavailable/not-ready-unavailable`, stops new work, and leaves safety state
+unchanged. A verifier self-check, integrity failure, authenticated conflict, or
+latched unsafe state maps to `unsafe/not-ready-unsafe`, stops proving and
+submission, preserves evidence, and requires the registered recovery flow. An
+unsafe state cannot be downgraded by a later outage or restart. Unknown,
+malformed, or unauthorized probe results map to unavailable. Only authenticated
+source evidence can invoke the freeze rule.
 
 Tracked deployment evidence contains manifest digests, artifact hashes, public
 transaction ids, redacted configuration, benchmark summaries, and reproduction
 commands. Raw logs, endpoint credentials, secrets, and large artifacts remain
-outside git under a declared retention policy. The evidence index records their
-content hashes and storage locations without exposing secret values.
+outside git under a versioned `EvidenceRetentionProfileV1`. It binds evidence
+classes, outcome-review retention, unresolved-gate retention,
+content-addressed supersession, expiry evaluation, integrity, access, owner, and
+audit rules. Deployment policy fills actual durations and deadlines before a run.
+The evidence index records content hashes, lengths, media types, storage classes,
+access methods, deadlines, profile digest, and verification commands without
+exposing secret values. Required outcome evidence remains available through
+classification and independent review; expiry before then yields `blocked`.
+Unresolved-gate resume evidence remains until resolution or accepted
+content-addressed supersession. Expiry without supersession returns the gate to
+`unresolved` and stops dependent work.
+
+`EvidenceSupersessionV1` binds roster and gate ids, activation reference, old and
+new evidence, reason, deadlines, proposal/effective times, retention and owner
+policies, approvals, and evidence sequence. `GateResumeV1` binds current root
+context, prior gate record/status, effective evidence, dependency snapshot,
+resume time, owner plus governance approvals, and compare-and-swap gate sequence.
+Late supersession first returns the gate to unresolved. Competing or stale
+records lose without changing gate, safety, value, or replay state.
+
+Source-evidence freeze accepts only validated source conflict or unauthorized-
+upgrade evidence. Delayed recovery is a separately authorized action from a
+recorded frozen state. Its authorization binds evidence, allowed action,
+threshold, delay, sequence, and any domain migration; its receipt binds all four
+pre/post state owners. Governance signatures and elapsed time never masquerade
+as source evidence.
 
 ## Dependencies and hard blockers
 
@@ -945,4 +1284,9 @@ Every sprint runs:
 
 Benchmark gates name hardware, software revisions, warm/cold method, sample count,
 percentiles, authority-set size, target protocol parameters, and pass/fallback
-thresholds. Completion claims cite fresh command output and deployment evidence.
+thresholds. `PerformancePolicyV1` freezes those metric ids, units, methods,
+limits, and margins before measurement. `PerformanceThresholdReceiptV1` binds
+the policy, suite/architecture, artifacts, raw-sample digest, computed metrics,
+decisions, and independent reproduction. The machine-readable roster requires
+these receipts at the full-decider, Midnight-execution, and Cardano-execution
+gates. Completion claims cite fresh command output and deployment evidence.

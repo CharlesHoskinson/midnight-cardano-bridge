@@ -17,6 +17,7 @@ Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 - [Canonical 25-section bridge design](bridges/midnight-cardano-recursive-bridge.md): current readable system design and source-linked evidence boundary.
 - [Council-reviewed program design](../docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md): 11 sprints, 62 work packages, fixed proof paths, gates, and completion outcomes.
 - [Predicate catalog status](proof-claims/predicate-catalog-status.md): required 42 Cardano and 52 Midnight records, recovery search, admission gates, and live-test subset rules.
+- [Machine-readable gate roster](../protocol/gate-roster-v1.json): canonical 14-entry activation roster with stable ids and a byte-exact deterministic-CBOR digest.
 - [OpenSpec workflow](../openspec/config.yaml): repository context and artifact rules. See the active [Sprint 1 proposal](../openspec/changes/sprint-01-foundation/proposal.md) and the [`openspec/specs/` landing page](../openspec/specs/README.md) for stable capability directory navigation. No stable capability has been published.
 
 ## Standards

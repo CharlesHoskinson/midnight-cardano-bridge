@@ -20,12 +20,12 @@ Document control through Appendices. Its proof-of-concept paths are fixed:
 - Midnight facts use recursive Halo2/KZG relations with the full final decider
   proved inside BSB22 commitment-Groth16 over BLS12-381 for Cardano.
 
-The first execution phase has four hard feasibility gates: the missing 42 plus
-52 predicate catalogs, public Mithril certification of the exact SCLS entity,
-the authenticated Midnight event-to-header-to-MMR path, and the measured full
-Halo2/KZG decider wrapper with invalid-accumulator rejection. Two additional
-execution boundaries require a deployed Midnight external-proof operation and a
-reference Cardano verifier for the complete wrapped BEEFY/MMR claim. The
+The first execution phase has six hard activation gates: the missing 42 plus 52
+predicate catalogs, public Mithril certification of the exact SCLS entity, the
+authenticated Midnight event-to-header-to-MMR path, the measured full Halo2/KZG
+decider wrapper with invalid-accumulator rejection, a deployed Midnight
+external-proof operation, and a reference Cardano verifier for the complete
+wrapped BEEFY/MMR claim. The
 [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md)
 defines the hard 94-record count, uniqueness, schema, and provenance gate. A
 proof-template family may reuse a circuit, but it cannot replace any predicate

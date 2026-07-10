@@ -1,0 +1,209 @@
+{
+  "$schema": "./gate-roster-v1.schema.json",
+  "artifact_id": "mcb.gate-roster.v1",
+  "canonical_cbor_sha256": "2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f",
+  "canonical_serialization": {
+    "preimage_json_pointer": "/roster",
+    "profile_id": "mcb.common-cbor.rfc8949-deterministic.v1",
+    "digest_algorithm": "sha-256",
+    "encoded_bytes_file": "gate-roster-v1.cbor.hex"
+  },
+  "roster": {
+    "roster_id": "mcb.poc-gates.v1",
+    "version": 1,
+    "common_codec_id": "mcb.common-cbor.rfc8949-deterministic.v1",
+    "entries": [
+      {
+        "gate_id": "S01-BLOCK-01/catalog-completeness",
+        "owners": ["owner.predicate-catalog", "owner.registry", "owner.conformance"],
+        "interfaces": ["interface.catalog-import", "interface.registry-population", "interface.conformance-corpus"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.catalog.cardano-42",
+          "evidence.catalog.midnight-52",
+          "evidence.catalog.unique-identifiers",
+          "evidence.catalog.per-row-provenance",
+          "evidence.catalog.94-row-schema-roundtrip-positive-negative-vectors",
+          "evidence.catalog.independent-validator-receipts"
+        ],
+        "activation_ref": "activation.catalog-completeness.v1"
+      },
+      {
+        "gate_id": "S01-BLOCK-02/public-scls-availability",
+        "owners": ["owner.cardano-consensus-profile", "owner.mithril-integration", "owner.deployment-governance"],
+        "interfaces": ["interface.cardano-public-anchor", "interface.mithril-signed-entity"],
+        "applicability": {"public": "required", "lab": "public-only"},
+        "required_evidence": [
+          "evidence.scls.accepted-public-signer-population",
+          "evidence.scls.exact-signed-entity-profile",
+          "evidence.scls.public-certificate-chain",
+          "evidence.scls.public-availability-receipts"
+        ],
+        "activation_ref": "activation.public-scls-availability.v1"
+      },
+      {
+        "gate_id": "S01-BLOCK-03/event-inclusion",
+        "owners": ["owner.midnight-consensus-profile", "owner.event-adapter", "owner.circuit", "owner.conformance"],
+        "interfaces": ["interface.midnight-event-inclusion-role", "interface.midnight-header-mmr"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.event.source-pinned-event-header-mmr-profile",
+          "evidence.event.rejecting-prototype",
+          "evidence.event.inclusion-noninclusion-parent-vectors",
+          "evidence.event.independent-receipts"
+        ],
+        "activation_ref": "activation.event-inclusion.v1"
+      },
+      {
+        "gate_id": "S01-BLOCK-04/full-decider",
+        "owners": ["owner.proof-system", "owner.wrapper-circuit", "owner.setup", "owner.conformance"],
+        "interfaces": ["interface.halo2-full-decider", "interface.bsb22-wrapper", "interface.proof-template-coverage"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.decider.native-circuit-equivalence",
+          "evidence.decider.invalid-final-kzg-rejection",
+          "evidence.decider.setup-and-artifact-bindings",
+          "evidence.proof-template.every-family-end-to-end",
+          "evidence.performance.policy-and-threshold-receipts.full-decider",
+          "evidence.decider.independent-receipts"
+        ],
+        "activation_ref": "activation.full-decider.v1"
+      },
+      {
+        "gate_id": "S01-BLOCK-05/midnight-execution",
+        "owners": ["owner.midnight-operation", "owner.midnight-chain-client", "owner.circuit", "owner.conformance"],
+        "interfaces": ["interface.cardano-to-midnight-abi", "interface.midnight-atomic-transition"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.execution.midnight-deployed-operation",
+          "evidence.execution.midnight-external-proof",
+          "evidence.execution.midnight-abi-mutations",
+          "evidence.performance.policy-and-threshold-receipts.midnight",
+          "evidence.execution.midnight-confirmed-transition-receipts"
+        ],
+        "activation_ref": "activation.midnight-execution.v1"
+      },
+      {
+        "gate_id": "S01-BLOCK-06/cardano-execution",
+        "owners": ["owner.cardano-validator", "owner.cardano-chain-client", "owner.wrapper-circuit", "owner.conformance"],
+        "interfaces": ["interface.midnight-to-cardano-abi", "interface.cardano-atomic-transition"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.execution.cardano-complete-plutus-boundary",
+          "evidence.execution.cardano-bsb22-proof",
+          "evidence.execution.cardano-abi-mutations",
+          "evidence.performance.policy-and-threshold-receipts.cardano",
+          "evidence.execution.cardano-confirmed-transition-receipts"
+        ],
+        "activation_ref": "activation.cardano-execution.v1"
+      },
+      {
+        "gate_id": "CONS-BOOT-01",
+        "owners": ["owner.consensus-profile", "owner.circuit"],
+        "interfaces": ["interface.mithril-recursive-base", "interface.mithril-recursive-step"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.bootstrap.source-pinned-terminal-profiles",
+          "evidence.bootstrap.base-step-cross-profile-vectors",
+          "evidence.bootstrap.independent-receipts"
+        ],
+        "activation_ref": "activation.consensus-bootstrap.v1"
+      },
+      {
+        "gate_id": "CONS-CARDANO-01",
+        "owners": ["owner.cardano-consensus-profile", "owner.circuit", "owner.cardano-anchor", "owner.conformance"],
+        "interfaces": ["interface.certificate-scls-equality", "interface.scls-membership-nonmembership"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.scls.cardano-identity-descriptor-vectors",
+          "evidence.scls.certificate-descriptor-message-equality-vectors",
+          "evidence.scls.exact-two-level-tree-semantics",
+          "evidence.scls.membership-nonmembership-boundary-vectors",
+          "evidence.scls.independent-native-message-and-tree-encoders"
+        ],
+        "activation_ref": "activation.consensus-cardano-scls.v1"
+      },
+      {
+        "gate_id": "CONS-BEEFY-01",
+        "owners": ["owner.midnight-consensus-profile", "owner.circuit", "owner.cardano-validator", "owner.conformance"],
+        "interfaces": ["interface.beefy-descriptor", "interface.beefy-quorum", "interface.beefy-handoff"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.beefy.complete-authority-list-derivation",
+          "evidence.beefy.quorum-boundary-vectors",
+          "evidence.beefy.mandatory-handoff-vectors",
+          "evidence.beefy.independent-receipts"
+        ],
+        "activation_ref": "activation.consensus-beefy.v1"
+      },
+      {
+        "gate_id": "CONS-CHECKPOINT-01",
+        "owners": ["owner.deployment-governance", "owner.conformance"],
+        "interfaces": ["interface.checkpoint-body", "interface.checkpoint-approval", "interface.recursive-base"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.checkpoint.two-node-byte-reproduction",
+          "evidence.checkpoint.eligibility-signature-threshold-vectors",
+          "evidence.checkpoint.fresh-instance-equality-vectors",
+          "evidence.checkpoint.reset-receipts"
+        ],
+        "activation_ref": "activation.consensus-checkpoint.v1"
+      },
+      {
+        "gate_id": "CONS-MIDNIGHT-ID-01",
+        "owners": ["owner.midnight-consensus-profile", "owner.deployment", "owner.conformance"],
+        "interfaces": ["interface.midnight-identity", "interface.initial-beefy-state"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.midnight-identity.chain-spec-or-independent-root",
+          "evidence.midnight-identity.initial-beefy-derivation",
+          "evidence.midnight-identity.sibling-chain-vectors"
+        ],
+        "activation_ref": "activation.consensus-midnight-identity.v1"
+      },
+      {
+        "gate_id": "CONS-DOMAIN-01",
+        "owners": ["owner.artifact-format", "owner.registry", "owner.deployment", "owner.conformance"],
+        "interfaces": ["interface.domain-template-dag", "interface.post-domain-activation", "interface.domain-migration", "interface.common-codec"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.domain.two-polyglot-golden-derivations",
+          "evidence.domain.transitive-acyclicity",
+          "evidence.domain.activation-decision-and-deployment-receipt-equality",
+          "evidence.domain.mutation-reset-and-old-domain-replay-vectors",
+          "evidence.domain.migration-continuity-vectors",
+          "evidence.domain.common-codec-polyglot-golden-vectors",
+          "evidence.domain.common-codec-no-redefinition-vectors"
+        ],
+        "activation_ref": "activation.consensus-domain.v1"
+      },
+      {
+        "gate_id": "CONS-FRESH-01",
+        "owners": ["owner.consensus-profile", "owner.destination", "owner.deployment", "owner.conformance"],
+        "interfaces": ["interface.registry-resolution", "interface.claim-freshness"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.freshness.source-destination-adapter-bindings",
+          "evidence.freshness.units-and-numeric-bounds",
+          "evidence.freshness.boundary-era-overflow-vectors",
+          "evidence.freshness.proof-authenticated-source-time"
+        ],
+        "activation_ref": "activation.consensus-freshness.v1"
+      },
+      {
+        "gate_id": "CONS-FREEZE-01",
+        "owners": ["owner.consensus-profile", "owner.destination", "owner.governance", "owner.conformance"],
+        "interfaces": ["interface.safety-freeze", "interface.authorized-recovery", "interface.gate-resume"],
+        "applicability": {"public": "required", "lab": "required"},
+        "required_evidence": [
+          "evidence.freeze.source-conflict-and-upgrade-vectors",
+          "evidence.freeze.authorized-delayed-recovery-vectors",
+          "evidence.freeze.restart-race-and-resume-vectors",
+          "evidence.freeze.evidence-supersession-vectors",
+          "evidence.freeze.retention-receipts"
+        ],
+        "activation_ref": "activation.consensus-freeze-recovery.v1"
+      }
+    ]
+  }
+}

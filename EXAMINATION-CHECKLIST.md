@@ -16,7 +16,7 @@ Each item: *what to examine — where (repo/file/source) — the question it ans
 - [~] **Normative requirements:** the custom OpenSpec workflow has a proposal, 12 capability deltas, design, tasks, and initialized review. The current change lives under [`openspec/changes/sprint-01-foundation/`](openspec/changes/sprint-01-foundation/README.md); accepted requirements appear on the [`openspec/specs/` landing page](openspec/specs/README.md) only after review, validation, and archive.
 - [!] **Predicate admission:** registry population requires exactly 42 unique Cardano and 52 unique Midnight records. The [catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the missing sources and the hard count, uniqueness, schema, and provenance gates. No filler row is permitted.
 
-### Four early feasibility gates
+### Six activation gates
 
 | Gate | Current evidence | Program effect |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ Each item: *what to examine — where (repo/file/source) — the question it ans
 | `S01-BLOCK-03`: authenticated Midnight event-to-header-to-MMR path | Blocked. The current relay object omits the event and MMR-leaf proof. | Blocks authenticated Midnight predicate inclusion. |
 | `S01-BLOCK-04`: full Halo2/KZG decider inside BSB22 | Blocked. The gnark BSB22 stack and Midnight IVC example pass locally, but the bridge full-decider wrapper and invalid-accumulator rejection do not exist. | Blocks the selected Midnight-to-Cardano proof path. |
 
-Two execution boundaries remain separate from those four gates:
+The final two gates cover the destination execution boundaries:
 
 - [!] **`S01-BLOCK-05`, Midnight external-proof operation:** no deployed operation has accepted an untrusted registered Cardano proof and committed tracked state, destination action, and replay state atomically. Library compilation is not execution-surface evidence.
 - [!] **`S01-BLOCK-06`, Cardano wrapped BEEFY/MMR boundary:** no public Cardano validator consumes the complete claim. The observed recovery-circuit BSB22 Preview transactions prove the landing mechanism, not the bridge relation.

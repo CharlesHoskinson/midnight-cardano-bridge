@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/midnight-cardano-bridge/gate-roster-v1.schema.json",
+  "title": "GateRosterV1 publication",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "artifact_id", "canonical_cbor_sha256", "canonical_serialization", "roster"],
+  "properties": {
+    "$schema": {"const": "./gate-roster-v1.schema.json"},
+    "artifact_id": {"const": "mcb.gate-roster.v1"},
+    "canonical_cbor_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "canonical_serialization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preimage_json_pointer", "profile_id", "digest_algorithm", "encoded_bytes_file"],
+      "properties": {
+        "preimage_json_pointer": {"const": "/roster"},
+        "profile_id": {"const": "mcb.common-cbor.rfc8949-deterministic.v1"},
+        "digest_algorithm": {"const": "sha-256"},
+        "encoded_bytes_file": {"const": "gate-roster-v1.cbor.hex"}
+      }
+    },
+    "roster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roster_id", "version", "common_codec_id", "entries"],
+      "properties": {
+        "roster_id": {"const": "mcb.poc-gates.v1"},
+        "version": {"const": 1},
+        "common_codec_id": {"const": "mcb.common-cbor.rfc8949-deterministic.v1"},
+        "entries": {
+          "type": "array",
+          "minItems": 14,
+          "maxItems": 14,
+          "items": {"$ref": "#/$defs/entry"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stableId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+    "nonEmptyStableIds": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/stableId"}
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gate_id", "owners", "interfaces", "applicability", "required_evidence", "activation_ref"],
+      "properties": {
+        "gate_id": {"$ref": "#/$defs/stableId"},
+        "owners": {"$ref": "#/$defs/nonEmptyStableIds"},
+        "interfaces": {"$ref": "#/$defs/nonEmptyStableIds"},
+        "applicability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["public", "lab"],
+          "properties": {
+            "public": {"const": "required"},
+            "lab": {"enum": ["required", "public-only"]}
+          }
+        },
+        "required_evidence": {"$ref": "#/$defs/nonEmptyStableIds"},
+        "activation_ref": {"$ref": "#/$defs/stableId"}
+      }
+    }
+  }
+}
