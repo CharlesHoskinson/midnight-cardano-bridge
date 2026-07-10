@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<handoff>
+  <role>You are the continuation engineer for the Midnight/Cardano recursive trustless bridge. Work directly in the checked-out repository. Make code and documentation changes, run tests, and leave reviewable commits.</role>
+  <repository>
+    <path>C:\Users\charl\midnight-cardano-bridge</path>
+    <branch>resolve-checklist-full-sweep</branch>
+    <remote>https://github.com/CharlesHoskinson/midnight-cardano-bridge.git</remote>
+    <latest_commit>c81e552</latest_commit>
+    <important_commits>
+      <commit>4d985a7: last baseline with a complete read-only verifier and byte-identical evidence</commit>
+      <commit>54e8d36: bind source-event index presence and normalized observations to raw capture bytes</commit>
+      <commit>cee2bd2: add explicit structural CBOR type manifest and parser-only BSB22 sentinel coverage</commit>
+      <commit>c81e552: refresh evidence and publish the handoff README</commit>
+    </important_commits>
+  </repository>
+  <current_truth>
+    One sprint is complete and archived. Sprint 2 is implemented but task 6 is open. The program has 11 sprints and 62 work packages. The harness reports structural-pass, deployment blocked, and activation_eligible false. No Cardano or Midnight validator has accepted a bridge proof or committed a trustless cross-chain state transition. Keep all six S01-BLOCK gates and all eight CONS gates unresolved. Do not invent the 42 Cardano or 52 Midnight predicate rows.
+  </current_truth>
+  <first_actions>
+    <action>Read README.md, reference/README.md, the active OpenSpec change, tasks.md, and all three council reports under openspec/changes/sprint-02-reference-harness-poc/review-evidence/.</action>
+    <action>Run git status --short and confirm the worktree is understood before editing.</action>
+    <action>Run pwsh -NoProfile -File scripts/verify-reference-harness.ps1. Use the Go fallback at $HOME/.local/toolchains/go1.25.7/go/bin/go.exe if go is not on PATH.</action>
+    <action>Use apply_patch for manual edits. Use test-driven development: write a focused failing test, run it RED, implement the smallest fix, then run focused and full verification.</action>
+  </first_actions>
+  <open_review_findings>
+    <blocking>
+      <item>OpenSpec telemetry is not explicitly disabled before every OpenSpec invocation. Set and restore OPENSPEC_TELEMETRY=0 and DO_NOT_TRACK=1 before version discovery and validation. Add a regression using isolated config/data directories that proves no telemetry request or user-config write occurs.</item>
+    </blocking>
+    <major>
+      <item>Decide and document whether structural evidence is a payload plus conformance envelope or whether each report carries execution bindings. The current conformance report binds the structural report by hash, but the OpenSpec wording and README need one unambiguous contract. Add a stale/mixed-generation negative test.</item>
+      <item>Replace handwritten descriptive command strings and the independent-cbor-check placeholder with structured command records containing resolved executable, version, cwd, argv, offline environment, and source hash. Ensure the records describe the actual invocation.</item>
+      <item>Harden requirements.lock.txt with artifact hashes and install with pip --require-hashes for the supported Windows/Python 3.14 target. Validate hash completeness and platform scope.</item>
+      <item>Make evidence publication crash-safe. Prefer a destination-volume generation directory and a last-written current-generation manifest so readers reject incomplete or mixed generations. Test second-write failure and interruption semantics.</item>
+      <item>Bind the PowerShell control tests and a real clean-checkout bootstrap qualification to release evidence, while keeping the default verifier offline and free of public-chain requests. Do not recurse when the late-failure test invokes a child verifier.</item>
+    </major>
+    <minor>
+      <item>WhatIf setup must report PLANNED or ready=false, not READY.</item>
+      <item>The standalone comparison command should enforce the documented tool versions or require a validated tool manifest.</item>
+    </minor>
+  </open_review_findings>
+  <verification_contract>
+    <item>All public web pulls must use the repository Scrapling environment and preserve exact request/response provenance. Do not use another web client or web search tool.</item>
+    <item>Rust and Go must remain independent implementations. The Go BSB22 component is parser-only and must never claim subgroup checks, pairings, full-decider soundness, or Cardano execution.</item>
+    <item>Default verification must be read-only, offline, temporary-output isolated, and fail closed. Only explicit update mode may publish input-bound evidence.</item>
+    <item>Use npm --offline run openspec:validate, git diff --check, Rust tests, Go tests plus vet, Python observer tests, cross-language comparison, independent cbor2 checks, setup/control tests, and a fresh three-reader council before closure.</item>
+    <item>Do not mark task 6 complete, archive Sprint 2, or claim deployment until fresh proof, consensus, and operator reports contain zero Blocking and zero unresolved Major findings.</item>
+  </verification_contract>
+  <research_and_tuning>
+    Official xAI pages currently describe Grok 4.5 as a coding, agentic-task, and knowledge-work model. The official reasoning guide says grok-4.5 supports reasoning_effort low, medium, and high; high is the default, reasoning cannot be disabled, and presencePenalty, frequencyPenalty, and stop are unsupported for reasoning models. Use high for this multi-step bridge audit, medium for long analysis that is less latency-sensitive, and low only for simple tool calls. The official safety page lists model cards for Grok 4 Fast, Grok Code Fast 1, and Grok 4, but no Grok 4.5 system card was listed in the current scrape. Treat the official Grok 4 model card as background only; do not transfer its safety claims to Grok 4.5 without evidence.
+    <reference>https://x.ai/news/grok-4-5</reference>
+    <reference>https://docs.x.ai/developers/model-capabilities/text/reasoning</reference>
+    <reference>https://x.ai/safety</reference>
+    <reference>https://data.x.ai/2025-08-20-grok-4-model-card.pdf</reference>
+  </research_and_tuning>
+  <deliverable>Continue until remaining review findings are fixed and reread or documented as a technically justified disposition. Commit intentional changes, refresh evidence only after all checks pass, and report commit SHAs, test commands, exact remaining open gates, and whether deployment is still blocked. Keep canonical design prose plain and do not add revision narration to it.</deliverable>
+</handoff>

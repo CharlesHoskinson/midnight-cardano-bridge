@@ -106,7 +106,8 @@ The current PoC still does not prove a Cardano or Midnight bridge transaction.
 The six `S01-BLOCK-*` gates and eight `CONS-*` gates remain open. A continuation
 agent should start by reading the active OpenSpec change, all three council
 reports, and `git status`, then run the component tests before changing the
-canonical design.
+canonical design. The full XML handoff prompt is in
+[`docs/grok-4.5-handoff.xml`](docs/grok-4.5-handoff.xml).
 
 ## Status, and the things I do not yet know
 
