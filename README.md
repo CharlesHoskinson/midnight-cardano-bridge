@@ -85,6 +85,29 @@ The knowledge base is organized by domain:
 
 `EXAMINATION-CHECKLIST.md` tracks what still needs work to move this from a draft to a buildable spec. `RESEARCH-PLAN.md` records how the corpus was assembled.
 
+## Handoff state
+
+One sprint is complete and archived. Sprint 2 is implemented and under final
+review; nine later sprints remain in the 11-sprint program. Commit `4d985a7`
+is the last baseline whose complete offline verifier passed with byte-identical
+golden evidence. The council reports are recorded under
+`openspec/changes/sprint-02-reference-harness-poc/review-evidence/`.
+
+The first remediation wave is committed in `54e8d36` and binds source-event
+indices and normalized observations to their preserved bytes. The proof-vector
+wave is committed in `cee2bd2` and adds the explicit CBOR type manifest plus
+parser-only sentinel coverage.
+Do not update the golden reports until the remaining operator and proof review
+items are resolved. Then run the full verifier with `-UpdateEvidence`, rerun it
+read-only, and mark Sprint 2 task 6 only after a fresh proof, consensus, and
+operator reread reports zero Blocking and zero unresolved Major findings.
+
+The current PoC still does not prove a Cardano or Midnight bridge transaction.
+The six `S01-BLOCK-*` gates and eight `CONS-*` gates remain open. A continuation
+agent should start by reading the active OpenSpec change, all three council
+reports, and `git status`, then run the component tests before changing the
+canonical design.
+
 ## Status, and the things I do not yet know
 
 This is a buildable foundation with explicit feasibility gates. The shared claim protocol, fixed proof directions, bootstrap manifests, validator behavior and test outcomes are specified; the following dependencies are not yet closed.

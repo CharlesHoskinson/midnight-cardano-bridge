@@ -79,6 +79,25 @@ fn published_roster_reencodes_byte_exactly() {
 }
 
 #[test]
+fn structural_cbor_schema_manifest_covers_all_members() {
+    let manifest: Value = serde_json::from_slice(
+        &fs::read(fixture("structural-cbor-schema-v1.json")).expect("read CBOR schema manifest"),
+    )
+    .expect("decode CBOR schema manifest");
+    assert_eq!(manifest["schema_version"], json!(1));
+    assert!(manifest["projection"].as_str().is_some());
+    assert_eq!(manifest["root_set"].as_object().unwrap().len(), 10);
+    assert_eq!(manifest["event"].as_object().unwrap().len(), 7);
+    let gate = manifest["gate_record"].as_object().unwrap();
+    for field in [
+        "gate_id", "owners", "interfaces", "applicability", "required_evidence",
+        "activation_ref", "status", "evidence_digest", "evidence_retention_valid",
+    ] {
+        assert!(gate.contains_key(field), "manifest missing gate_record.{field}");
+    }
+}
+
+#[test]
 fn post_domain_root_field_is_rejected() {
     let shared_err =
         mcb_harness::run_fixture(&repo_root(), &fixture("invalid-post-domain-v1.json"))

@@ -15,5 +15,10 @@
     "source_transaction_or_object_id":"bytes", "source_action_or_event_index":"uint",
     "event_discriminator":"text", "source_event_commitment":"bytes"
   },
-  "gate_record": {"gate_id":"text", "status":"text", "evidence_digest":"bytes", "evidence_retention_valid":"bool"}
+  "gate_record": {
+    "gate_id":"text", "owners":["text"], "interfaces":["text"],
+    "applicability":{"public":"text", "lab":"text"},
+    "required_evidence":["text"], "activation_ref":"text",
+    "status":"text", "evidence_digest":"bytes", "evidence_retention_valid":"bool"
+  }
 }
