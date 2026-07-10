@@ -4,63 +4,70 @@ A design study, and the citation-backed knowledge base behind it, for a two-way 
 
 The idea is simple to state and hard to build. Instead of trusting a committee of signers to relay messages between the two chains, each chain verifies the other's finality for itself, inside a proof. Recursion compresses the expensive part (checking a chain's history and its finality certificate) into a single succinct proof that the destination chain can check in one shot.
 
-This repository contains the full design document at [`knowledge_base/bridges/midnight-cardano-recursive-bridge.md`](knowledge_base/bridges/midnight-cardano-recursive-bridge.md), plus the research corpus it was synthesized from: 41 pages and about 534 verbatim-cited claims drawn from 38 primary sources.
+This repository contains the full design document at [`knowledge_base/bridges/midnight-cardano-recursive-bridge.md`](knowledge_base/bridges/midnight-cardano-recursive-bridge.md), plus the research corpus from which it was synthesized. The corpus keeps source text and mechanically checked verbatim evidence with each admitted claim.
+
+## Program documents
+
+- The [canonical living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md) is the current, source-linked system description with exactly 25 numbered sections.
+- The [council-reviewed program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) defines the 11-sprint, 62-work-package execution program and its proof-of-concept boundaries.
+- The [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the blocked 42 Cardano plus 52 Midnight catalog gate, searched locations, and row-admission rules without inventing entries.
+- The [OpenSpec workflow](openspec/config.yaml) carries normative requirements through active proposal, delta-spec, design, task, and review artifacts. The active [Sprint 1 change](openspec/changes/sprint-01-foundation/proposal.md) contains the current deltas; accepted capability requirements publish to [`openspec/specs/`](openspec/specs/) when a change is archived.
 
 ## Why proofs instead of a committee
 
-Most bridges trust a set of signers. If those signers collude, or their keys leak, the bridge is gone. The public record of nine-figure bridge failures is long enough to make the point.
+Most bridges add a set of signers. If those signers collude, or their keys leak, the bridge can authorize a false transfer.
 
-A trustless bridge removes that party. Security then rests on two things and nothing else: each source chain's own consensus and finality, and the soundness of the proof systems used to check it. There is no new quorum of bridge validators, no multisig, no price oracle sitting in the trust path. A relayer still moves bytes around, but it is untrusted. The on-chain validator reconstructs what it needs and checks a proof.
+The public trust profiles in this design add no bridge quorum. They instead pin an authenticated source-chain bootstrap, consensus and finality rules, proof-system setup artifacts, verifier keys and deployment domains. Relayers move bytes but do not authorize state changes. Destination validators reconstruct the public statement, verify the registered proof, and update anchor, action and replay state atomically.
 
 ## The design in one page
 
 The bridge is asymmetric, because the two chains can cheaply verify different things.
 
-For the Midnight to Cardano direction, the natural proof system is Groth16, or more precisely a signature-quorum check that Cardano can run natively. Cardano gained BLS12-381 pairing builtins in [CIP-0381](knowledge_base/standards/cip-0381.md) and a multi-scalar-multiplication builtin in [CIP-0133](knowledge_base/standards/cip-0133.md), so a Plutus validator can verify pairing-based proofs and BLS aggregate signatures on chain. Cardano also has a native ECDSA builtin, which matters because the current relay uses ECDSA (more on that below).
+For Midnight to Cardano, the selected path proves the complete Midnight finality, inclusion and predicate relation recursively in Halo2/KZG, then proves the final KZG decision inside BSB22 commitment-Groth16 over BLS12-381. A Plutus V3 validator reconstructs the typed `claim_digest`, checks the registered wrapper key and verifies that Groth16 proof with the [CIP-0381](knowledge_base/standards/cip-0381.md) pairing and [CIP-0133](knowledge_base/standards/cip-0133.md) MSM builtins. Cardano's native ECDSA builtin remains relevant to the current BEEFY source material, but it is not a substitute for the selected wrapped relation.
 
-For the Cardano to Midnight direction, the proof system is Plonk or Halo2. Midnight's proving stack ([`midnight-zk`](knowledge_base/midnight/proving-system-curves.md)) is a Plonk system with KZG commitments over BLS12-381, forked from the PSE line of Halo2. It has a universal setup and supports recursion by verifying one proof inside another circuit. A Midnight-side verifier can afford the heavier work of checking a Cardano finality certificate.
+For Cardano to Midnight, a registered Halo2/Plonkish program verifies the Cardano anchor, inclusion path and predicate and binds the same claim protocol. Midnight's proving stack ([`midnight-zk`](knowledge_base/midnight/proving-system-curves.md)) uses KZG commitments over BLS12-381 and supports recursive composition. The destination operation must still demonstrate that it can accept an untrusted external proof and update tracked Cardano state, the requested action and replay state in one transaction.
 
 The word recursive in the title carries weight. Re-verifying a chain's full header history on every transfer is not viable. Recursion folds "headers 0..N are valid and block N carries a finality certificate" into a single proof, and each step verifies the previous proof plus a small increment. Only the latest proof reaches the destination chain.
 
-## The part that surprised me: both chains already share one curve
+## Shared proof substrate
 
-The cleanest result in this study is that Midnight and Cardano sit on the same pairing curve, BLS12-381. Midnight proves with KZG over BLS12-381. Cardano verifies BLS12-381 pairings natively through CIP-0381, and IOG has already built a [Halo2-Plutus verifier](knowledge_base/cardano/halo2-plutus-verifier.md) that checks Halo2 and KZG proofs on chain.
+Midnight's KZG stack and Cardano's pairing builtins both use BLS12-381. That common substrate makes the selected wrapper practical and is supported by prior [Halo2-Plutus verifier](knowledge_base/cardano/halo2-plutus-verifier.md) work. It does not mean that the two chains use the same finality signature scheme: the current Midnight BEEFY layer uses ECDSA, while Mithril uses a stake-threshold construction.
 
-Because both sides speak the same curve, each chain can verify the other's finality certificate as a native pairing check rather than emulating a foreign curve inside a circuit. Both finality certificates are BLS aggregate signatures under this design: Midnight can run a [BEEFY](knowledge_base/consensus/beefy.md)-style layer, and Cardano has [Mithril](knowledge_base/cardano/mithril-bls-certificates.md), a stake-threshold BLS multisignature. The shared "at least two thirds signed" argument is the [committee-key / apk-proofs](knowledge_base/proof-systems/apk-proofs-committee-key.md) construction, which Web3 Foundation built for exactly this job: accountable light clients between proof-of-stake chains.
+The setup obligations also remain distinct. Halo2/KZG uses an authenticated universal, updatable SRS. BSB22 commitment-Groth16 adds a circuit-specific setup and verification key for the exact wrapper relation. Both artifact graphs, their hashes and their accepted deployment domains are validator roots of trust.
 
-One consequence is that Groth16's per-circuit trusted setup becomes optional. Both chains rely on a universal KZG setup already, so the bridge's residual trust reduces to BLS and pairing soundness plus each chain's honest-stake majority.
+The [committee-key / apk-proofs](knowledge_base/proof-systems/apk-proofs-committee-key.md) work remains relevant to future source-backed certificate adapters, but the proof of concept does not assume an unpublished BLS or consensus migration.
 
 ## Where the two chains are today, and where this design goes
 
 At launch, Midnight relies on Cardano as a trusted layer. Cardano events are observed by Midnight block producers and written into the ledger as [system transactions](knowledge_base/bridges/cardano-system-transactions.md), with the current cNIGHT bridge approving mainchain transaction hashes in batches. That is federated, not trustless.
 
-In the other direction, Midnight's node ships a `midnight-beefy-relay` that reads a BEEFY signed commitment, an authorities Merkle proof, and an MMR proof, and encodes them as Cardano `PlutusData` for on-chain verification. That is real and running, and it is the closest thing to a trustless leg today. It is also explicitly temporary: a future Midnight release pivots the consensus toward a BABE-based design.
+In the other direction, Midnight's node ships a `midnight-beefy-relay` that serializes a BEEFY signed commitment and an authorities Merkle proof as Cardano `PlutusData`. The object commits to an MMR root, but the current path does not serialize the event, MMR leaf or inclusion proof needed to authenticate a particular Midnight fact. It is useful source material, not a complete settlement proof.
 
-So this document describes the endpoint, not a greenfield rebuild. It replaces the trusted observation with proofs in both directions, and it treats the finality certificate abstractly so the on-chain validator survives the coming consensus change. The certificate's signature scheme and payload can change under it without changing the validator's shape: verify a signature quorum, verify set membership, verify state inclusion, then settle.
+The design replaces trusted observation with proofs in both directions. Finality adapters are explicitly versioned by suite, protocol fingerprint and deployment domain so a future source-backed consensus change can be added without silently changing an existing claim's meaning.
 
 ## Consensus and finality, stated precisely
 
-Midnight runs a Substrate consensus. Block production is AURA today, not BABE, and finality is GRANDPA. Validators are delegated from Cardano stake pool operators, so the two chains' validator sets overlap rather than merely resemble each other. GRANDPA finality messages are signed with Ed25519. The temporary BEEFY bridge layer signs with ECDSA over secp256k1, which Cardano can verify with its native ECDSA builtin.
+Midnight runs a Substrate consensus. Block production is AURA today, not BABE, and finality is GRANDPA. Validators are delegated from Cardano stake pool operators, so the two chains' validator sets overlap rather than merely resemble each other. GRANDPA finality messages are signed with Ed25519. The current bridge-oriented BEEFY adapter signs with ECDSA over secp256k1, which Cardano can verify with its native ECDSA builtin.
 
-The concrete Direction A artifact is fully specified in the relay. A `RelayChainProof` carries a signed commitment (payloads, block number, validator set id, and ECDSA votes) plus a Merkle `AuthoritiesProof` against a `keyset_commitment`. The commitment payload carries the MMR root and the current and next stakes and authority sets, so the validator-set handoff travels inside the signed payload. A Cardano validator that consumes this parses the PlutusData, verifies each ECDSA vote, verifies the Merkle proof, checks that the signing stake clears two thirds, and reads the MMR root for state inclusion.
+The current `RelayChainProof` carries a signed commitment containing the MMR-root payload, block number, validator-set id and ECDSA votes, plus a Merkle `AuthoritiesProof` against a `keyset_commitment`. The relay uses stake and authority payloads while constructing that proof, but does not serialize the full stake data or an event-to-MMR inclusion path in the Cardano-facing object. A complete validator must bind the authority-set transition, finalized commitment, MMR inclusion, predicate and typed output before settlement.
 
 There is one honest gap worth stating plainly. The Cardano-side on-chain validator that consumes that PlutusData is not in the public `midnight-node` repository (the Aiken file there is an unrelated vesting skeleton). Locating or specifying it is the top open item.
 
 ## The Cardano-side anchor for the reverse leg
 
-For Cardano to Midnight, the clean anchor is a canonical ledger-state root. [CIP-0165](knowledge_base/standards/cip-0165.md) defines the Standard Canonical Ledger State: a deterministic CBOR snapshot with a two-level Merkle root pinned to a slot, whose UTxO namespace supports both membership and non-membership proofs. Because every honest node recomputes the same root, that root is what a Mithril BLS certificate can sign. The pipeline becomes: Midnight verifies a Mithril certificate over the SCLS root with one pairing check, then verifies a Merkle path that the Cardano lock UTxO is in that root. No header replay, no trusted indexer.
+For Cardano to Midnight, [CIP-0165](knowledge_base/standards/cip-0165.md) proposes the Standard Canonical Ledger State: a deterministic CBOR snapshot with a two-level Merkle root pinned to a slot and a UTxO namespace that supports membership and non-membership proofs. The preferred public profile would verify the complete Mithril certificate chain for that exact SCLS signed entity, including the genesis trust anchor, AVK evolution and protocol parameters, before checking a ledger path. CIP-0165 remains Proposed, and the sampled public Preview aggregator did not expose SCLS certificates, so this profile is a hard gate. A project-operated signer profile can exercise the mechanics only as `degraded-lab` evidence.
 
 ## How the knowledge base was built
 
 I did not want a design that reads well and cites nothing. Every load-bearing claim in this repository links to a source, and the quotes behind those claims are exact substrings of the source text, checked mechanically. That gate is the reason the corpus under-claims rather than inventing citations: a weaker extraction produces fewer claims, not false ones.
 
-The corpus was assembled with the [deep-research-toolkit](https://github.com/CharlesHoskinson/deep-research-toolkit). The workflow per source is fetch, chunk, extract claims with verbatim quotes, gate the quotes, write a concept page, then compile everything into a DuckDB and LanceDB index that the design synthesis queries. The current state is 38 sources, about 534 gated claims, 41 pages, and a clean link graph.
+The corpus was assembled with the [deep-research-toolkit](https://github.com/CharlesHoskinson/deep-research-toolkit). The workflow per source is fetch, chunk, extract claims with verbatim quotes, gate the quotes, write a concept page, then compile everything into a DuckDB and LanceDB index that the design synthesis queries.
 
 Sources include the Cardano CIPs (0381, 0133, 0140 Peras, 0165), the Midnight repositories and docs (`midnight-zk`, `midnight-node`, `midnight-ledger`, including the ZKIR v3 documentation from pull request 617), the Polkadot BABE, GRANDPA, and BEEFY material, Mithril, and the Web3 Foundation apk-proofs work. A companion proof-claim taxonomy sits on top, describing the typed claims that applications consume once the bridge has produced a trustworthy anchor.
 
 ## How to read this repository
 
-Start with the design document: [`knowledge_base/bridges/midnight-cardano-recursive-bridge.md`](knowledge_base/bridges/midnight-cardano-recursive-bridge.md). It is the synthesis, and it links down into everything else.
+Start with the [canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md). It is the synthesis, and it links down into everything else. Use the [program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) for work-package ordering, the [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) for the 94-record gate, and [OpenSpec](openspec/config.yaml) for normative requirements and review state.
 
 The knowledge base is organized by domain:
 
@@ -76,15 +83,16 @@ The knowledge base is organized by domain:
 
 ## Status, and the things I do not yet know
 
-This is a draft. It is honest about that. A few items are settled: the shared BLS12-381 substrate, the concrete shape of the current relay artifact, the AURA plus GRANDPA consensus, the Mithril over SCLS anchor for the reverse leg, and the ZKIR v3 pipeline that a Midnight-side verifier circuit compiles through.
+This is a buildable foundation with explicit feasibility gates. The shared claim protocol, fixed proof directions, bootstrap manifests, validator behavior and test outcomes are specified; the following dependencies are not yet closed.
 
 Several items are open and named in the design and the checklist:
 
-- The Cardano-side on-chain verifier for the relay's PlutusData is not yet located in public code.
-- Midnight's future BABE-design finality format is not published yet, and the design is written to absorb it.
-- The exact Mithril BLS12-381 encoding, and the Peras votes-and-certificates format, still need to be pinned from primary sources.
-- The measured on-chain cost of the real verifier, at Midnight's actual validator-set size, still needs a benchmark.
-- ZKIR v3 is not frozen. The released crate is authoritative, so circuit-level details must be re-pinned against it.
+- The source-backed catalogs for 42 Cardano and 52 Midnight predicates have not been recovered.
+- The selected public Mithril profile has not demonstrated certification of the exact CIP-0165 SCLS entity.
+- The Midnight event-to-header-to-MMR inclusion path is missing from the current relay object.
+- The full Halo2/KZG decider has not yet been constrained and measured inside the BSB22 wrapper.
+- A deployed Midnight operation has not yet accepted the external Cardano proof with atomic state updates.
+- No public Cardano validator currently verifies the complete wrapped BEEFY/MMR claim.
 
 I would rather ship a design that says what it does not know than one that hides its gaps behind confident prose.
 

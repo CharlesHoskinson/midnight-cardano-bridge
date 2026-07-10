@@ -1,10 +1,51 @@
 # Examination Checklist — Midnight ↔ Cardano Recursive Trustless Bridge
 
-Everything we still need to examine to take the design from **draft** to **buildable spec**.
-Complements `RESEARCH-PLAN.md` (source corpus) and the design doc's §9 (open problems).
+This checklist records examined evidence and open work against the
+[canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md),
+the [11-sprint program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md),
+and the [Sprint 1 OpenSpec change](openspec/changes/sprint-01-foundation/proposal.md).
+`RESEARCH-PLAN.md` remains the source-corpus and evidence ledger.
 
 **Status legend:** `[ ]` not started · `[~]` partially examined · `[x]` examined/answered · `[!]` blocked by unpublished upstream artifact or measurement-only work.
 Each item: *what to examine — where (repo/file/source) — the question it answers.*
+
+## Program controls and current evidence
+
+- [x] **Program shape:** the approved program has 11 dependency-bounded sprints and 62 work packages. The [program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) is the execution boundary.
+- [x] **Canonical narrative:** the [living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md) has exactly 25 numbered top-level sections in this approved order: Document control; Purpose and scope; System model; Terminology and invariants; Security and trust model; Bootstrap and roots of trust; Shared claim protocol; Predicate registry; Cardano predicate catalog; Midnight predicate catalog; Cardano state anchoring; Cardano to Midnight proof path; Midnight state anchoring; Midnight to Cardano proof path; Proof systems and setup; Reference harness; Trustless transaction protocol; Destination validators; Relaying and data availability; Governance and upgrades; Economics and performance; Conformance and security testing; Testnet deployment; Production path and residual risks; Appendices.
+- [~] **Normative requirements:** the custom OpenSpec workflow has a proposal, 12 capability deltas, design, tasks, and initialized review. The current change lives under [`openspec/changes/sprint-01-foundation/`](openspec/changes/sprint-01-foundation/README.md); accepted requirements move to [`openspec/specs/`](openspec/specs/) only after review, validation, and archive.
+- [!] **Predicate admission:** registry population requires exactly 42 unique Cardano and 52 unique Midnight records. The [catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the missing sources and the hard count, uniqueness, schema, and provenance gates. No filler row is permitted.
+
+### Four early feasibility gates
+
+| Gate | Current evidence | Program effect |
+| --- | --- | --- |
+| `S01-BLOCK-01`: 94 source-backed predicate records | Blocked. Searches found none of the three recorded source files. | Blocks registry population and 94-record conformance. |
+| `S01-BLOCK-02`: public Mithril SCLS profile | Blocked. A dated official Preview aggregator sample exposed transaction and database entities, not SCLS. | A project signer can support only a separate lab profile and at most `degraded-lab`. |
+| `S01-BLOCK-03`: authenticated Midnight event-to-header-to-MMR path | Blocked. The current relay object omits the event and MMR-leaf proof. | Blocks authenticated Midnight predicate inclusion. |
+| `S01-BLOCK-04`: full Halo2/KZG decider inside BSB22 | Blocked. The gnark BSB22 stack and Midnight IVC example pass locally, but the bridge full-decider wrapper and invalid-accumulator rejection do not exist. | Blocks the selected Midnight-to-Cardano proof path. |
+
+Two execution boundaries remain separate from those four gates:
+
+- [!] **`S01-BLOCK-05`, Midnight external-proof operation:** no deployed operation has accepted an untrusted registered Cardano proof and committed tracked state, destination action, and replay state atomically. Library compilation is not execution-surface evidence.
+- [!] **`S01-BLOCK-06`, Cardano wrapped BEEFY/MMR boundary:** no public Cardano validator consumes the complete claim. The observed recovery-circuit BSB22 Preview transactions prove the landing mechanism, not the bridge relation.
+
+### Foundation, toolchain, and review state
+
+- [x] The source-linked 25-section foundation and initial council-reviewed program design exist.
+- [x] Rust 1.90.0, Go 1.25.7, Cardano node 11.0.1, and Cardano CLI 11.0.0.0 are available on the dated Windows host. The gnark 0.15.0 BSB22 tests pass.
+- [x] `midnight-aggregation` compiles, and the native IVC example passes with the exact upstream feature set and authenticated SRS files. This is component feasibility, not a bridge proof.
+- [x] Midnight Preview RPC and Mithril Preview aggregator observations were captured, and the prior single-operator BSB22 Cardano landing was independently confirmed. None is a deployment trust root.
+- [!] Docker is absent and the installed WSL distribution cannot run until the required Windows component is enabled. Compact and the proof server therefore remain unavailable on this host.
+- [~] Sprint 1 review still requires a compiled Deep Research Toolkit dossier, a Humanizer pass, independent proof-systems, consensus, and implementer/operator council reads, question dispositions, a clean rewrite, a preservation pass, a fresh reread, and strict OpenSpec and repository verification.
+
+Program evidence is labeled `live-pass` only when both selected public testnets
+accept claim-authorized transactions under the named public trust profiles.
+`degraded-lab` requires both directions to execute but permits a declared fixture
+or project-operated root. `blocked` records an incomplete relation, path,
+execution surface, catalog gate, or public dependency with its reproducer, owner,
+affected interface, and resume evidence. No deployment outcome is assigned yet,
+and the open gates prohibit a `live-pass` claim.
 
 Cloned repos live in ignored `_external/`: `midnight-zk`, `midnight-docs`, `midnight-ledger`,
 `midnight-node`, `mithril`, `partner-chains`, `CIPs`, `plutus`, `cardano-ledger`,
@@ -32,7 +73,7 @@ captured as a deep-research-toolkit run under `research-runs/`.
 - [~] **Cardano finality certificate to verify in-circuit** — Direction remains **Mithril/ATMS BLS cert over a CIP-0165 SCLS `root_hash`@slot** (src-0034/0037/0042). Confirmed Mithril BLS implementation and certificate-chain mechanics; still open whether an SCLS certification module is deployed by signers/aggregators/clients.
   - [!] Peras "Votes & Certificates on Cardano" companion CIP — not found in the current CIPs checkout; CIP-0140 remains proposed and does not provide the concrete companion object.
   - [x] Mithril STM — `mithril-stm` confirms BLS via `blst`, `BlsSigningKey`, `BlsSignature`, aggregate verification keys, and `midnight_curves::Bls12` SNARK/IVC work (src-0042).
-  - [x] **CIP-0165 SCLS** = the canonical inclusion anchor a Mithril cert signs (src-0034).
+  - [x] **CIP-0165 SCLS source** — CIP-0165 is Proposed and specifies the selected SCLS artifact. The public Mithril SCLS certification profile remains blocked (src-0034).
 - [x] **c2m-bridge pallet full logic** — `midnight-node/pallets/c2m-bridge/src/lib.rs` (src-0041): implements `TransferHandler`; `MAX_APPROVALS_PER_BATCH = 32`; user credits require single-use governance-approved Cardano tx hashes; unapproved user transfers are routed to Treasury; reserve/invalid paths construct ledger system transactions. A trustless proof replaces `ApprovedMcTxHashes`.
 - [x] **Generic partner-chains bridge** — `partner-chains/toolkit/bridge/pallet/src/lib.rs` (src-0041): node observability classifies Cardano UTxOs into transfer types and supplies them as mandatory inherent data; chain builders implement `TransferHandler`; governance configures watched Cardano scripts/checkpoints. This is not itself a finality-proof verifier.
 - [!] **Cardano block-header verification in-circuit** — no public Midnight implementation or benchmark found. The chosen Mithril+SCLS path intentionally avoids full Praos/KES/VRF header replay for Direction B.
@@ -40,8 +81,8 @@ captured as a deep-research-toolkit run under `research-runs/`.
 ## C. Consensus & finality (current + roadmap)
 
 - [x] **Current: AURA + GRANDPA** — `midnight-docs/.../consensus.mdx` (src-0027); GRANDPA finality = **Ed25519** (src-0026).
-- [x] **Current bridge finality: BEEFY = ECDSA** — `midnight-node/relay` (src via read); temporary.
-- [!] **⭐ Future BABE-design finality** — blocked on future Midnight release/spec. Current public `midnight-node` still exposes AURA/GRANDPA plus BEEFY support; Direction A must stay certificate-interface based.
+- [x] **Current bridge adapter: BEEFY = ECDSA** — `midnight-node/relay` (src via read).
+- [!] **Future finality adapter:** no local primary source supports a BABE migration. Current public `midnight-node` exposes AURA/GRANDPA plus BEEFY support. Any future format needs a new source-backed adapter, suite, fingerprint, registry binding, and deployment domain.
 - [x] **Validator-set selection & size** — runtime uses Partner Chain committee selection with `DParameter { num_permissioned_candidates, num_registered_candidates }`, `MaxAuthorities = 10_000`, and session rotation via `pallet_session_validator_management` (src-0046). Public resource chain specs now pin initial BEEFY/session/committee counts: govnet N=6, devnet N=7, mainnet N=10, all with registered candidates = 0 (src-0049). Mode-0 budgeting should use the target deployment's live authority set, but the published mainnet genesis workload is N=10 rather than the type ceiling.
 - [~] **GRANDPA justification encoding** — background encoding known from Substrate/GRANDPA sources, but current bridge path uses BEEFY-ECDSA rather than parsing GRANDPA justifications on Cardano. Keep as only relevant for Mode-2/future certificate wrapping.
 
@@ -76,15 +117,15 @@ captured as a deep-research-toolkit run under `research-runs/`.
 
 ## G. Cryptography & signature-scheme decisions
 
-- [x] **Unified BLS12-381 substrate** (design §1a) — Midnight KZG/BLS12-381 ↔ Cardano CIP-0381.
+- [x] **Unified BLS12-381 substrate** (design §§12, 14, and 15): Midnight KZG/BLS12-381 ↔ Cardano CIP-0381.
 - [x] **apk-proofs / committee key** (src-0025) — accountable ≥t-of-committed-keys BLS proof.
 - [~] **apk-proofs math + cost** — repo and bridge relevance ingested (src-0025); real-N bridge cost remains measurement work.
-- [x] **Mode decision matrix** — provisional lock: Mode 0 only for small/equal-weight current BEEFY committees; Mode 1 target if Midnight exposes BLS aggregate finality; Mode 2 zk-wrap fallback for large or non-native signature sets. Trigger is actual validator N and Cardano budget measurement.
+- [x] **Proof-of-concept landing** — the selected path proves the full Halo2/KZG decider inside BSB22 commitment-Groth16. Native current BEEFY-ECDSA and direct Halo2/KZG verification remain separate production candidates that require target-network measurements and a versioned decision record.
 - [x] **JubJub role** — Midnight uses BLS12-381/KZG for proof commitments and pairings; Jubjub/embedded curve is in-circuit value-commitment/EC machinery, not the external finality signature substrate.
 
 ## H. Trust model, security & setup
 
-- [x] **Trusted-at-launch → trustless endpoint** (design §1b, src-0030).
+- [x] **Trusted-at-launch → proof-enforced endpoint** (design §§2, 3, and 5; src-0030).
 - [~] **End-to-end trust reduction** — Mode 0 currently depends on unpublished Cardano verifier and equal-weight BEEFY assumptions; Direction B depends on Mithril SCLS module deployment. Trust-reduction skeleton is known, final proof awaits artifacts.
 - [~] **Trusted setup posture** — Midnight/Filecoin SRS paths and hash verification are now pinned (src-0043/0044); per-circuit Groth16 risks/VK-equality controls remain from src-0014. Need ceremony provenance from `midnight-trusted-setup` before final governance language.
 - [~] **Threat model** — risks enumerated: reorg below finality, ≥1/3 BEEFY/GRANDPA equivocation, relayer withholding, stale authority set, missing event-inclusion proof, governance-approved c2m hashes, replay. Full threat-model doc still to write.
@@ -94,7 +135,7 @@ captured as a deep-research-toolkit run under `research-runs/`.
 
 - [~] **BEEFY justification / MMR-leaf availability** — relayer obtains justifications via RPC subscription and can call `mmr_generateProof`; no public DA/failure-handling policy found.
 - [!] **Relayer incentives & permissionlessness** — no public mechanism found.
-- [!] **Finality latency (end-to-end)** — blocked on relay cadence/incentives, target Cardano finality rule, and future BABE/BEEFY replacement details.
+- [!] **Finality latency (end-to-end)** — blocked on relay cadence and incentives, the target Cardano finality rule, and the measured cost of the current source-backed finality adapter. Any later adapter needs its own evidence and measurements.
 
 ## J. Economics, fees & UX
 
@@ -125,10 +166,10 @@ captured as a deep-research-toolkit run under `research-runs/`.
 
 ## M. Cross-cutting design decisions to LOCK
 
-- [~] Direction-A landing: **Mode 0 now only for small/equal-weight current BEEFY; Mode 1/2 trigger = actual N + verifier benchmark.**
-- [x] Direction-B certificate: **Mithril/ATMS over SCLS** is the preferred path; Peras stays future/research.
-- [~] Proof format on Cardano: **native ECDSA for current BEEFY if verifier is published; BLS if finality certificate changes; Groth16/KZG wrapper only after benchmark.**
-- [x] Abstract **"finality certificate" interface** so the Cardano validator survives the **BABE pivot** (design §3).
+- [x] Direction-A proof-of-concept landing: **full-decider BSB22 commitment-Groth16 is fixed.** Native ECDSA or direct Halo2/KZG requires a separate measured production decision.
+- [~] Direction-B certificate: **Mithril/ATMS over the proposed SCLS artifact** is the selected gated profile. Public SCLS certification has not been observed; a project-operated profile caps the result at `degraded-lab`.
+- [x] Proof format on Cardano: **the proof of concept uses BSB22 commitment-Groth16.** Current BEEFY-ECDSA remains a production alternative, not an automatic fallback.
+- [x] Abstract **"finality certificate" interface** so a source-backed future finality change can use a new adapter without changing predicate semantics (design §§13 and 20). No BABE migration is assumed.
 - [x] Recursion boundary: use Midnight IVC/aggregation for Cardano-side certificates/claims; give Cardano a native verifier or one wrapped proof, not per-step header replay.
 - [~] Bridged-asset model & two-way conservation — DUST/NIGHT/token identity pinned; arbitrary-token conservation rules remain a spec item.
 
@@ -143,14 +184,14 @@ predicates are claims *against* that anchor. Directly relevant, especially §31 
 - [x] **Read the report** — done (948 lines).
 - [x] **Ingested report §8/§9/§31** → `proof-claims/{claim-envelope,anchor-trust-models,bridge-claim-requirements}.md` (src-0036/0037/0035; 21+16+15 claims).
 - [x] **Ingested `claim-interface-schema.md`** → `proof-claims/claim-interface-schema.md` (src-0038, 13 claims). *(remaining catalogs: `verified-claim-catalog-42.md`, `midnight-proof-claim-catalog-52.md`, `cardano-prior-epoch-zk-proof-categories.md`.)*
-- [x] **⭐ Pulled CIP-0165 (SCLS)** → `standards/cip-0165.md` (src-0034, 12 claims). **= the Direction-B inclusion anchor**: Mithril-BLS-certified SCLS `root_hash`@slot; UTxO membership/nonmembership. Folded into design §4.
+- [x] **⭐ Pulled CIP-0165 (SCLS)** → `standards/cip-0165.md` (src-0034, 12 claims). The Proposed artifact is selected for the gated Direction-B anchor profile; public Mithril SCLS certification has not been observed. Folded into design §11.
 - [x] **Claim envelope (§8) as the bridge message format** — locked as the outer typed message. Current `RelayChainProof` is a raw finality artifact and must be wrapped/bound by envelope fields before production settlement.
 - [x] **Bridge message identity (§31)** — deterministic message hash locked as required replay key input.
-- [x] **Finality-rule binding (§31)** — locked: envelope must name the accepted rule and params (`midnight-beefy-ecdsa-equal-weight`, future BLS/BABE rule, `mithril-scls`, etc.).
+- [x] **Finality-rule binding (§31)** — locked: the envelope names the accepted rule and parameters, such as `midnight-beefy-ecdsa-equal-weight` or `mithril-scls`. A future rule needs a source-backed adapter, suite, fingerprint and deployment domain before admission.
 - [x] **Asset identity (§31)** — locked: Cardano asset tuple + Midnight unshielded/shielded token identity; **DUST = non-bridgeable** fee resource.
 - [x] **Replay: two distinct records** — locked: ZK nullifier and consumed bridge-message set are separate.
 - [x] **Anchor/trust taxonomy (§9)** — mapped to current options: BEEFY signed MMR root, Mithril cert, SCLS root, Zswap/DUST/contract roots, and indexer commitments as untrusted unless certified.
 - [x] **Nonmembership / absence** — SCLS ordered-neighbor nonmembership and ledger nullifier/intent sets are the relevant complete-set mechanisms.
 - [~] **Verifier registry governance (§25)** — registry pattern locked; concrete Cardano verifier/VK governance blocked on unpublished verifier.
 - [!] **Conformance vectors + failure codes (§26/§19)** — blocked until validator/redeemer format exists.
-- [!] **Remaining sibling proof-claim catalogs** — the recorded local corpus path `C:/proofcategories/reports` is not present in this workspace, and targeted filename searches did not find `verified-claim-catalog-42.md`, `midnight-proof-claim-catalog-52.md`, or `cardano-prior-epoch-zk-proof-categories.md`. Ingestion needs the private/local corpus location.
+- [!] **Remaining sibling proof-claim catalogs:** exhaustive local searches under `C:/Users/charl`, `C:/proofcategories`, and `C:/proof-zk-recovery`, followed by authenticated GitHub searches across repositories visible to the active account, found no `verified-claim-catalog-42.md`, `midnight-proof-claim-catalog-52.md`, or `cardano-prior-epoch-zk-proof-categories.md` before the search API rate limit. See the [catalog status](knowledge_base/proof-claims/predicate-catalog-status.md). Recovery or source-backed per-row reconstruction must pass the hard 94-record gate.

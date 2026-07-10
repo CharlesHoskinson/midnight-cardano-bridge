@@ -4,13 +4,70 @@ Working document (not part of the OKF knowledge base). Tracks the source corpus,
 per-source pipeline status, and the synthesis deliverable. Update the STATUS column
 as each source moves through: `fetch → run → extract → gate → page`.
 
+## Current program frame
+
+Research feeds the [canonical 25-section living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md),
+the [council-reviewed 11-sprint, 62-work-package program](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md),
+and the [OpenSpec requirements workflow](openspec/config.yaml). Active Sprint 1
+deltas are under [`openspec/changes/sprint-01-foundation/`](openspec/changes/sprint-01-foundation/README.md);
+accepted capability requirements publish to [`openspec/specs/`](openspec/specs/)
+after review, strict validation, and archive.
+
+The living design uses the exact approved sequence of 25 numbered sections, from
+Document control through Appendices. Its proof-of-concept paths are fixed:
+
+- Cardano facts use the registered Midnight Halo2/Plonkish stack over BLS12-381.
+- Midnight facts use recursive Halo2/KZG relations with the full final decider
+  proved inside BSB22 commitment-Groth16 over BLS12-381 for Cardano.
+
+The first execution phase has four hard feasibility gates: the missing 42 plus
+52 predicate catalogs, public Mithril certification of the exact SCLS entity,
+the authenticated Midnight event-to-header-to-MMR path, and the measured full
+Halo2/KZG decider wrapper with invalid-accumulator rejection. Two additional
+execution boundaries require a deployed Midnight external-proof operation and a
+reference Cardano verifier for the complete wrapped BEEFY/MMR claim. The
+[predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md)
+defines the hard 94-record count, uniqueness, schema, and provenance gate. A
+proof-template family may reuse a circuit, but it cannot replace any predicate
+record.
+
+## Evidence and review workflow
+
+Source-backed technical work follows this gate:
+
+```text
+technical draft
+-> compiled knowledge index and verbatim-gated Deep Research Toolkit dossier
+-> Humanizer pass
+-> independent proof-systems, consensus, and implementer/operator council reads
+-> question dispositions and clean current-state rewrite
+-> Humanizer preservation check and fresh council reread
+-> strict OpenSpec and repository verification
+```
+
+The current foundation includes the populated 25-section design, complete Sprint
+1 planning artifacts, local Rust and Go toolchains, Cardano node and CLI binaries,
+passing gnark BSB22 tests, a passing Midnight IVC example with authenticated SRS
+files, dated public endpoint observations, and independently observed prior
+Cardano BSB22 landing transactions. These probes do not close the four gates or
+the two execution boundaries. Docker is absent and WSL is not usable on the
+current Windows host, so Compact and the proof server remain unavailable there.
+
+The program reports `live-pass` only when both selected public testnets accept
+claim-authorized transactions under their named public trust profiles. It reports
+`degraded-lab` when both directions execute but at least one uses a declared lab
+root. It reports `blocked` when a required relation, authenticated path, execution
+surface, catalog gate, or public dependency cannot complete. No deployment
+outcome is assigned from the current research or toolchain probes.
+
 ## Goal
 
 Build a comprehensive, verbatim-gated knowledge base on Midnight and Cardano design,
 then synthesize a **recursive trustless bridge** architecture:
-- **Midnight → Cardano** direction verified with **Groth16** proofs (cheap pairing
-  verification on Cardano via CIP-381 BLS12-381 builtins).
-- **Cardano → Midnight** direction verified with **Plonk / Halo2** proofs.
+- **Midnight → Cardano** direction verified with the full Halo2/KZG decision
+  relation wrapped in **BSB22 commitment-Groth16** over BLS12-381 for Plutus V3.
+- **Cardano → Midnight** direction verified with the registered Midnight
+  **Halo2 / Plonkish** stack over BLS12-381.
 
 Key design tension to resolve through research: what each side can *cheaply verify*
 on-chain, what each source chain's *finality/consensus* requires a light client to
@@ -58,7 +115,7 @@ prove, and how *recursion* compresses chain history into a single succinct proof
 |---|--------|-----------------|------|--------|
 | C1 | Groth16 — pairing-based NIZK | eprint.iacr.org/2016/260 | pdf | todo |
 | C2 | Plonk | eprint.iacr.org/2019/953 | pdf | todo |
-| C3 | Halo2 / Halo (recursive, no trusted setup) | zcash halo2 book / Halo paper | web/pdf | todo |
+| C3 | Halo2 / Halo recursion with a universal, updatable KZG SRS trusted setup | zcash halo2 book / Halo paper | web/pdf | todo |
 | C4 | Recursive proof composition / accumulation (Nova, PCD) | eprint | pdf | todo |
 | C5 | BLS12-381 curve + pairing-friendly / curve cycles | ietf/zcash spec | web | todo |
 | C6 | KZG polynomial commitments / trusted setup | eprint | pdf | todo |
@@ -81,10 +138,12 @@ prove, and how *recursion* compresses chain history into a single succinct proof
 
 ## Deliverable
 
-`knowledge_base/bridges/midnight-cardano-recursive-bridge.md` — the synthesized design
-doc: protocol flows both directions, proof formats, on-chain verifier cost budget,
-recursion strategy, finality/trust model, data availability, and open problems — every
-load-bearing claim cross-linked to a gated KB page.
+[`knowledge_base/bridges/midnight-cardano-recursive-bridge.md`](knowledge_base/bridges/midnight-cardano-recursive-bridge.md)
+is the exact 25-section living design. It covers both protocol flows, proof
+formats, setup, verifier budgets, recursion, source trust, settlement, data
+availability, conformance, testnet outcomes, and residual risks. Load-bearing
+source claims link to gated knowledge-base evidence; normative acceptance rules
+live in OpenSpec.
 
 ## Progress log
 
@@ -131,7 +190,9 @@ load-bearing claim cross-linked to a gated KB page.
   (CMST), tx model (Standard/ClaimRewards + 9 SystemTransaction; DistributeNight(CardanoBridge)),
   FAB wire format. Added **PR #617 = ZKIR v3** (Compact→ZKIR→PLONK; Jubjub/secp256k1 EC +
   Poseidon/SHA256/Keccak256 in-circuit). User guidance: **BEEFY is temporary; future pivots to
-  BABE** — design kept mechanism-agnostic (Mode 0 ECDSA-native / Mode 1 BLS / Mode 2 zk-wrap).
+  BABE** as a historical planning input. The current source-gated design keeps the interface
+  versioned but assumes no BABE migration without primary evidence (Mode 0 ECDSA-native /
+  Mode 1 BLS / Mode 2 zk-wrap).
   **33 sources / 457 claims / 36 pages.**
 - 2026-07-09: **Made `EXAMINATION-CHECKLIST.md`** (14 sections A–N). Examined §A relay:
   Direction-A artifact = `RelayChainProof` PlutusData (ECDSA votes + Merkle AuthoritiesProof
@@ -145,6 +206,8 @@ load-bearing claim cross-linked to a gated KB page.
   chain-spec extraction pins initial BEEFY/session/committee counts at govnet N=6, devnet N=7,
   and mainnet N=10, all with `num_registered_candidates = 0`. Mode-0 budgeting can use
   mainnet genesis N=10 as the published baseline while still tracking live authority rotation.
-- NEXT: find the Cardano-side BEEFY verifier (partner-chains smart-contracts repo); Zswap +
-  NIGHT/DUST specs; remaining sibling catalogs (42/52); the BABE-design finality format when it
-  lands; academic PDFs (Groth16/Plonk/zkBridge/Mina/GRANDPA/aPLONK) + EUTxO. Docling warmed.
+- CURRENT GATES: recover or reconstruct the 42/52 source-backed catalogs; confirm the public
+  Mithril SCLS profile; prototype the Midnight event-to-header-to-MMR path; build and measure
+  the full Halo2/KZG decider wrapper; demonstrate the Midnight external-proof operation; and
+  supply the complete Cardano wrapped BEEFY/MMR verifier boundary. Academic PDFs remain useful
+  background, but they do not substitute for these execution artifacts.

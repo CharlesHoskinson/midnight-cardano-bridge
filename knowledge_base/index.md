@@ -12,6 +12,13 @@ Knowledge base for the **Midnight ↔ Cardano recursive trustless bridge** study
 Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 `bridges/`. See [source records](sources/index.md).
 
+## Program control
+
+- [Canonical 25-section bridge design](bridges/midnight-cardano-recursive-bridge.md): current readable system design and source-linked evidence boundary.
+- [Council-reviewed program design](../docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md): 11 sprints, 62 work packages, fixed proof paths, gates, and completion outcomes.
+- [Predicate catalog status](proof-claims/predicate-catalog-status.md): required 42 Cardano and 52 Midnight records, recovery search, admission gates, and live-test subset rules.
+- [OpenSpec workflow](../openspec/config.yaml): repository context and artifact rules; see the active [Sprint 1 proposal](../openspec/changes/sprint-01-foundation/proposal.md) and the [`openspec/specs/`](../openspec/specs/) stable capability directory populated by accepted archives.
+
 ## Standards
 - [CIP-0381: Plutus support for pairings over BLS12-381](standards/cip-0381.md) — BLS12-381 pairing builtins enabling on-chain Groth16 verification.
 - [CIP-0133: Plutus multi-scalar multiplication over BLS12-381](standards/cip-0133.md) — MSM builtin; dominant SNARK-verification cost, MSM>129 can't fit one tx.
@@ -60,10 +67,11 @@ Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 - [Working Groth16 verifier live on Cardano Preview](bridges/groth16-cardano-preview-deployment.md) — real proof released 5 tADA; nullifier replay-protection; feasibility proof for the Midnight→Cardano leg.
 - [ZK recovery architecture (prover → validator)](bridges/zk-recovery-architecture.md) — reusable pattern: validator reconstructs its own public input, pinned VK, spent-map.
 - [Cardano→Midnight system transactions (CMST)](bridges/cardano-system-transactions.md) — the current **trusted-at-launch** observation interface the trustless bridge replaces.
-- **[→ Recursive trustless bridge design](bridges/midnight-cardano-recursive-bridge.md)** — the synthesized design (in progress).
+- **[→ Recursive trustless bridge design](bridges/midnight-cardano-recursive-bridge.md):** the canonical 25-section living design.
 
 ## Proof-claim / predicate layer (application layer atop the bridge anchor)
 - [Bridge claim requirements](proof-claims/bridge-claim-requirements.md) — finality, message identity, replay, asset identity, authorization (report §31).
 - [Shared claim envelope](proof-claims/claim-envelope.md) — typed fields a cross-chain claim/bridge message binds (report §8).
 - [Anchor & trust models](proof-claims/anchor-trust-models.md) — 8 anchor types; the anchor must be part of the claim (report §9).
 - [Claim interface schema](proof-claims/claim-interface-schema.md) — HistoricalClaim envelope, predicate registry, `bridge_message_finalized`.
+- [Predicate catalog status](proof-claims/predicate-catalog-status.md): hard 94-record gate, missing sources, row contract, and conformance boundary.
