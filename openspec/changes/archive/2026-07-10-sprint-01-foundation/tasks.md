@@ -69,7 +69,7 @@
 - [x] 5.5 **S01-T05-W05** Run a fresh current-document-only reread and close with zero blocking questions and zero unresolved major questions.
   Verification: `$review = Get-Content -Raw openspec/changes/sprint-01-foundation/review.md; foreach ($result in @('**Council gate:** closed', '**Blocking review questions:** 0', '**Unresolved major review questions:** 0')) { if (-not $review.Contains($result)) { throw "Missing council closure result: $result" } }`
 
-- [ ] 5.6 **S01-T05-W06** Commit only the reconciled living design and review artifact as `Resolve proof bridge foundation review`.
+- [x] 5.6 **S01-T05-W06** Commit only the reconciled living design and review artifact as `Resolve proof bridge foundation review`.
   Command: `git add knowledge_base/bridges/midnight-cardano-recursive-bridge.md openspec/changes/sprint-01-foundation/review.md; git commit -m "Resolve proof bridge foundation review"`
   Verification: `git show --name-only --format=%s -1 | rg "Resolve proof bridge foundation review|knowledge_base/bridges/midnight-cardano-recursive-bridge.md|openspec/changes/sprint-01-foundation/review.md"`
 
@@ -79,19 +79,19 @@
 
 **Interface:** Consume all completed foundation artifacts. Produce stable OpenSpec specs, an archived Sprint 1 change, and fresh verification evidence.
 
-- [ ] 6.1 **S01-T06-W01** Run strict OpenSpec validation for all specs and the active change, plus verbose validation of the custom schema.
+- [x] 6.1 **S01-T06-W01** Run strict OpenSpec validation for all specs and the active change, plus verbose validation of the custom schema.
   Verification: `$env:OPENSPEC_TELEMETRY='0'; npm run openspec:validate; if ($LASTEXITCODE -ne 0) { throw "OpenSpec repository validation failed" }; npx openspec schema validate proof-bridge --verbose; if ($LASTEXITCODE -ne 0) { throw "proof-bridge schema validation failed" }`
 
-- [ ] 6.2 **S01-T06-W02** Run whitespace, placeholder, and gated source-pack checks against the completed foundation.
+- [x] 6.2 **S01-T06-W02** Run whitespace, placeholder, and gated source-pack checks against the completed foundation.
   Verification: `git diff --check; if ($LASTEXITCODE -ne 0) { throw "Unstaged whitespace check failed" }; git diff --cached --check; if ($LASTEXITCODE -ne 0) { throw "Staged whitespace check failed" }; $placeholders = rg -n "TODO|TBD|FIXME|\[ \]" knowledge_base/bridges/midnight-cardano-recursive-bridge.md openspec --glob '!**/tasks.md'; if ($LASTEXITCODE -eq 0) { $placeholders; throw "Placeholder content remains" }; if ($LASTEXITCODE -ne 1) { throw "Placeholder scan failed" }; & .\.venv-drt\Scripts\python.exe _external\deep-research-toolkit\skills\research-knowledge-graph\scripts\check_claims.py research-runs/midnight-cardano-bridge-source-sweep-20260709; if ($LASTEXITCODE -ne 0) { throw "Bridge source pack failed" }; & .\.venv-drt\Scripts\python.exe _external\deep-research-toolkit\skills\research-knowledge-graph\scripts\check_claims.py research-runs/midnight-validator-set-sizing-20260709; if ($LASTEXITCODE -ne 0) { throw "Validator-set source pack failed" }`
 
-- [ ] 6.3 **S01-T06-W03** Archive the accepted `sprint-01-foundation` change so its delta requirements become stable specs.
+- [x] 6.3 **S01-T06-W03** Archive the accepted `sprint-01-foundation` change so its delta requirements become stable specs.
   Command: `$env:OPENSPEC_TELEMETRY='0'; npx openspec archive sprint-01-foundation --yes`
   Verification: `$archive = Get-ChildItem openspec/changes/archive -Directory -Filter '*sprint-01-foundation'; if ($archive.Count -ne 1) { throw "Expected one archived Sprint 1 change" }`
 
-- [ ] 6.4 **S01-T06-W04** Revalidate the archived state and inspect the worktree for only intended foundation changes.
+- [x] 6.4 **S01-T06-W04** Revalidate the archived state and inspect the worktree for only intended foundation changes.
   Verification: `npm run openspec:validate; if ($LASTEXITCODE -ne 0) { throw "Archived OpenSpec validation failed" }; git status --short --branch; if ($LASTEXITCODE -ne 0) { throw "Worktree inspection failed" }`
 
-- [ ] 6.5 **S01-T06-W05** Commit the validated, archived foundation as `Complete proof bridge documentation foundation`.
+- [x] 6.5 **S01-T06-W05** Commit the validated, archived foundation as `Complete proof bridge documentation foundation`.
   Command: `git add .; git commit -m "Complete proof bridge documentation foundation"`
   Verification: `git show --stat --oneline -1 | rg "Complete proof bridge documentation foundation"`
