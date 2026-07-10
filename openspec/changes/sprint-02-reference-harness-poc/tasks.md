@@ -4,7 +4,7 @@
 
 ## 2. Go structural harness and BSB22 parser
 
-- [ ] 2.1 **S02-RH-W02** Add failing Go tests for an independent deterministic-CBOR encoder, roster/root/domain/continuity agreement, exact BSB22 proof/VK offsets, scalar modulus rejection, and parser non-claims; then implement the commands. Verification: `go test ./...` from `reference/go`.
+- [x] 2.1 **S02-RH-W02** Add failing Go tests for an independent deterministic-CBOR encoder, roster/root/domain/continuity agreement, exact BSB22 proof/VK offsets, scalar modulus rejection, and parser non-claims; then implement the commands. Verification: `go test ./...` from `reference/go`.
 
 ## 3. Shared cross-language fixtures
 
