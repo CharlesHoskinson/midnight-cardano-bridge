@@ -1,23 +1,20 @@
-[
-  {
-    "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "epoch": 1354,
-    "signed_entity_type": {
-      "CardanoTransactions": [1354, 4456724]
+{
+  "schema_version": 1,
+  "adapter_revision": "mcb.scrapling-observer.v1",
+  "trust": "unsigned-observation",
+  "chain": "cardano",
+  "network": "pre-release-preview",
+  "endpoint": "https://aggregator.pre-release-preview.api.mithril.network/aggregator/certificates",
+  "observed_at": "2026-07-10T00:00:00Z",
+  "capture_sha256": "6845d9ce0cfe9b5b39abdae468dff056ae118bf0ba0c5e5482901bd0762ca627",
+  "exchanges": [
+    {
+      "request_method": "GET",
+      "request_body_hex": "",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "response_status": 200,
+      "response_body_hex": "5b7b2265706f6368223a313335342c2268617368223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c227369676e65645f656e746974795f74797065223a7b2243617264616e6f5472616e73616374696f6e73223a5b313335342c343435363732345d7d7d2c7b2265706f6368223a313335342c2268617368223a2262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262222c227369676e65645f656e746974795f74797065223a7b2243617264616e6f5472616e73616374696f6e73223a5b313335342c343435363732335d7d7d2c7b2265706f6368223a313335332c2268617368223a2263636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363222c227369676e65645f656e746974795f74797065223a7b2243617264616e6f4461746162617365223a313335337d7d5d",
+      "raw_response_sha256": "ccdb08b05cc5c036c2db5de9c94af4064d05327648b822212f09b0a912ec1718"
     }
-  },
-  {
-    "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    "epoch": 1354,
-    "signed_entity_type": {
-      "CardanoTransactions": [1354, 4456723]
-    }
-  },
-  {
-    "hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    "epoch": 1353,
-    "signed_entity_type": {
-      "CardanoDatabase": 1353
-    }
-  }
-]
+  ]
+}
