@@ -260,6 +260,61 @@ class ObservationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "gate-reference"):
             observe.validate_observation(record)
 
+    def test_observation_validator_binds_every_midnight_data_field_to_capture(self):
+        mutations = {
+            "endpoint_reported_head": ("0x" + "00" * 32, "observation-data"),
+            "endpoint_reported_block_number": (1541270, "observation-data"),
+            "endpoint_reported_state_root": ("0x" + "11" * 32, "observation-data"),
+            "finality_evaluation": ("performed", "trust-claim"),
+            "event_inclusion_evaluation": ("performed", "trust-claim"),
+            "destination_execution_evaluation": ("performed", "trust-claim"),
+            "affected_gates": ([], "gate-reference"),
+            "gate_status": ("passed", "gate-claim"),
+        }
+        self.assertEqual(set(mutations), observe.MIDNIGHT_DATA_FIELDS)
+
+        for field, (replacement, error) in mutations.items():
+            with self.subTest(field=field):
+                record = self._normalize(observe.normalize_midnight, self.midnight_capture)
+                record["data"][field] = replacement
+                with self.assertRaisesRegex(ValueError, error):
+                    observe.validate_observation(record)
+
+    def test_observation_validator_binds_every_mithril_data_field_to_capture(self):
+        mutations = {
+            "certificate_count": (4, "observation-data"),
+            "endpoint_entity_type_names": (["CardanoDatabase"], "observation-data"),
+            "scls_profile_evaluation": ("performed", "trust-claim"),
+            "affected_gates": ([], "gate-reference"),
+            "gate_status": ("passed", "gate-claim"),
+        }
+        self.assertEqual(set(mutations), observe.MITHRIL_DATA_FIELDS)
+
+        for field, (replacement, error) in mutations.items():
+            with self.subTest(field=field):
+                record = self._normalize(observe.normalize_mithril, self.mithril_capture)
+                record["data"][field] = replacement
+                with self.assertRaisesRegex(ValueError, error):
+                    observe.validate_observation(record)
+
+    def test_observation_validator_binds_aggregate_provenance_to_exchanges(self):
+        mutations = {
+            "request_method": "PATCH",
+            "request_body_sha256": "0" * 64,
+            "raw_response_sha256": "0" * 64,
+            "response_statuses": [299],
+        }
+        for normalizer, capture in (
+            (observe.normalize_midnight, self.midnight_capture),
+            (observe.normalize_mithril, self.mithril_capture),
+        ):
+            for field, replacement in mutations.items():
+                with self.subTest(chain=capture["chain"], field=field):
+                    record = self._normalize(normalizer, capture)
+                    record[field] = replacement
+                    with self.assertRaisesRegex(ValueError, "observation-provenance"):
+                        observe.validate_observation(record)
+
     def test_normalization_rejects_invalid_envelopes_and_hostile_responses(self):
         tampered = copy.deepcopy(self.midnight_capture)
         tampered["endpoint"] += "/tampered"

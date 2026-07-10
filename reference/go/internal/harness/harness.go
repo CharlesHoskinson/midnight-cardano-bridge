@@ -300,6 +300,23 @@ func parseSourceEvent(raw []byte) (sourceEventIdentityV1, error) {
 	if err := json.Unmarshal(raw, &fields); err != nil || fields == nil {
 		return sourceEventIdentityV1{}, &HarnessError{"source-event-shape", "source event must be an object"}
 	}
+	requiredFields := [...]string{
+		"version",
+		"source_chain_identity_digest",
+		"source_handler_or_namespace",
+		"source_transaction_or_object_id",
+		"source_action_or_event_index",
+		"event_discriminator",
+		"source_event_commitment",
+	}
+	if len(fields) != len(requiredFields) {
+		return sourceEventIdentityV1{}, &HarnessError{"source-event-schema", "fields do not match SourceEventIdentityV1"}
+	}
+	for _, field := range requiredFields {
+		if _, ok := fields[field]; !ok {
+			return sourceEventIdentityV1{}, &HarnessError{"source-event-schema", "fields do not match SourceEventIdentityV1"}
+		}
+	}
 	var event sourceEventIdentityV1
 	if err := decodeStrict(raw, &event); err != nil {
 		return sourceEventIdentityV1{}, fail("source-event-schema", err)

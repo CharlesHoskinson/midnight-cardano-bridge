@@ -27,6 +27,10 @@ reset-isolation disagreement SHALL fail with a stable error code.
 - **WHEN** a source-event identity adds any root, domain, activation, authorization, destination-instance, or unknown field
 - **THEN** both commands SHALL reject it before continuity-key derivation
 
+#### Scenario: A source-event index member is absent
+- **WHEN** a `SourceEventIdentityV1` omits `source_action_or_event_index`
+- **THEN** both commands SHALL reject it with `source-event-schema` and SHALL NOT treat absence as an explicit index zero
+
 ### Requirement: Reproducible conformance entry point
 The repository SHALL provide one noninteractive command that runs Rust tests, Go
 tests, Python observation-fixture tests, cross-language golden comparison, and

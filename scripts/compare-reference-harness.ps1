@@ -52,6 +52,38 @@ try {
 $goReport = $goJson | ConvertFrom-Json
 $fixture = Get-Content -Raw -LiteralPath $fixturePath | ConvertFrom-Json
 
+$missingIndexPath = Join-Path ([IO.Path]::GetTempPath()) ("mcb-missing-event-index-{0}.json" -f [guid]::NewGuid())
+try {
+    $missingIndexFixture = Get-Content -Raw -LiteralPath $fixturePath | ConvertFrom-Json
+    $missingIndexFixture.source_event_identity.PSObject.Properties.Remove('source_action_or_event_index')
+    $missingIndexJson = $missingIndexFixture | ConvertTo-Json -Depth 30
+    [IO.File]::WriteAllText($missingIndexPath, $missingIndexJson + "`n", [Text.UTF8Encoding]::new($false))
+
+    $rustRejectionLines = & $cargo run --locked --offline --quiet --manifest-path (Join-Path $repoRoot 'reference\rust\Cargo.toml') --bin mcb-rust -- run $missingIndexPath $repoRoot 2>&1
+    $rustRejectionExit = $LASTEXITCODE
+    Push-Location (Join-Path $repoRoot 'reference\go')
+    try {
+        $goRejectionLines = & $go run ./cmd/mcb-go run $missingIndexPath ../.. 2>&1
+        $goRejectionExit = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
+
+    foreach ($rejection in @(
+        @{ Name = 'Rust'; Exit = $rustRejectionExit; Output = ($rustRejectionLines | Out-String).Trim() },
+        @{ Name = 'Go'; Exit = $goRejectionExit; Output = ($goRejectionLines | Out-String).Trim() }
+    )) {
+        if ($rejection.Exit -eq 0) {
+            throw "$($rejection.Name) accepted SourceEventIdentityV1 without source_action_or_event_index"
+        }
+        if ($rejection.Output -notmatch 'source-event-schema:') {
+            throw "$($rejection.Name) missing-index rejection was not source-event-schema: $($rejection.Output)"
+        }
+    }
+} finally {
+    Remove-Item -LiteralPath $missingIndexPath -Force -ErrorAction SilentlyContinue
+}
+
 $rustFields = @($rust.PSObject.Properties.Name | Sort-Object)
 $goFields = @($goReport.PSObject.Properties.Name | Sort-Object)
 if (($rustFields -join "`n") -ne ($goFields -join "`n")) {
@@ -112,4 +144,5 @@ foreach ($field in @($rust.PSObject.Properties.Name)) {
 $json = $evidence | ConvertTo-Json -Depth 12
 [IO.File]::WriteAllText($evidencePath, $json + "`n", [Text.UTF8Encoding]::new($false))
 
+$global:LASTEXITCODE = 0
 Write-Output "cross_language_structural=PASS evidence=$evidencePath"

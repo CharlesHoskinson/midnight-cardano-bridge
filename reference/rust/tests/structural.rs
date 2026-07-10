@@ -207,6 +207,22 @@ fn exact_structural_schemas_reject_unknown_and_malformed_fields() {
 }
 
 #[test]
+fn source_event_schema_requires_explicit_index_member() {
+    let missing_index = mutated_fixture("missing-source-event-index", |value| {
+        value["source_event_identity"]
+            .as_object_mut()
+            .expect("source event object")
+            .remove("source_action_or_event_index");
+    });
+    let err = mcb_harness::run_fixture(&repo_root(), missing_index.path())
+        .expect_err("missing source event index member must fail");
+    assert_eq!(err.code(), "source-event-schema");
+
+    mcb_harness::run_fixture(&repo_root(), &fixture("structural-v1.json"))
+        .expect("explicit index zero must remain valid");
+}
+
+#[test]
 fn producer_dag_rejects_cycle_unresolved_back_edge_and_post_domain_dependency() {
     fn node_mut<'a>(value: &'a mut Value, id: &str) -> &'a mut Value {
         value["producer_dag"]["nodes"]

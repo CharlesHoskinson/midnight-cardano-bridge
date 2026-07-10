@@ -213,11 +213,7 @@ def _sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
-def normalize_midnight(capture: Mapping[str, Any]) -> dict[str, Any]:
-    """Normalize only a validated Midnight capture envelope."""
-    validate_capture(capture)
-    if capture["chain"] != "midnight":
-        raise ValueError("capture-schema: expected Midnight capture")
+def _derive_midnight_data(capture: Mapping[str, Any]) -> dict[str, Any]:
     head_response = _capture_response_json(capture, 0, "invalid-midnight-response")
     header_response = _capture_response_json(capture, 1, "invalid-midnight-response")
     try:
@@ -230,10 +226,7 @@ def normalize_midnight(capture: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(head, str) or not isinstance(state_root, str):
         raise ValueError("invalid-midnight-response")
 
-    record = _base_observation(
-        capture, "POST:chain_getFinalizedHead+chain_getHeader"
-    )
-    record["data"] = {
+    return {
         "endpoint_reported_head": head,
         "endpoint_reported_block_number": block_number,
         "endpoint_reported_state_root": state_root,
@@ -243,6 +236,17 @@ def normalize_midnight(capture: Mapping[str, Any]) -> dict[str, Any]:
         "affected_gates": [MIDNIGHT_GATE],
         "gate_status": "unresolved",
     }
+
+
+def normalize_midnight(capture: Mapping[str, Any]) -> dict[str, Any]:
+    """Normalize only a validated Midnight capture envelope."""
+    validate_capture(capture)
+    if capture["chain"] != "midnight":
+        raise ValueError("capture-schema: expected Midnight capture")
+    record = _base_observation(
+        capture, "POST:chain_getFinalizedHead+chain_getHeader"
+    )
+    record["data"] = _derive_midnight_data(capture)
     validate_observation(record)
     return record
 
@@ -257,11 +261,7 @@ def _entity_type_name(value: Any) -> str:
     raise ValueError("invalid-mithril-response")
 
 
-def normalize_mithril(capture: Mapping[str, Any]) -> dict[str, Any]:
-    """Normalize only a validated Mithril capture without trust inference."""
-    validate_capture(capture)
-    if capture["chain"] != "cardano":
-        raise ValueError("capture-schema: expected Cardano capture")
+def _derive_mithril_data(capture: Mapping[str, Any]) -> dict[str, Any]:
     raw = _capture_response_json(capture, 0, "invalid-mithril-response")
     if isinstance(raw, (str, bytes, bytearray)) or not isinstance(raw, Sequence):
         raise ValueError("invalid-mithril-response")
@@ -272,14 +272,22 @@ def normalize_mithril(capture: Mapping[str, Any]) -> dict[str, Any]:
             raise ValueError("invalid-mithril-response")
         names.add(_entity_type_name(certificate.get("signed_entity_type")))
 
-    record = _base_observation(capture, "GET")
-    record["data"] = {
+    return {
         "certificate_count": len(raw),
         "endpoint_entity_type_names": sorted(names),
         "scls_profile_evaluation": "not-performed",
         "affected_gates": [MITHRIL_GATE],
         "gate_status": "unresolved",
     }
+
+
+def normalize_mithril(capture: Mapping[str, Any]) -> dict[str, Any]:
+    """Normalize only a validated Mithril capture without trust inference."""
+    validate_capture(capture)
+    if capture["chain"] != "cardano":
+        raise ValueError("capture-schema: expected Cardano capture")
+    record = _base_observation(capture, "GET")
+    record["data"] = _derive_mithril_data(capture)
     validate_observation(record)
     return record
 
@@ -364,8 +372,14 @@ def validate_observation(record: Mapping[str, Any]) -> None:
     data = record["data"]
     if capture["chain"] == "midnight":
         _validate_midnight_data(data)
+        expected_data = _derive_midnight_data(capture)
     else:
         _validate_mithril_data(data)
+        expected_data = _derive_mithril_data(capture)
+    if data != expected_data:
+        raise ValueError(
+            "observation-data: normalized data does not match preserved response bytes"
+        )
 
 
 def _validate_gate_reference(data: Mapping[str, Any], expected: str) -> None:

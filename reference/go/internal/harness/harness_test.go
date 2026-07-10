@@ -180,6 +180,20 @@ func TestExactStructuralSchemasRejectUnknownAndMalformedFields(t *testing.T) {
 	}
 }
 
+func TestSourceEventSchemaRequiresExplicitIndexMember(t *testing.T) {
+	missingIndex := mutatedFixture(t, "missing-source-event-index", func(value map[string]any) {
+		delete(value["source_event_identity"].(map[string]any), "source_action_or_event_index")
+	})
+	_, err := RunFixture(repoRoot(t), missingIndex)
+	if err == nil || ErrorCode(err) != "source-event-schema" {
+		t.Fatalf("expected source-event-schema for missing index member, got %v", err)
+	}
+
+	if _, err := RunFixture(repoRoot(t), fixture(t, "structural-v1.json")); err != nil {
+		t.Fatalf("explicit index zero must remain valid: %v", err)
+	}
+}
+
 func TestProducerDAGRejectsCycleUnresolvedNonForwardAndPostDomainMapping(t *testing.T) {
 	node := func(value map[string]any, id string) map[string]any {
 		for _, raw := range value["producer_dag"].(map[string]any)["nodes"].([]any) {
