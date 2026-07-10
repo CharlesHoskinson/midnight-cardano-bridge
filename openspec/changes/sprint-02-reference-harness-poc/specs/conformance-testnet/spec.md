@@ -5,16 +5,24 @@ Read-only public endpoint access in this change SHALL use Scrapling. Each
 normalized observation SHALL bind schema version, chain, network, endpoint,
 request method and body digest, observation time, raw response digest, adapter
 revision, and `trust = unsigned-observation`. Captured fixtures SHALL retain the
-same provenance fields. An endpoint response SHALL NOT count as finality,
+same provenance fields plus exact request and response body bytes and HTTP
+statuses. Capture validation SHALL recompute both digests, parse those preserved
+bytes, and reject a trust relabel, unknown field, duplicate or unknown gate id,
+body tamper, provenance tamper, or any positive finality, SCLS, inclusion,
+proof-verification, or execution claim. An endpoint response SHALL NOT count as finality,
 checkpoint approval, proof verification, destination execution, or gate closure.
 
 #### Scenario: Midnight and Mithril endpoints respond
 - **WHEN** the adapters successfully read a Midnight finalized-head response and a Mithril certificate listing
-- **THEN** they SHALL emit unsigned observations and leave every affected gate unresolved
+- **THEN** Midnight SHALL reference exactly `S01-BLOCK-03/event-inclusion`, Mithril SHALL reference exactly `S01-BLOCK-02/public-scls-availability`, and both SHALL leave those gates unresolved
 
 #### Scenario: A captured response is relabeled authenticated
 - **WHEN** a fixture or caller changes `trust` from `unsigned-observation`
 - **THEN** fixture validation SHALL reject it
+
+#### Scenario: An endpoint invents an SCLS-looking type name
+- **WHEN** a Mithril response includes an unregistered type name containing `SCLS` or a caller adds a positive SCLS field
+- **THEN** normalization SHALL report the endpoint-supplied type name without interpreting it and closed-schema validation SHALL reject the positive claim
 
 ### Requirement: Structural result is not an outcome label
 The conformance command SHALL report `structural-pass` or `structural-fail` for the

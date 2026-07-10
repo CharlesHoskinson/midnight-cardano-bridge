@@ -1729,6 +1729,55 @@ source fact, expected canonical statement digest, and provenance. A synthetic
 fixture cannot be relabeled as captured public data. Adapters, provers, and
 relayers remain untrusted; the destination verifier is the acceptance boundary.
 
+### Executable structural slice
+
+The repository includes a non-activating reference slice under `reference/`.
+Rust and Go independently consume the same versioned fixture but share no codec
+or classifier library. Both reproduce the published 7,705-byte gate roster,
+validate a closed structural root schema and a closed
+`SourceEventIdentityV1`, topologically check a 15-node producer graph, encode
+typed deterministic CBOR, and compare complete hash preimages before comparing
+digests. A cycle, missing producer, non-forward edge, post-domain dependency,
+unknown field, malformed typed value, or cross-language disagreement rejects.
+
+The diagnostic profile is `mcb.structural-lab.sha256-cbor.v1`. Its root,
+deployment-domain, continuity, and gate-record-set hashes use this framing:
+
+```text
+u64_be(domain_byte_length) || UTF8(domain) ||
+u64_be(body_byte_length) || body
+```
+
+This framing tests ownership and dependency order. It is not the unresolved
+production profile owned by `CONS-DOMAIN-01`, and every report fixes
+`activation_eligible=false`.
+
+The reset vector is a state-bearing continuity migration. Changing the fresh
+deployment instance id changes the root and domain while the same authenticated
+source event keeps one continuity key. The imported consumed set rejects that
+event and accepts an unrelated event. The base classifier joins 14 ordered
+status and evidence records to the exact roster, derives six open activation
+gates and eight unresolved consensus gates, and selects row 2. Synthetic vectors
+exercise all five classifier rows, but rows 4 and 5 never change the structural
+report's actual deployment outcome from `blocked`.
+
+The Go BSB22 component is a native-byte parser, not a verifier. It enforces the
+336-byte proof, 672-byte committed VK, every named field offset, and a canonical
+32-byte little-endian scalar below the BLS12-381 scalar modulus. Boundary and
+endian-trap vectors do not perform point decoding, subgroup checks, pairings,
+the full Halo2/KZG decision, or Cardano execution. Its exact affected gate ids
+remain `S01-BLOCK-04/full-decider` and `S01-BLOCK-06/cardano-execution`, both
+unresolved.
+
+Public reads are isolated in the Python adapter and use Scrapling. Immutable
+capture envelopes retain exact request and response bodies, HTTP statuses,
+per-exchange digests, endpoint metadata, time, adapter revision, and the fixed
+`unsigned-observation` label. Closed normalized schemas reject positive
+finality, SCLS, event-inclusion, proof, checkpoint, or execution claims. The
+offline verifier performs no live read, stages every candidate outside the
+repository, and publishes input-bound golden evidence only after the entire run
+passes.
+
 The planned implementation layout uses Rust for common APIs, source adapters, and
 Midnight/Halo2 circuits; Go and gnark for the BSB22 wrapper; Plinth compiled to
 UPLC for Cardano; and Compact with TypeScript bindings for the Midnight operation.
@@ -2427,24 +2476,32 @@ current documented `cardano-node` release on 2026-07-10 is 11.0.1, released
 
 ### Dated local probes
 
-The 2026-07-10 host has Rust 1.90.0, Go 1.25.7, and verified
-`cardano-node` 11.0.1 and `cardano-cli` binaries. The gnark 0.15.0 BSB22 harness
-passed its Go tests. `midnight-aggregation` compiled, and its IVC example passed
-with the exact features and SRS hashes recorded in sections 15 and 21. Docker is
-absent. WSL reports Ubuntu 26.04 but the required Windows optional component is
-disabled, so Compact and the proof server cannot run on this host without an
-environment change.
+The 2026-07-10 harness host pins PowerShell 7.6.3, Rust/Cargo 1.90.0, Go
+1.25.7, Python 3.14.6, Node/npm 24.18.0/11.16.0, OpenSpec 1.5.0, Scrapling
+0.4.10, and cbor2 5.7.1. Verified `cardano-node` 11.0.1 and `cardano-cli`
+binaries are also available. The gnark 0.15.0 BSB22 harness passed its Go tests.
+`midnight-aggregation` compiled, and its IVC example passed with the exact
+features and SRS hashes recorded in sections 15 and 21. Docker is absent. WSL
+reports Ubuntu 26.04 but the required Windows optional component is disabled, so
+Compact and the proof server cannot run on this host without an environment
+change.
 
-A single unsigned Preview RPC observation returned chain identity
-`Midnight Preview`, genesis hash
-`0x801d3fc306115a3b538ea9498881c176376f8e3213464fe620fc1f359d13b880`,
-runtime `midnight` spec version 1000000, transaction version 3, and finalized
-block 1,541,269 with head
-`0xab8df223d93aab56256c985fee7df80b465e3774595084932d27487fdd17738f`
+At `2026-07-10T11:25:55Z`, a Scrapling capture sent byte-preserved
+`chain_getFinalizedHead` and `chain_getHeader` requests to Midnight Preview. The
+endpoint reported block 1,544,263, head
+`0xf608d7d1fd83209d418e8ae83bd536f1a944230cd6b49fac1faa32e0c30343c2`,
 and state root
-`0xa241bd9de9ee559b790c8f0963d7a87c91a827ca1cac3ae0994c0d6e85e2e8dc`.
-The endpoint reported 12 peers and was not syncing. These are candidate manifest
-inputs from one endpoint. They are not an approved checkpoint, do not establish
+`0xf68d19871a298531a35f552b50553aa3b0377cfb4484eeb2fac062210d2d6158`.
+The record labels finality, event inclusion, and destination execution as
+`not-performed` and leaves only `S01-BLOCK-03/event-inclusion` unresolved. The
+RPC method name does not turn the response into independently checked finality.
+
+At `2026-07-10T11:26:03Z`, the official Mithril pre-release Preview aggregator
+returned 20 certificates whose endpoint-supplied entity type names were
+`CardanoDatabase` and `CardanoTransactions`. The adapter does not infer SCLS from
+those strings. It records `scls_profile_evaluation=not-performed` and leaves only
+`S01-BLOCK-02/public-scls-availability` unresolved. Both captures are unsigned
+transport evidence. They are not approved checkpoints, do not establish
 independent-node agreement, and cannot authorize a deployment.
 
 ### Endpoint and preflight contract

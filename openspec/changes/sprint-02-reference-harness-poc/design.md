@@ -85,6 +85,45 @@ must remain `blocked` because execution gates and confirmed destination receipts
 are absent. No command accepts an override that turns structural evidence into
 an outcome label.
 
+### 7. Structural inputs use closed schemas and an explicit producer graph
+
+The fixture carries a closed `StructuralDeploymentRootSetV1`, closed
+`SourceEventIdentityV1` values, and a typed producer graph outside the root-set
+preimage. Every root member names one graph producer. Validation rejects unknown
+root or event fields, unknown graph stages, duplicate nodes, unresolved
+dependencies, cycles, non-forward edges, and any reachable post-domain producer.
+A field-name blacklist is insufficient because aliases and nested records can
+hide a post-domain dependency.
+
+### 8. Structural hash framing is byte-exact and non-production
+
+Every structural digest uses
+`u64_be(domain_byte_length) || UTF8(domain) || u64_be(body_byte_length) || body`.
+Rust and Go emit the canonical body and full preimage as lowercase hex before
+comparing digests. Digest-like fixture members remain lowercase hexadecimal text
+inside this diagnostic profile; production typed bytes and the production hash
+profile remain owned by `CONS-DOMAIN-01`.
+
+### 9. Captures preserve transport bytes but confer no trust
+
+Observation fixtures are immutable envelopes containing the exact request and
+response body bytes, HTTP statuses, endpoint metadata, time, adapter revision,
+digests, and fixed unsigned trust label. Normalization starts only after envelope
+validation recomputes the digests and parses the preserved bytes. Closed output
+schemas reject positive finality, SCLS, inclusion, proof, or execution claims.
+The adapters report endpoint-supplied entity names without interpreting them.
+
+### 10. Verification stages evidence and classifies explicit records
+
+The base fixture supplies 14 ordered gate statuses, selected profile,
+evidence-retention decisions, and two direction-receipt states. The harness joins
+those inputs to the exact roster and applies the five classifier rows in order;
+the base vector selects row 2. The combined verifier writes candidates to a
+temporary run directory and emits no pass or deployment label until every check
+succeeds. Default verification is offline and read-only. An explicit evidence
+update atomically publishes reports only after a complete pass, with deterministic
+input, verifier, command, and tool-version bindings.
+
 ## Risks / Trade-offs
 
 - [The custom CBOR subset diverges from full RFC 8949] -> Reject unsupported JSON
@@ -98,6 +137,11 @@ an outcome label.
   `structural-only`, expose parser checks separately, and keep proof gates open.
 - [Rust dependency retrieval is unavailable] -> Limit crates to `serde`,
   `serde_json`, `sha2`, and `hex`; retain `Cargo.lock` after a verified build.
+- [A prior pass report survives a later failed run] -> Treat committed reports
+  as input-bound golden evidence, stage each current run outside the repository,
+  and publish only after all checks pass.
+- [An endpoint invents an SCLS-looking entity name] -> Preserve the reported
+  string without semantic interpretation and reject all positive trust fields.
 
 ## Migration Plan
 
@@ -106,8 +150,11 @@ an outcome label.
    continuity, and classifier commands.
 3. Add failing Go tests, then implement an independent encoder and BSB22 parser.
 4. Add failing Python `unittest` fixtures, then implement Scrapling transport and
-   normalization.
-5. Run the combined verifier, preserve reports, and review the implementation.
+   normalization over byte-preserving capture envelopes.
+5. Add negative schema, DAG, replay, classifier, proof-offset, scalar-boundary,
+   capture-tamper, and late-verifier-failure vectors.
+6. Run the offline combined verifier, atomically preserve input-bound reports,
+   and review the implementation.
 
 Rollback removes `reference/`, the verification script, and this active change;
 it does not alter the stable Sprint 1 contracts or any chain state.

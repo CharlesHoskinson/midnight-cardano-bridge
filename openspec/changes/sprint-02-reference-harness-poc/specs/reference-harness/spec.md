@@ -5,23 +5,43 @@ The repository SHALL provide Rust and Go commands that independently decode the
 published `GateRosterV1`, reproduce its deterministic-CBOR bytes and SHA-256,
 derive structural-lab root-set and deployment-domain vectors, and derive
 domain-independent source-event continuity keys. The implementations SHALL share
-only versioned fixtures and SHALL fail on byte, digest, field-order, forbidden
-post-domain input, or reset-isolation disagreement.
+only versioned fixtures. They SHALL validate closed structural root-set and
+`SourceEventIdentityV1` schemas, reject unknown fields, and validate an explicit
+producer DAG before encoding. A cycle, unresolved producer, non-forward edge,
+post-domain producer, byte mismatch, digest mismatch, field-order mismatch, or
+reset-isolation disagreement SHALL fail with a stable error code.
 
 #### Scenario: Both implementations reproduce one vector
 - **WHEN** the Rust and Go commands consume the same valid structural fixture
-- **THEN** they SHALL emit byte-identical roster, root-set, domain, and continuity digests
+- **THEN** they SHALL emit byte-identical roster, root-set, event, and reset CBOR plus byte-identical framed hash preimages and digests
 
 #### Scenario: A post-domain field enters the root set
 - **WHEN** a fixture adds a deployment domain, activation, ABI instance, transaction, or receipt to a root-set preimage
 - **THEN** both commands SHALL reject it before digest derivation
 
+#### Scenario: A transitive producer crosses the domain boundary
+- **WHEN** an otherwise permitted root member names a producer with a cycle, unresolved dependency, back edge, or post-domain dependency
+- **THEN** both commands SHALL reject the producer DAG and SHALL NOT emit `structural-pass`
+
+#### Scenario: A domain field enters a source-event identity
+- **WHEN** a source-event identity adds any root, domain, activation, authorization, destination-instance, or unknown field
+- **THEN** both commands SHALL reject it before continuity-key derivation
+
 ### Requirement: Reproducible conformance entry point
 The repository SHALL provide one noninteractive command that runs Rust tests, Go
 tests, Python observation-fixture tests, cross-language golden comparison, and
 strict OpenSpec validation. It SHALL report each component and return nonzero on
-the first failed contract without altering gate state.
+the first failed contract without altering gate state. The default command SHALL
+perform no network request and SHALL stage generated evidence outside the
+repository. It SHALL publish or replace committed evidence only after every
+check succeeds, and only under an explicit update mode. Each committed report
+SHALL bind the input-file hashes, verifier revision, commands, tool versions,
+and final result needed to distinguish it from a stale prior run.
 
 #### Scenario: A golden digest is mutated
 - **WHEN** the conformance command encounters a fixture whose expected digest differs from either implementation
 - **THEN** it SHALL fail and SHALL NOT emit a deployment outcome label
+
+#### Scenario: A check fails after cross-language comparison
+- **WHEN** roster, observation, OpenSpec, or repository validation fails after a temporary structural report was generated
+- **THEN** the command SHALL return nonzero, emit no pass or deployment label, leave committed evidence byte-identical, and remove the temporary run directory

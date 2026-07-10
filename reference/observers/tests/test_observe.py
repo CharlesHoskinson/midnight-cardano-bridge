@@ -382,7 +382,48 @@ class TransportTests(unittest.TestCase):
             for line in requirements.read_text(encoding="utf-8").splitlines()
             if line.strip()
         }
-        self.assertEqual(lines, {"scrapling==0.4.10", "cbor2==5.7.1"})
+        self.assertEqual(lines, {"scrapling[fetchers]==0.4.10", "cbor2==5.7.1"})
+
+        lock = OBSERVER_DIR / "requirements.lock.txt"
+        self.assertTrue(lock.exists(), "observer transitive requirements must be locked")
+        locked_lines = [
+            line.strip()
+            for line in lock.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual(
+            locked_lines,
+            [
+                "anyio==4.14.1",
+                "apify-fingerprint-datapoints==0.13.0",
+                "browserforge==1.2.4",
+                "cbor2==5.7.1",
+                "certifi==2026.6.17",
+                "cffi==2.1.0",
+                "click==8.4.2",
+                "colorama==0.4.6",
+                "cssselect==1.4.0",
+                "curl-cffi==0.15.0",
+                "greenlet==3.5.3",
+                "idna==3.18",
+                "lxml==6.1.1",
+                "markdown-it-py==4.2.0",
+                "mdurl==0.1.2",
+                "msgspec==0.21.1",
+                "orjson==3.11.9",
+                "patchright==1.61.1",
+                "playwright==1.61.0",
+                "protego==0.6.2",
+                "pycparser==3.0",
+                "pyee==13.0.1",
+                "pygments==2.20.0",
+                "rich==15.0.0",
+                "scrapling==0.4.10",
+                "tld==0.13.2",
+                "typing-extensions==4.16.0",
+                "w3lib==2.4.1",
+            ],
+        )
 
     def test_fixture_cli_normalizes_only_the_envelopes_own_provenance(self):
         fixture = OBSERVER_DIR / "fixtures" / "midnight-finalized-v1.json"

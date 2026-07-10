@@ -1,2 +1,2 @@
-scrapling==0.4.10
+scrapling[fetchers]==0.4.10
 cbor2==5.7.1

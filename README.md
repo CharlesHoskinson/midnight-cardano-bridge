@@ -71,7 +71,7 @@ Sources include the Cardano CIPs (0381, 0133, 0140 Peras, 0165), the Midnight re
 
 Start with the [canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md). It is the synthesis, and it links down into everything else. Use the [program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) for work-package ordering, the [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) for the 94-record gate, and [OpenSpec](openspec/config.yaml) for normative requirements and review state.
 
-Run `pwsh -NoProfile -File scripts/verify-reference-harness.ps1` for the current executable PoC. A clean run reports `structural-pass` and deployment outcome `blocked`. The result covers reproducible encodings, parser boundaries, and unsigned observation provenance. It does not claim proof verification or testnet settlement.
+From a clean checkout, first run `pwsh -NoProfile -File scripts/setup-reference-harness.ps1`, then run `pwsh -NoProfile -File scripts/verify-reference-harness.ps1`. Setup fetches lockfile-controlled Node, Rust, and Windows/Python 3.14 dependencies but no public-chain data; verification is offline and read-only. A clean run reports `structural-pass` and deployment outcome `blocked`. The committed reports are input-bound golden evidence rather than last-run status. The result covers reproducible encodings, parser boundaries, and unsigned observation provenance. It does not claim proof verification or testnet settlement.
 
 The knowledge base is organized by domain:
 
