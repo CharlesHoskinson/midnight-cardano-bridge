@@ -8,6 +8,23 @@
     "fresh_deployment_instance_id": "00000000000000000000000000000001",
     "deployment_domain": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
   },
+  "producer_dag": {
+    "root_node": "deployment_root_set",
+    "nodes": [],
+    "root_field_producers": {
+      "bridge_program_id": "",
+      "fresh_deployment_instance_id": "",
+      "source_identity_fingerprints": "",
+      "checkpoint_manifest_digests": "",
+      "semantic_registry_template_root": "",
+      "artifact_template_root": "",
+      "destination_abi_template_digests": "",
+      "deployment_recipe_digests": "",
+      "replay_policy_template_digest": "",
+      "freshness_policy_template_digest": ""
+    }
+  },
+  "reset_mode": "state-bearing-continuity-migration",
   "reset_fresh_deployment_instance_id": "00000000000000000000000000000002",
   "source_event_identity": {
     "version": 1,
@@ -17,6 +34,23 @@
     "source_action_or_event_index": 0,
     "event_discriminator": "bridge-transfer",
     "source_event_commitment": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+  },
+  "continuity_replay": {
+    "imported_consumed_events": [],
+    "unrelated_event": {}
+  },
+  "outcome_classifier": {
+    "selected_profile": "public",
+    "evidence_retention_valid": false,
+    "cardano_to_midnight": {
+      "transition_confirmed": false,
+      "independent_successor_state_read_confirmed": false
+    },
+    "midnight_to_cardano": {
+      "transition_confirmed": false,
+      "independent_successor_state_read_confirmed": false
+    },
+    "gate_statuses": []
   },
   "expected": {}
 }

@@ -35,6 +35,66 @@
     "replay_policy_template_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
     "freshness_policy_template_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
   },
+  "producer_dag": {
+    "root_node": "deployment_root_set",
+    "nodes": [
+      {"id": "bridge_program", "stage": "source", "dependencies": []},
+      {"id": "deployment_instance", "stage": "source", "dependencies": []},
+      {"id": "source_descriptors", "stage": "source", "dependencies": []},
+      {"id": "source_fingerprints", "stage": "template", "dependencies": ["source_descriptors"]},
+      {"id": "semantic_registry_template", "stage": "template", "dependencies": ["bridge_program"]},
+      {"id": "artifact_template", "stage": "template", "dependencies": ["bridge_program"]},
+      {"id": "destination_abi_templates", "stage": "template", "dependencies": ["bridge_program"]},
+      {"id": "deployment_recipes", "stage": "template", "dependencies": ["bridge_program"]},
+      {"id": "replay_policy_template", "stage": "template", "dependencies": ["bridge_program"]},
+      {"id": "freshness_policy_template", "stage": "template", "dependencies": ["bridge_program"]},
+      {
+        "id": "checkpoint_manifests",
+        "stage": "manifest",
+        "dependencies": [
+          "source_fingerprints",
+          "semantic_registry_template",
+          "artifact_template",
+          "destination_abi_templates",
+          "deployment_recipes",
+          "replay_policy_template",
+          "freshness_policy_template"
+        ]
+      },
+      {
+        "id": "deployment_root_set",
+        "stage": "root-set",
+        "dependencies": [
+          "bridge_program",
+          "deployment_instance",
+          "source_fingerprints",
+          "checkpoint_manifests",
+          "semantic_registry_template",
+          "artifact_template",
+          "destination_abi_templates",
+          "deployment_recipes",
+          "replay_policy_template",
+          "freshness_policy_template"
+        ]
+      },
+      {"id": "root_set_digest", "stage": "root-digest", "dependencies": ["deployment_root_set"]},
+      {"id": "deployment_domain", "stage": "domain", "dependencies": ["root_set_digest"]},
+      {"id": "registry_activation", "stage": "post-domain", "dependencies": ["deployment_domain"]}
+    ],
+    "root_field_producers": {
+      "bridge_program_id": "bridge_program",
+      "fresh_deployment_instance_id": "deployment_instance",
+      "source_identity_fingerprints": "source_fingerprints",
+      "checkpoint_manifest_digests": "checkpoint_manifests",
+      "semantic_registry_template_root": "semantic_registry_template",
+      "artifact_template_root": "artifact_template",
+      "destination_abi_template_digests": "destination_abi_templates",
+      "deployment_recipe_digests": "deployment_recipes",
+      "replay_policy_template_digest": "replay_policy_template",
+      "freshness_policy_template_digest": "freshness_policy_template"
+    }
+  },
+  "reset_mode": "state-bearing-continuity-migration",
   "reset_fresh_deployment_instance_id": "00000000000000000000000000000002",
   "source_event_identity": {
     "version": 1,
@@ -45,17 +105,82 @@
     "event_discriminator": "bridge-transfer",
     "source_event_commitment": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
   },
+  "continuity_replay": {
+    "imported_consumed_events": [
+      {
+        "version": 1,
+        "source_chain_identity_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "source_handler_or_namespace": "cardano.preview.bridge.v1",
+        "source_transaction_or_object_id": "abababababababababababababababababababababababababababababababab",
+        "source_action_or_event_index": 0,
+        "event_discriminator": "bridge-transfer",
+        "source_event_commitment": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      }
+    ],
+    "unrelated_event": {
+      "version": 1,
+      "source_chain_identity_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "source_handler_or_namespace": "cardano.preview.bridge.v1",
+      "source_transaction_or_object_id": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+      "source_action_or_event_index": 1,
+      "event_discriminator": "bridge-transfer",
+      "source_event_commitment": "1212121212121212121212121212121212121212121212121212121212121212"
+    }
+  },
+  "outcome_classifier": {
+    "selected_profile": "public",
+    "evidence_retention_valid": true,
+    "cardano_to_midnight": {
+      "transition_confirmed": false,
+      "independent_successor_state_read_confirmed": false
+    },
+    "midnight_to_cardano": {
+      "transition_confirmed": false,
+      "independent_successor_state_read_confirmed": false
+    },
+    "gate_statuses": [
+      {"gate_id": "S01-BLOCK-01/catalog-completeness", "status": "unresolved", "evidence_digest": "0101010101010101010101010101010101010101010101010101010101010101", "evidence_retention_valid": true},
+      {"gate_id": "S01-BLOCK-02/public-scls-availability", "status": "unresolved", "evidence_digest": "0202020202020202020202020202020202020202020202020202020202020202", "evidence_retention_valid": true},
+      {"gate_id": "S01-BLOCK-03/event-inclusion", "status": "unresolved", "evidence_digest": "0303030303030303030303030303030303030303030303030303030303030303", "evidence_retention_valid": true},
+      {"gate_id": "S01-BLOCK-04/full-decider", "status": "unresolved", "evidence_digest": "0404040404040404040404040404040404040404040404040404040404040404", "evidence_retention_valid": true},
+      {"gate_id": "S01-BLOCK-05/midnight-execution", "status": "unresolved", "evidence_digest": "0505050505050505050505050505050505050505050505050505050505050505", "evidence_retention_valid": true},
+      {"gate_id": "S01-BLOCK-06/cardano-execution", "status": "unresolved", "evidence_digest": "0606060606060606060606060606060606060606060606060606060606060606", "evidence_retention_valid": true},
+      {"gate_id": "CONS-BOOT-01", "status": "unresolved", "evidence_digest": "0707070707070707070707070707070707070707070707070707070707070707", "evidence_retention_valid": true},
+      {"gate_id": "CONS-CARDANO-01", "status": "unresolved", "evidence_digest": "0808080808080808080808080808080808080808080808080808080808080808", "evidence_retention_valid": true},
+      {"gate_id": "CONS-BEEFY-01", "status": "unresolved", "evidence_digest": "0909090909090909090909090909090909090909090909090909090909090909", "evidence_retention_valid": true},
+      {"gate_id": "CONS-CHECKPOINT-01", "status": "unresolved", "evidence_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "evidence_retention_valid": true},
+      {"gate_id": "CONS-MIDNIGHT-ID-01", "status": "unresolved", "evidence_digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "evidence_retention_valid": true},
+      {"gate_id": "CONS-DOMAIN-01", "status": "unresolved", "evidence_digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "evidence_retention_valid": true},
+      {"gate_id": "CONS-FRESH-01", "status": "unresolved", "evidence_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "evidence_retention_valid": true},
+      {"gate_id": "CONS-FREEZE-01", "status": "unresolved", "evidence_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "evidence_retention_valid": true}
+    ]
+  },
   "expected": {
     "schema_version": 1,
     "profile_id": "mcb.structural-lab.sha256-cbor.v1",
     "roster_sha256": "2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f",
     "roster_cbor_bytes": 7705,
-    "root_set_digest": "37bd614c370e42ab554c05b39b97ad2d625a88e8dbbea9e882d1f31cb5125fd4",
-    "deployment_domain": "ff73f84b447dfec218429dd29a4604d923516690b72a2d7c089ec180dc223102",
-    "reset_root_set_digest": "cd755878f7f00a875a6b7ec32cc9912cb53e2b53566e16618558a32dcc2fad26",
-    "reset_deployment_domain": "1e38cff40a491e5ddb4b9b2c1563f80738df2305b1a1ba957249fe3dd45090ca",
-    "continuity_key": "7a3d0419bdbf4c60e878eda06a2327e04c894e9b4f4c9bf18e331bfa421a0725",
-    "reset_continuity_key": "7a3d0419bdbf4c60e878eda06a2327e04c894e9b4f4c9bf18e331bfa421a0725",
+    "root_set_digest": "4ab79a6c57660ff853faf459b7984c34cf6044dc6269605069ec9b87d40443f5",
+    "deployment_domain": "1682ff52449e668548a65e56bc71c9e17bf873f26d4140ded8064b06236288a3",
+    "reset_mode": "state-bearing-continuity-migration",
+    "reset_root_set_digest": "f9554fd5b9d79f4f5b50b5314c4db8fee1e2d9d438cd2a3b0c67d2d813590bf6",
+    "reset_deployment_domain": "44024b2952c16bf024bb6ddd9ee9e959caa91adffdcce253be865e28cb4b92a5",
+    "continuity_key": "3ccb64f1b29329a37ce0bebfc8b845fefc3d3a5122a53cde728555b053bb2a5f",
+    "reset_continuity_key": "3ccb64f1b29329a37ce0bebfc8b845fefc3d3a5122a53cde728555b053bb2a5f",
+    "unrelated_continuity_key": "dfaf22328526e103e8f60099f18394c153c2babee4c96c366bae15fc3eb5ddda",
+    "imported_consumed_continuity_key_count": 1,
+    "same_event_replay_result": "rejected-consumed",
+    "unrelated_event_replay_result": "accepted-unused",
+    "producer_dag_valid": true,
+    "producer_dag_node_count": 15,
+    "gate_record_set_valid": true,
+    "gate_record_count": 14,
+    "gate_record_set_digest": "d51f54062e489b0ffc68f3535e03076cecf6eef820663d6ab59edec69b661f63",
+    "selected_profile": "public",
+    "outcome_classifier_row": 2,
+    "classifier_vector_label": "blocked",
+    "open_activation_gate_count": 6,
+    "unresolved_consensus_gate_count": 8,
     "structural_result": "structural-pass",
     "deployment_outcome": "blocked",
     "activation_eligible": false

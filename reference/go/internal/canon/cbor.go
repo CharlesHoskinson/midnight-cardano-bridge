@@ -17,6 +17,10 @@ func Encode(value any) ([]byte, error) {
 			return nil, fmt.Errorf("only unsigned integers are supported: %w", err)
 		}
 		return encodeHead(0, parsed), nil
+	case uint64:
+		return encodeHead(0, value), nil
+	case []byte:
+		return append(encodeHead(2, uint64(len(value))), value...), nil
 	case string:
 		body := []byte(value)
 		return append(encodeHead(3, uint64(len(body))), body...), nil
@@ -42,9 +46,6 @@ func Encode(value any) ([]byte, error) {
 			entries = append(entries, entry{encodedKey, encodedValue})
 		}
 		sort.Slice(entries, func(i, j int) bool {
-			if len(entries[i].key) != len(entries[j].key) {
-				return len(entries[i].key) < len(entries[j].key)
-			}
 			return bytes.Compare(entries[i].key, entries[j].key) < 0
 		})
 		out := encodeHead(5, uint64(len(entries)))
@@ -53,6 +54,11 @@ func Encode(value any) ([]byte, error) {
 			out = append(out, entry.value...)
 		}
 		return out, nil
+	case bool:
+		if value {
+			return []byte{0xf5}, nil
+		}
+		return []byte{0xf4}, nil
 	default:
 		return nil, fmt.Errorf("unsupported deterministic-CBOR value %T", value)
 	}

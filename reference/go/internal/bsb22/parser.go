@@ -27,10 +27,38 @@ type VK struct {
 	Alpha, Beta, Gamma, Delta, IC0, IC1, K2, CKG, CKGSigmaNeg []byte
 }
 
+type FieldLayout struct {
+	Name   string `json:"name"`
+	Offset int    `json:"offset"`
+	Length int    `json:"length"`
+}
+
+var proofLayout = []FieldLayout{
+	{"A", 0, 48},
+	{"B", 48, 96},
+	{"C", 144, 48},
+	{"D", 192, 96},
+	{"PoK", 288, 48},
+}
+
+var vkLayout = []FieldLayout{
+	{"alpha", 0, 48},
+	{"beta", 48, 96},
+	{"gamma", 144, 96},
+	{"delta", 240, 96},
+	{"IC0", 336, 48},
+	{"IC1", 384, 48},
+	{"K2", 432, 48},
+	{"CK.G", 480, 96},
+	{"CK.GSigmaNeg", 576, 96},
+}
+
 type Parsed struct {
 	Proof                     Proof
 	VK                        VK
 	PublicScalar              []byte
+	ProofLayout               []FieldLayout
+	VKLayout                  []FieldLayout
 	CryptographicVerification bool
 	FullDeciderGate           string
 	CardanoExecutionGate      string
@@ -53,6 +81,8 @@ func Parse(proof, vk, publicScalar []byte) (Parsed, error) {
 		Proof:                     Proof{proof[0:48], proof[48:144], proof[144:192], proof[192:288], proof[288:336]},
 		VK:                        VK{vk[0:48], vk[48:144], vk[144:240], vk[240:336], vk[336:384], vk[384:432], vk[432:480], vk[480:576], vk[576:672]},
 		PublicScalar:              append([]byte(nil), publicScalar...),
+		ProofLayout:               append([]FieldLayout(nil), proofLayout...),
+		VKLayout:                  append([]FieldLayout(nil), vkLayout...),
 		CryptographicVerification: false,
 		FullDeciderGate:           "unresolved",
 		CardanoExecutionGate:      "unresolved",

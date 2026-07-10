@@ -38,15 +38,30 @@ func run(args []string) error {
 		if err != nil {
 			return err
 		}
-		parsed, err := bsb22.Parse(proof, vk, pub)
+		report, err := buildBSB22Report(proof, vk, pub)
 		if err != nil {
 			return err
 		}
-		return json.NewEncoder(os.Stdout).Encode(map[string]any{
-			"proof_bytes": len(proof), "vk_bytes": len(vk), "public_scalar_bytes": len(pub),
-			"cryptographic_verification": parsed.CryptographicVerification,
-			"S01-BLOCK-04":               parsed.FullDeciderGate, "S01-BLOCK-06": parsed.CardanoExecutionGate,
-		})
+		return json.NewEncoder(os.Stdout).Encode(report)
 	}
 	return fmt.Errorf("usage: mcb-go run <fixture> <repo-root> | bsb22-check <proof-hex> <vk-hex> <pub-hex>")
+}
+
+func buildBSB22Report(proof, vk, publicScalar []byte) (map[string]any, error) {
+	parsed, err := bsb22.Parse(proof, vk, publicScalar)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"proof_bytes":                len(proof),
+		"vk_bytes":                   len(vk),
+		"public_scalar_bytes":        len(publicScalar),
+		"proof_fields":               parsed.ProofLayout,
+		"vk_fields":                  parsed.VKLayout,
+		"cryptographic_verification": parsed.CryptographicVerification,
+		"gate_statuses": map[string]string{
+			"S01-BLOCK-04/full-decider":      parsed.FullDeciderGate,
+			"S01-BLOCK-06/cardano-execution": parsed.CardanoExecutionGate,
+		},
+	}, nil
 }
