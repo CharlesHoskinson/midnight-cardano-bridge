@@ -44,7 +44,8 @@ try {
         'setup=python-requirements state=PLANNED',
         'setup=cargo-fetch-locked state=PLANNED',
         'public_data_fetch=false',
-        'setup=reference-harness state=READY'
+        'setup=reference-harness state=PLANNED',
+        'ready=false'
     )) {
         Assert-Contains -Text $output -Expected $expected
     }

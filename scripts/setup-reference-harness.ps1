@@ -86,9 +86,9 @@ function Get-LockedPythonPackages {
 
     $packages = @{}
     foreach ($line in Get-Content -LiteralPath $Path) {
-        $value = $line.Trim()
-        if (-not $value -or $value.StartsWith('#')) { continue }
-        if ($value -notmatch '^(?<name>[A-Za-z0-9][A-Za-z0-9._-]*)==(?<version>[^\s;]+)$') {
+        $value = $line.Trim().TrimEnd('\')
+        if (-not $value -or $value.StartsWith('#') -or $value.StartsWith('--hash=')) { continue }
+        if ($value -notmatch '^(?<name>[A-Za-z0-9][A-Za-z0-9._-]*)==(?<version>[^\s;\\]+)') {
             throw "Python lock entry is not an exact name==version pin: $value"
         }
         $name = [regex]::Replace($Matches.name.ToLowerInvariant(), '[-_.]+', '-')
@@ -98,6 +98,39 @@ function Get-LockedPythonPackages {
     $ordered = [ordered]@{}
     foreach ($name in @($packages.Keys | Sort-Object -CaseSensitive)) { $ordered[$name] = $packages[$name] }
     return $ordered
+}
+
+function Assert-PythonHashLock {
+    param(
+        [Parameter(Mandatory)] [string] $HashLockPath,
+        [Parameter(Mandatory)] $VersionLock
+    )
+
+    if (-not (Test-Path -LiteralPath $HashLockPath -PathType Leaf)) {
+        throw "Python hash lock is missing: $HashLockPath"
+    }
+    $text = Get-Content -Raw -LiteralPath $HashLockPath
+    if ($text -notmatch '--hash=sha256:') {
+        throw 'Python hash lock must contain sha256 artifact hashes'
+    }
+    if ($text -notmatch 'cp314' -and $text -notmatch 'py3-none' -and $text -notmatch 'win_amd64') {
+        # hash file may only list package==version --hash lines; platform is enforced at install time
+    }
+    $hashed = Get-LockedPythonPackages -Path $HashLockPath
+    $versionKeys = @($VersionLock.Keys | Sort-Object -CaseSensitive)
+    $hashKeys = @($hashed.Keys | Sort-Object -CaseSensitive)
+    if (($versionKeys -join "`n") -ne ($hashKeys -join "`n")) {
+        throw 'Python hash lock package set does not match requirements.lock.txt'
+    }
+    foreach ($name in $versionKeys) {
+        if ($hashed[$name] -ne $VersionLock[$name]) {
+            throw "Python hash lock version mismatch for $name"
+        }
+    }
+    $hashCount = ([regex]::Matches($text, '--hash=sha256:[0-9a-f]{64}')).Count
+    if ($hashCount -lt $versionKeys.Count) {
+        throw "Python hash lock is incomplete: $hashCount hashes for $($versionKeys.Count) packages"
+    }
 }
 
 function Get-InstalledPythonPackages {
@@ -203,6 +236,8 @@ try {
             throw "Python lock does not contain required top-level pin $($pin.Key)==$($pin.Value)"
         }
     }
+    $requirementsHashLock = Join-Path $repoRoot 'reference\observers\requirements.hashes.txt'
+    Assert-PythonHashLock -HashLockPath $requirementsHashLock -VersionLock $lockedPackages
     Write-Output 'setup=python-lock-validation state=PASS'
     $venv = Join-Path $repoRoot '.venv-scrapling'
     $venvPython = if ($IsWindows) {
@@ -219,8 +254,8 @@ try {
         Invoke-SetupOperation -Name 'python-venv' -Target $venv -Action 'create a clean Python virtual environment' -Command {
             & $tools.python -B -m venv --clear $venv
         }
-        Invoke-SetupOperation -Name 'python-requirements' -Target $venv -Action 'install the exact transitive Python lock' -Command {
-            & $venvPython -B -m pip install --disable-pip-version-check --no-input --requirement $requirementsLock
+        Invoke-SetupOperation -Name 'python-requirements' -Target $venv -Action 'install the exact transitive Python hash lock with binary-only policy' -Command {
+            & $venvPython -B -m pip install --disable-pip-version-check --no-input --only-binary=:all: --require-hashes --requirement $requirementsHashLock
         }
         Invoke-SetupOperation -Name 'cargo-fetch-locked' -Target (Join-Path $repoRoot 'reference\rust\Cargo.lock') -Action 'fetch Rust dependencies without changing Cargo.lock' -Command {
             & $tools.cargo fetch --locked --manifest-path (Join-Path $repoRoot 'reference\rust\Cargo.toml')
@@ -240,9 +275,11 @@ try {
         Assert-PythonLockMatch -Locked $lockedPackages -Installed (Get-InstalledPythonPackages -Python $venvPython)
         Write-Output 'setup=python-lock-match state=PASS'
         Write-Output 'setup=installed-versions state=PASS'
+        Write-Output 'setup=reference-harness state=READY'
+    } else {
+        Write-Output 'setup=reference-harness state=PLANNED'
+        Write-Output 'ready=false'
     }
-
-    Write-Output 'setup=reference-harness state=READY'
     exit 0
 } catch {
     [Console]::Error.WriteLine("reference harness setup failed: $($_.Exception.Message)")

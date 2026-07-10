@@ -141,9 +141,9 @@ function Get-LockedPythonPackages {
 
     $packages = @{}
     foreach ($line in Get-Content -LiteralPath $Path) {
-        $value = $line.Trim()
-        if (-not $value -or $value.StartsWith('#')) { continue }
-        if ($value -notmatch '^(?<name>[A-Za-z0-9][A-Za-z0-9._-]*)==(?<version>[^\s;]+)$') {
+        $value = $line.Trim().TrimEnd('\')
+        if (-not $value -or $value.StartsWith('#') -or $value.StartsWith('--hash=')) { continue }
+        if ($value -notmatch '^(?<name>[A-Za-z0-9][A-Za-z0-9._-]*)==(?<version>[^\s;\\]+)') {
             throw "Python lock entry is not an exact name==version pin: $value"
         }
         $name = [regex]::Replace($Matches.name.ToLowerInvariant(), '[-_.]+', '-')
@@ -614,37 +614,116 @@ function Move-Replace {
     [IO.File]::Move($Source, $Destination, $true)
 }
 
+function Get-EvidenceGenerationRoot {
+    param([Parameter(Mandatory)] [string] $RepoRoot)
+    return (Join-Path $RepoRoot 'reference\evidence\generations')
+}
+
+function Get-CurrentGenerationPointerPath {
+    param([Parameter(Mandatory)] [string] $RepoRoot)
+    return (Join-Path $RepoRoot 'reference\evidence\current-generation.json')
+}
+
+function Read-CurrentGeneration {
+    param([Parameter(Mandatory)] [string] $RepoRoot)
+
+    $pointerPath = Get-CurrentGenerationPointerPath -RepoRoot $RepoRoot
+    if (-not (Test-Path -LiteralPath $pointerPath -PathType Leaf)) {
+        throw 'current-generation pointer is missing'
+    }
+    $pointer = Get-Content -Raw -LiteralPath $pointerPath | ConvertFrom-Json
+    if (-not $pointer.generation_id) { throw 'current-generation pointer lacks generation_id' }
+    $genDir = Join-Path (Get-EvidenceGenerationRoot -RepoRoot $RepoRoot) $pointer.generation_id
+    $structural = Join-Path $genDir 'structural-report-v1.json'
+    $conformance = Join-Path $genDir 'conformance-report-v1.json'
+    if (-not (Test-Path -LiteralPath $structural -PathType Leaf) -or -not (Test-Path -LiteralPath $conformance -PathType Leaf)) {
+        throw "current generation $($pointer.generation_id) is incomplete"
+    }
+    $structuralHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $structural).Hash.ToLowerInvariant()
+    $conformanceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $conformance).Hash.ToLowerInvariant()
+    if ($pointer.structural_sha256 -ne $structuralHash -or $pointer.conformance_sha256 -ne $conformanceHash) {
+        throw "current generation $($pointer.generation_id) hashes do not match generation files"
+    }
+    return [ordered]@{
+        generation_id = $pointer.generation_id
+        structural_path = $structural
+        conformance_path = $conformance
+        structural_sha256 = $structuralHash
+        conformance_sha256 = $conformanceHash
+        pointer_path = $pointerPath
+    }
+}
+
 function Publish-EvidencePair {
     param(
         [Parameter(Mandatory)] [string] $StructuralCandidate,
         [Parameter(Mandatory)] [string] $ConformanceCandidate,
-        [Parameter(Mandatory)] [string] $StructuralDestination,
-        [Parameter(Mandatory)] [string] $ConformanceDestination
+        [Parameter(Mandatory)] [string] $RepoRoot
     )
 
-    $candidateVolume = [IO.Path]::GetPathRoot((Resolve-Path -LiteralPath $StructuralCandidate).Path)
-    $destinationVolume = [IO.Path]::GetPathRoot((Resolve-Path -LiteralPath (Split-Path -Parent $StructuralDestination)).Path)
-    if ($candidateVolume -ne $destinationVolume) {
-        throw 'evidence update requires TEMP and the repository to be on the same volume for atomic replacement'
+    # Stage an immutable generation on the destination volume, verify the pair,
+    # then publish the small current-generation pointer last.
+    $generationRoot = Get-EvidenceGenerationRoot -RepoRoot $RepoRoot
+    if (-not (Test-Path -LiteralPath $generationRoot)) {
+        New-Item -ItemType Directory -Force -Path $generationRoot | Out-Null
     }
-    $suffix = [guid]::NewGuid().ToString('N')
-    $rollbackDirectory = Split-Path -Parent $StructuralCandidate
-    $structuralBefore = [IO.File]::ReadAllBytes($StructuralDestination)
-    $conformanceBefore = [IO.File]::ReadAllBytes($ConformanceDestination)
-    $structuralMoved = $false
+    $generationId = [guid]::NewGuid().ToString('N')
+    $stageDir = Join-Path $generationRoot $generationId
+    New-Item -ItemType Directory -Force -Path $stageDir | Out-Null
+
+    $stagedStructural = Join-Path $stageDir 'structural-report-v1.json'
+    $stagedConformance = Join-Path $stageDir 'conformance-report-v1.json'
+    $stagedPointer = Join-Path $stageDir 'generation-manifest.json'
+
     try {
-        Move-Replace -Source $StructuralCandidate -Destination $StructuralDestination
-        $structuralMoved = $true
-        Move-Replace -Source $ConformanceCandidate -Destination $ConformanceDestination
-    } catch {
-        if ($structuralMoved) {
-            $rollback = Join-Path $rollbackDirectory "structural-$suffix.rollback"
-            [IO.File]::WriteAllBytes($rollback, $structuralBefore)
-            Move-Replace -Source $rollback -Destination $StructuralDestination
+        [IO.File]::Copy($StructuralCandidate, $stagedStructural, $true)
+        [IO.File]::Copy($ConformanceCandidate, $stagedConformance, $true)
+        $structuralHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $stagedStructural).Hash.ToLowerInvariant()
+        $conformanceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $stagedConformance).Hash.ToLowerInvariant()
+        $manifest = [ordered]@{
+            schema_version = 1
+            generation_id = $generationId
+            structural_sha256 = $structuralHash
+            conformance_sha256 = $conformanceHash
+            structural_file = 'structural-report-v1.json'
+            conformance_file = 'conformance-report-v1.json'
+            report_roles = [ordered]@{
+                structural = 'payload'
+                conformance = 'envelope'
+            }
+            published_at_utc = (Get-Date).ToUniversalTime().ToString('o')
         }
-        $conformanceRollback = Join-Path $rollbackDirectory "conformance-$suffix.rollback"
-        [IO.File]::WriteAllBytes($conformanceRollback, $conformanceBefore)
-        Move-Replace -Source $conformanceRollback -Destination $ConformanceDestination
+        Write-JsonFile -Path $stagedPointer -Value $manifest
+
+        # Verify full pair before pointer publication.
+        Assert-ByteIdentical -Candidate $stagedStructural -Committed $StructuralCandidate -Name 'staged-structural'
+        Assert-ByteIdentical -Candidate $stagedConformance -Committed $ConformanceCandidate -Name 'staged-conformance'
+        if ($structuralHash.Length -ne 64 -or $conformanceHash.Length -ne 64) {
+            throw 'staged generation produced invalid hashes'
+        }
+
+        # Mirror convenience copies for stable paths (byte-identical to generation).
+        $mirrorStructural = Join-Path $RepoRoot 'reference\evidence\structural-report-v1.json'
+        $mirrorConformance = Join-Path $RepoRoot 'reference\evidence\conformance-report-v1.json'
+        [IO.File]::Copy($stagedStructural, $mirrorStructural, $true)
+        [IO.File]::Copy($stagedConformance, $mirrorConformance, $true)
+
+        $pointerPath = Get-CurrentGenerationPointerPath -RepoRoot $RepoRoot
+        $pointer = [ordered]@{
+            schema_version = 1
+            generation_id = $generationId
+            structural_sha256 = $structuralHash
+            conformance_sha256 = $conformanceHash
+            structural_relative_path = "generations/$generationId/structural-report-v1.json"
+            conformance_relative_path = "generations/$generationId/conformance-report-v1.json"
+        }
+        $pointerTemp = Join-Path $stageDir 'current-generation.pointer.tmp'
+        Write-JsonFile -Path $pointerTemp -Value $pointer
+        Move-Replace -Source $pointerTemp -Destination $pointerPath
+    } catch {
+        if (Test-Path -LiteralPath $stageDir) {
+            Remove-Item -LiteralPath $stageDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
         throw
     }
 }
@@ -658,7 +737,8 @@ function Set-RunEnvironment {
     $names = @(
         'ALL_PROXY', 'CARGO_NET_OFFLINE', 'CARGO_TARGET_DIR', 'GOCACHE', 'GOTOOLCHAIN',
         'HTTP_PROXY', 'HTTPS_PROXY', 'MCB_CARGO', 'MCB_GO', 'MCB_OFFLINE',
-        'npm_config_cache', 'npm_config_offline', 'NO_PROXY', 'PYTHONDONTWRITEBYTECODE'
+        'npm_config_cache', 'npm_config_offline', 'NO_PROXY', 'PYTHONDONTWRITEBYTECODE',
+        'OPENSPEC_TELEMETRY', 'DO_NOT_TRACK', 'CI'
     )
     $saved = @{}
     foreach ($name in $names) { $saved[$name] = [Environment]::GetEnvironmentVariable($name) }
@@ -673,11 +753,125 @@ function Set-RunEnvironment {
     $env:npm_config_cache = Join-Path $RunDirectory 'npm-cache'
     $env:npm_config_offline = 'true'
     $env:PYTHONDONTWRITEBYTECODE = '1'
+    $env:OPENSPEC_TELEMETRY = '0'
+    $env:DO_NOT_TRACK = '1'
     $env:HTTP_PROXY = 'http://127.0.0.1:9'
     $env:HTTPS_PROXY = 'http://127.0.0.1:9'
     $env:ALL_PROXY = 'http://127.0.0.1:9'
     $env:NO_PROXY = ''
     return $saved
+}
+
+$script:CommandRecords = [System.Collections.Generic.List[object]]::new()
+
+function ConvertTo-EvidencePath {
+    param(
+        [Parameter(Mandatory)] [string] $Path,
+        [Parameter(Mandatory)] [string] $RepoRoot,
+        [string] $RunRoot = $null
+    )
+
+    $full = [IO.Path]::GetFullPath($Path)
+    $repo = [IO.Path]::GetFullPath($RepoRoot).TrimEnd('\', '/')
+    if ($RunRoot) {
+        $run = [IO.Path]::GetFullPath($RunRoot).TrimEnd('\', '/')
+        if ($full.StartsWith($run + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+            $full.Equals($run, [StringComparison]::OrdinalIgnoreCase)) {
+            $suffix = if ($full.Length -gt $run.Length) { $full.Substring($run.Length).TrimStart('\', '/') } else { '' }
+            if ($suffix) { return '${RUN_TEMP}/' + ($suffix -replace '\\', '/') }
+            return '${RUN_TEMP}'
+        }
+    }
+    if ($full.StartsWith($repo + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase) -or
+        $full.Equals($repo, [StringComparison]::OrdinalIgnoreCase)) {
+        $suffix = if ($full.Length -gt $repo.Length) { $full.Substring($repo.Length).TrimStart('\', '/') } else { '' }
+        if ($suffix) { return '${REPO}/' + ($suffix -replace '\\', '/') }
+        return '${REPO}'
+    }
+    # Keep tool identity, not host-absolute install paths.
+    return [IO.Path]::GetFileName($full)
+}
+
+function ConvertTo-OrderedOfflineEnvironment {
+    param([hashtable] $OfflineEnvironment)
+
+    $ordered = [ordered]@{}
+    foreach ($key in @($OfflineEnvironment.Keys | Sort-Object -CaseSensitive)) {
+        $ordered[$key] = [string]$OfflineEnvironment[$key]
+    }
+    return $ordered
+}
+
+function New-CommandRecord {
+    param(
+        [Parameter(Mandatory)] [string] $LogicalTool,
+        [Parameter(Mandatory)] [string] $Executable,
+        [Parameter(Mandatory)] [string] $Cwd,
+        [Parameter(Mandatory)] [string[]] $Argv,
+        [string] $PinnedVersion = '',
+        [hashtable] $OfflineEnvironment = @{},
+        [string] $InlineSourceSha256 = $null,
+        [int] $ExitCode = 0,
+        [string] $RepoRoot = $null,
+        [string] $RunRoot = $null
+    )
+
+    $root = if ($RepoRoot) { $RepoRoot } else { $script:repoRoot }
+    $run = if ($RunRoot) { $RunRoot } else { $script:runRoot }
+    $normalizedArgv = @($Argv | ForEach-Object {
+        $arg = $_
+        if (-not $arg) { return $arg }
+        # Keep package patterns and flags intact (./..., --offline, etc.).
+        if ($arg.StartsWith('.') -or $arg.StartsWith('-') -or $arg -notmatch '[\\/:]') {
+            return $arg
+        }
+        if ([IO.Path]::IsPathRooted($arg) -or $arg -match '^[A-Za-z]:[\\/]' -or $arg -match '[\\/]') {
+            ConvertTo-EvidencePath -Path $arg -RepoRoot $root -RunRoot $run
+        } else {
+            $arg
+        }
+    })
+    $record = [ordered]@{
+        logical_tool = $LogicalTool
+        executable = ConvertTo-EvidencePath -Path $Executable -RepoRoot $root -RunRoot $run
+        pinned_version = $PinnedVersion
+        cwd = ConvertTo-EvidencePath -Path $Cwd -RepoRoot $root -RunRoot $run
+        argv = $normalizedArgv
+        offline_environment = ConvertTo-OrderedOfflineEnvironment -OfflineEnvironment $OfflineEnvironment
+        exit_code = $ExitCode
+    }
+    if ($InlineSourceSha256) {
+        $record.inline_source_sha256 = $InlineSourceSha256
+    }
+    return $record
+}
+
+function Invoke-Recorded {
+    param(
+        [Parameter(Mandatory)] [string] $LogicalTool,
+        [Parameter(Mandatory)] [string] $Executable,
+        [Parameter(Mandatory)] [string] $Cwd,
+        [Parameter(Mandatory)] [string[]] $Argv,
+        [string] $PinnedVersion = '',
+        [hashtable] $OfflineEnvironment = @{},
+        [string] $InlineSourceSha256 = $null
+    )
+
+    Push-Location $Cwd
+    try {
+        $output = & $Executable @Argv 2>&1
+        $code = $LASTEXITCODE
+    } finally {
+        Pop-Location
+    }
+    $record = New-CommandRecord -LogicalTool $LogicalTool -Executable $Executable -Cwd $Cwd -Argv $Argv `
+        -PinnedVersion $PinnedVersion -OfflineEnvironment $OfflineEnvironment -InlineSourceSha256 $InlineSourceSha256 -ExitCode $code `
+        -RepoRoot $repoRoot -RunRoot $runRoot
+    $script:CommandRecords.Add($record) | Out-Null
+    if ($code -ne 0) {
+        throw "command failed ($code): $LogicalTool"
+    }
+    return $output
 }
 
 function Restore-Environment {
@@ -714,37 +908,85 @@ try {
     $toolVersions = Get-ToolVersions -Tools $tools
     $pythonDistributionVersions = Get-PythonDistributionVersions -Python $tools.python
     $pythonLockPath = Join-Path $repoRoot 'reference\observers\requirements.lock.txt'
+    $pythonHashLockPath = Join-Path $repoRoot 'reference\observers\requirements.hashes.txt'
     $lockedPythonDistributionVersions = Get-LockedPythonPackages -Path $pythonLockPath
     Assert-PythonLockMatch -Locked $lockedPythonDistributionVersions -Installed $pythonDistributionVersions
+    $hashLockedPackages = Get-LockedPythonPackages -Path $pythonHashLockPath
+    Assert-PythonLockMatch -Locked $hashLockedPackages -Installed $pythonDistributionVersions
+    $hashLockText = Get-Content -Raw -LiteralPath $pythonHashLockPath
+    if (([regex]::Matches($hashLockText, '--hash=sha256:[0-9a-f]{64}')).Count -lt $hashLockedPackages.Count) {
+        throw 'Python hash lock is incomplete for installed distributions'
+    }
     Write-Output 'check=tool-versions state=PASS'
     Write-Output 'check=python-lock state=PASS'
 
     $runRoot = Join-Path ([IO.Path]::GetTempPath()) ('mcb-reference-verify-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $runRoot | Out-Null
     $savedEnvironment = Set-RunEnvironment -RunDirectory $runRoot -Tools $tools
+    if ($env:OPENSPEC_TELEMETRY -ne '0' -or $env:DO_NOT_TRACK -ne '1') {
+        throw 'OpenSpec telemetry opt-out environment was not applied'
+    }
     $inputHashes = Get-InputFileHashes
+    $script:CommandRecords = [System.Collections.Generic.List[object]]::new()
+    $offlineEnv = [ordered]@{
+        CARGO_NET_OFFLINE = 'true'
+        MCB_OFFLINE = '1'
+        npm_config_offline = 'true'
+        OPENSPEC_TELEMETRY = '0'
+        DO_NOT_TRACK = '1'
+        HTTP_PROXY = 'http://127.0.0.1:9'
+        HTTPS_PROXY = 'http://127.0.0.1:9'
+    }
 
     Push-Location $repoRoot
     try {
-        Invoke-Checked 'rust-tests' {
-            & $tools.cargo test --locked --offline --manifest-path (Join-Path $repoRoot 'reference\rust\Cargo.toml') --all-targets
+        # Control tests must not recurse into this verifier. The late-failure
+        # integration sets MCB_SKIP_CONTROL_TESTS=1 when it invokes an isolated copy.
+        if ($env:MCB_SKIP_CONTROL_TESTS -ne '1') {
+            Invoke-Checked 'control-tests' {
+                $null = Invoke-Recorded -LogicalTool 'pwsh-setup-contract' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
+                    -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\setup-reference-harness.contract.ps1')) `
+                    -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
+                $null = Invoke-Recorded -LogicalTool 'pwsh-compare-tests' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
+                    -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\compare-reference-harness.Tests.ps1')) `
+                    -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
+                $null = Invoke-Recorded -LogicalTool 'pwsh-late-failure-regression' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
+                    -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\verify-reference-harness.integration.ps1')) `
+                    -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
+                $null = Invoke-Recorded -LogicalTool 'pwsh-openspec-telemetry-contract' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
+                    -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\openspec-telemetry.contract.ps1')) `
+                    -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
+            }
+        } else {
+            Write-Output 'check=control-tests state=SKIPPED-NON-RECURSIVE'
         }
 
-        Push-Location (Join-Path $repoRoot 'reference\go')
-        try {
-            Invoke-Checked 'go-tests' { & $tools.go test ./... }
-            Invoke-Checked 'go-vet' { & $tools.go vet ./... }
-        } finally {
-            Pop-Location
+        Invoke-Checked 'rust-tests' {
+            $null = Invoke-Recorded -LogicalTool 'cargo' -Executable $tools.cargo -Cwd $repoRoot `
+                -Argv @('test', '--locked', '--offline', '--manifest-path', (Join-Path $repoRoot 'reference\rust\Cargo.toml'), '--all-targets') `
+                -PinnedVersion $toolVersions.cargo -OfflineEnvironment $offlineEnv
+        }
+
+        Invoke-Checked 'go-tests' {
+            $null = Invoke-Recorded -LogicalTool 'go-test' -Executable $tools.go -Cwd (Join-Path $repoRoot 'reference\go') `
+                -Argv @('test', './...') -PinnedVersion $toolVersions.go -OfflineEnvironment $offlineEnv
+        }
+        Invoke-Checked 'go-vet' {
+            $null = Invoke-Recorded -LogicalTool 'go-vet' -Executable $tools.go -Cwd (Join-Path $repoRoot 'reference\go') `
+                -Argv @('vet', './...') -PinnedVersion $toolVersions.go -OfflineEnvironment $offlineEnv
         }
 
         Invoke-Checked 'observation-tests' {
-            & $tools.python -B -m unittest discover -s (Join-Path $repoRoot 'reference\observers\tests') -v
+            $null = Invoke-Recorded -LogicalTool 'python-unittest' -Executable $tools.python -Cwd $repoRoot `
+                -Argv @('-B', '-m', 'unittest', 'discover', '-s', (Join-Path $repoRoot 'reference\observers\tests'), '-v') `
+                -PinnedVersion $toolVersions.python -OfflineEnvironment $offlineEnv
         }
 
         $structuralCandidatePath = Join-Path $runRoot 'structural-report-v1.json'
         Invoke-Checked 'cross-language-vectors' {
-            $null = & $tools.compare -EvidencePath $structuralCandidatePath
+            $null = Invoke-Recorded -LogicalTool 'compare-reference-harness' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
+                -Argv @('-NoProfile', '-File', $tools.compare, '-EvidencePath', $structuralCandidatePath) `
+                -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
         }
 
         $script:CurrentCheck = 'roster-publication'
@@ -752,57 +994,84 @@ try {
         Write-Output 'check=roster-publication state=PASS'
 
         $script:CurrentCheck = 'independent-cbor'
+        $cborInlineSha = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $repoRoot 'scripts\verify-reference-harness.ps1')).Hash.ToLowerInvariant()
         $cborSummary = Invoke-ThirdCborCheck -Python $tools.python -Cbor2Version $toolVersions.cbor2 -StructuralCandidate $structuralCandidatePath
+        $script:CommandRecords.Add((New-CommandRecord -LogicalTool 'independent-cbor2' -Executable $tools.python -Cwd $repoRoot `
+            -Argv @('-B', '-c', '<independent-cbor-check-source-bound>') -PinnedVersion $toolVersions.cbor2 `
+            -OfflineEnvironment $offlineEnv -InlineSourceSha256 $cborInlineSha -ExitCode 0 `
+            -RepoRoot $repoRoot -RunRoot $runRoot)) | Out-Null
         Write-Output 'check=independent-cbor state=PASS'
 
         $script:CurrentCheck = 'unsigned-observations'
         $observationDigests = Get-ObservationDigests
         Write-Output 'check=unsigned-observations state=PASS'
 
+        $script:CurrentCheck = 'bootstrap-qualification'
+        $bootstrapReceipt = Join-Path $repoRoot 'reference\evidence\bootstrap\clean-checkout-qualification-v1.json'
+        if (-not (Test-Path -LiteralPath $bootstrapReceipt -PathType Leaf)) {
+            throw 'bootstrap qualification receipt is missing'
+        }
+        $bootstrap = Get-Content -Raw -LiteralPath $bootstrapReceipt | ConvertFrom-Json
+        if ($bootstrap.receipt_kind -ne 'clean-checkout-bootstrap-qualification') {
+            throw 'bootstrap receipt kind mismatch'
+        }
+        if ($bootstrap.network.public_chain_endpoints_reachable -ne $false) {
+            throw 'bootstrap receipt must keep public chain endpoints unreachable'
+        }
+        if ($bootstrap.network.offline_default_verification -ne $true) {
+            throw 'bootstrap receipt must declare offline default verification'
+        }
+        $bootstrapSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $bootstrapReceipt).Hash.ToLowerInvariant()
+        Write-Output 'check=bootstrap-qualification state=PASS'
+
         $script:CurrentCheck = 'structural-candidate'
         $structuralState = Assert-StructuralCandidate -Path $structuralCandidatePath -Roster $roster -CborSummary $cborSummary
         $structural = $structuralState.report
         Write-Output 'check=structural-candidate state=PASS'
 
-        Invoke-Checked 'openspec-strict' { & $tools.npm --offline run openspec:validate }
-        Invoke-Checked 'git-diff-check' { & $tools.git diff --check }
+        Invoke-Checked 'openspec-strict' {
+            $null = Invoke-Recorded -LogicalTool 'npm-openspec-validate' -Executable $tools.npm -Cwd $repoRoot `
+                -Argv @('--offline', 'run', 'openspec:validate') -PinnedVersion $toolVersions.npm -OfflineEnvironment $offlineEnv
+        }
+        Invoke-Checked 'git-diff-check' {
+            $null = Invoke-Recorded -LogicalTool 'git' -Executable $tools.git -Cwd $repoRoot `
+                -Argv @('diff', '--check') -PinnedVersion $toolVersions.git -OfflineEnvironment $offlineEnv
+        }
 
         $script:CurrentCheck = 'input-stability'
         Assert-HashManifestUnchanged -Before $inputHashes -After (Get-InputFileHashes)
         Write-Output 'check=input-stability state=PASS'
 
-        $commands = @(
-            'cargo test --locked --offline --manifest-path reference/rust/Cargo.toml --all-targets',
-            'go test ./... (cwd reference/go)',
-            'go vet ./... (cwd reference/go)',
-            'python -B -m unittest discover -s reference/observers/tests -v',
-            'pwsh -NoProfile -File scripts/compare-reference-harness.ps1 -EvidencePath ${RUN_TEMP}/structural-report-v1.json',
-            'python -B -c <independent-cbor-check> protocol/gate-roster-v1.json protocol/gate-roster-v1.cbor.hex reference/fixtures/structural-v1.json ${RUN_TEMP}/structural-report-v1.json',
-            'npm --offline run openspec:validate',
-            'git diff --check'
-        )
+        $commandRecords = @($script:CommandRecords | ForEach-Object { $_ })
         $summary = [ordered]@{
             schema_version = 1
             report_kind = 'input-bound-golden-conformance'
+            report_role = 'envelope'
             profile_id = $structural.profile_id
             verifier_revision = $inputHashes['scripts/verify-reference-harness.ps1']
             tool_versions = $toolVersions
             python_distribution_versions = $pythonDistributionVersions
             python_lock_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $pythonLockPath).Hash.ToLowerInvariant()
-            commands = $commands
+            python_hash_lock_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $pythonHashLockPath).Hash.ToLowerInvariant()
+            commands = $commandRecords
             input_file_sha256 = $inputHashes
             structural_report_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $structuralCandidatePath).Hash.ToLowerInvariant()
+            structural_payload_role = 'payload-bound-by-hash'
+            bootstrap_qualification_sha256 = $bootstrapSha
             verified_components = @(
+                'control-tests-setup-compare-late-failure-telemetry',
                 'rust-structural-harness-tests',
                 'go-structural-harness-tests',
                 'go-vet',
                 'go-bsb22-parser-only',
                 'scrapling-observation-normalizer-tests',
                 'python-transitive-lock-match',
+                'python-hash-lock-match',
                 'cross-language-vectors',
                 'gate-roster-publication',
                 'independent-cbor2-structural-bytes',
                 'unsigned-observation-validation',
+                'bootstrap-qualification-receipt',
                 'openspec-strict',
                 'git-diff-check'
             )
@@ -846,12 +1115,17 @@ try {
             Publish-EvidencePair `
                 -StructuralCandidate $structuralCandidatePath `
                 -ConformanceCandidate $conformanceCandidatePath `
-                -StructuralDestination $structuralDestination `
-                -ConformanceDestination $conformanceDestination
+                -RepoRoot $repoRoot
             Write-Output 'check=evidence-publication state=UPDATED'
         } else {
-            Assert-ByteIdentical -Candidate $structuralCandidatePath -Committed $structuralDestination -Name 'structural'
-            Assert-ByteIdentical -Candidate $conformanceCandidatePath -Committed $conformanceDestination -Name 'conformance'
+            $current = Read-CurrentGeneration -RepoRoot $repoRoot
+            Assert-ByteIdentical -Candidate $structuralCandidatePath -Committed $current.structural_path -Name 'structural-generation'
+            Assert-ByteIdentical -Candidate $conformanceCandidatePath -Committed $current.conformance_path -Name 'conformance-generation'
+            Assert-ByteIdentical -Candidate $structuralCandidatePath -Committed $structuralDestination -Name 'structural-mirror'
+            Assert-ByteIdentical -Candidate $conformanceCandidatePath -Committed $conformanceDestination -Name 'conformance-mirror'
+            if ($current.structural_sha256 -ne $summary.structural_report_sha256) {
+                throw 'current-generation structural hash does not match candidate'
+            }
             Write-Output 'check=evidence-publication state=PASS'
         }
 

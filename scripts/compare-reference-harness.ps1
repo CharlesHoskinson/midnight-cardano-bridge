@@ -35,8 +35,36 @@ $go = if ($env:MCB_GO) {
 } else {
     Join-Path $HOME '.local\toolchains\go1.25.7\go\bin\go.exe'
 }
+$rustc = if ($env:MCB_RUSTC) {
+    $env:MCB_RUSTC
+} elseif (Get-Command rustc -ErrorAction SilentlyContinue) {
+    (Get-Command rustc).Source
+} else {
+    Join-Path $HOME '.cargo\bin\rustc.exe'
+}
 if (-not (Test-Path -LiteralPath $cargo)) { throw "cargo not found at $cargo" }
 if (-not (Test-Path -LiteralPath $go)) { throw "go not found at $go" }
+if (-not (Test-Path -LiteralPath $rustc)) { throw "rustc not found at $rustc" }
+
+$expectedToolVersions = [ordered]@{ cargo = '1.90.0'; rustc = '1.90.0'; go = '1.25.7' }
+if ($env:MCB_TOOL_MANIFEST) {
+    if (-not (Test-Path -LiteralPath $env:MCB_TOOL_MANIFEST -PathType Leaf)) {
+        throw "MCB_TOOL_MANIFEST does not exist: $($env:MCB_TOOL_MANIFEST)"
+    }
+    $manifest = Get-Content -Raw -LiteralPath $env:MCB_TOOL_MANIFEST | ConvertFrom-Json
+    foreach ($name in $expectedToolVersions.Keys) {
+        if ($manifest.tool_versions.$name -ne $expectedToolVersions[$name]) {
+            throw "tool manifest version mismatch for ${name}: $($manifest.tool_versions.$name)"
+        }
+    }
+} else {
+    $cargoVersionText = & $cargo --version 2>&1 | Out-String
+    if ($cargoVersionText -notmatch 'cargo 1\.90\.0 ') { throw "unsupported cargo version: $cargoVersionText" }
+    $rustcVersionText = & $rustc --version 2>&1 | Out-String
+    if ($rustcVersionText -notmatch 'rustc 1\.90\.0 ') { throw "unsupported rustc version: $rustcVersionText" }
+    $goVersionText = & $go version 2>&1 | Out-String
+    if ($goVersionText -notmatch 'go1\.25\.7 ') { throw "unsupported go version: $goVersionText" }
+}
 
 $rustJson = & $cargo run --locked --offline --quiet --manifest-path (Join-Path $repoRoot 'reference\rust\Cargo.toml') --bin mcb-rust -- run $fixturePath $repoRoot
 if ($LASTEXITCODE -ne 0) { throw 'Rust structural harness failed' }

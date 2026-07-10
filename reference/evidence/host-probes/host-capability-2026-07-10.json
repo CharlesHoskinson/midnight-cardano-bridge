@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "probe_kind": "host-capability-receipt",
+  "observed_at_utc": "2026-07-10T13:20:36.4646247Z",
+  "host": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "powershell": "7.6.3",
+    "architecture": "amd64"
+  },
+  "tools": {
+    "git": "git version 2.55.0.windows.1",
+    "gh": "gh version 2.95.0 (2026-06-17)",
+    "node": "v24.18.0",
+    "npm": "11.16.0",
+    "cargo": "cargo 1.90.0 (840b83a10 2025-07-30)",
+    "rustc": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+    "go": "go version go1.25.7 windows/amd64",
+    "grok": "grok 0.2.93 (f00f96316d) [stable]",
+    "codex": "codex-cli 0.144.1",
+    "venv_python": "Python 3.14.6",
+    "scrapling": "0.4.10",
+    "cbor2": "5.7.1",
+    "openspec": "1.5.0",
+    "docker_windows_path": "not-found",
+    "cardano_node_windows": "not-found",
+    "cardano_cli_windows": "not-found",
+    "midnight_compact_windows": "not-found (system32 compact.exe is not Midnight Compact)"
+  },
+  "wsl": {
+    "list_verbose": "NAME            STATE           VERSION\r\n* Ubuntu-26.04    Running         2",
+    "status": "Default Distribution: Ubuntu-26.04\r\nDefault Version: 2\r\nWSL1 is not supported with your current machine configuration.\r\nPlease enable the \"Windows Subsystem for Linux\" optional component to use WSL1.",
+    "inside_ubuntu_26_04": "DOCKER=29.6.1/29.6.1\nCARDANO_NODE=missing\nCARDANO_CLI=missing\nCOMPACT=missing\nLinux hoskinsonlaptop 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 GNU/Linux",
+    "working": true
+  },
+  "docker": {
+    "working_in_wsl": true,
+    "version": "29.6.1/29.6.1",
+    "note": "Docker Engine runs inside WSL2 Ubuntu-26.04"
+  },
+  "chain_tools": {
+    "midnight_compact": {
+      "found": false,
+      "ready": false
+    },
+    "cardano_node": {
+      "found": false,
+      "documented_target": "11.0.1",
+      "ready": false
+    },
+    "cardano_cli": {
+      "found": false,
+      "documented_target": "11.0.0.0",
+      "ready": false
+    }
+  },
+  "non_claims": [
+    "WSL2 and Docker availability are host environment facts only",
+    "They do not constitute Midnight or Cardano deployment readiness",
+    "Midnight Compact, proof server, cardano-node, and cardano-cli remain not ready until install, version, configuration, connectivity, and a minimal functional probe pass"
+  ]
+}

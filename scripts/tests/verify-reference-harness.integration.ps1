@@ -69,11 +69,19 @@ function New-FakeToolchain {
 
     $cargoScript = @"
 if (`$args -contains '--version') { Write-Output 'cargo 1.90.0 (840b83a10 2025-07-30)'; exit 0 }
+if ((`$args -join ' ') -match 'missing-event-index') {
+    [Console]::Error.WriteLine('source-event-schema: missing field source_action_or_event_index')
+    exit 1
+}
 if (`$args -contains 'run') { Write-Output ((Get-Content -Raw -LiteralPath '$quotedReport').Trim()); exit 0 }
 exit 0
 "@
     $goScript = @"
 if (`$args.Count -eq 1 -and `$args[0] -eq 'version') { Write-Output 'go version go1.25.7 windows/amd64'; exit 0 }
+if ((`$args -join ' ') -match 'missing-event-index') {
+    [Console]::Error.WriteLine('source-event-schema: missing field source_action_or_event_index')
+    exit 1
+}
 if (`$args -contains 'run') { Write-Output ((Get-Content -Raw -LiteralPath '$quotedReport').Trim()); exit 0 }
 exit 0
 "@
@@ -151,6 +159,7 @@ try {
         MCB_GO = $env:MCB_GO
         MCB_NPM = $env:MCB_NPM
         MCB_RUSTC = $env:MCB_RUSTC
+        MCB_SKIP_CONTROL_TESTS = $env:MCB_SKIP_CONTROL_TESTS
     }
     try {
         $env:PATH = "$fakeBin$([IO.Path]::PathSeparator)$savedPath"
@@ -158,6 +167,8 @@ try {
         $env:MCB_GO = Join-Path $fakeBin 'go.cmd'
         $env:MCB_NPM = Join-Path $fakeBin 'npm.cmd'
         $env:MCB_RUSTC = Join-Path $fakeBin 'rustc.cmd'
+        # Prevent recursive control-test orchestration when the isolated verifier runs.
+        $env:MCB_SKIP_CONTROL_TESTS = '1'
         $outputLines = & (Get-Command pwsh).Source -NoProfile -File $verifier 2>&1
         $exitCode = $LASTEXITCODE
         $output = $outputLines | Out-String

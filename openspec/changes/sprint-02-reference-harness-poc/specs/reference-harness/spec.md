@@ -32,15 +32,24 @@ reset-isolation disagreement SHALL fail with a stable error code.
 - **THEN** both commands SHALL reject it with `source-event-schema` and SHALL NOT treat absence as an explicit index zero
 
 ### Requirement: Reproducible conformance entry point
-The repository SHALL provide one noninteractive command that runs Rust tests, Go
-tests, Python observation-fixture tests, cross-language golden comparison, and
-strict OpenSpec validation. It SHALL report each component and return nonzero on
-the first failed contract without altering gate state. The default command SHALL
-perform no network request and SHALL stage generated evidence outside the
+The repository SHALL provide one noninteractive command that runs control-test
+scripts without recursive verifier invocation, Rust tests, Go tests, Python
+observation-fixture tests, cross-language golden comparison, and strict OpenSpec
+validation. It SHALL report each component and return nonzero on the first
+failed contract without altering gate state. The default command SHALL perform
+no network request, SHALL set `OPENSPEC_TELEMETRY=0` and `DO_NOT_TRACK=1` before
+every OpenSpec invocation, and SHALL stage generated evidence outside the
 repository. It SHALL publish or replace committed evidence only after every
-check succeeds, and only under an explicit update mode. Each committed report
-SHALL bind the input-file hashes, verifier revision, commands, tool versions,
-and final result needed to distinguish it from a stale prior run.
+check succeeds, and only under an explicit update mode.
+
+Committed evidence uses one structural payload plus one conformance envelope.
+The structural report is the structural payload and need not duplicate execution
+bindings. The conformance envelope SHALL bind the structural payload by SHA-256,
+plus the input-file hashes, verifier revision, structured command records, tool
+versions, and final result needed to distinguish it from a stale prior run.
+Readers SHALL select the current generation only through
+`reference/evidence/current-generation.json` and SHALL reject missing, mixed, or
+hash-mismatched generations.
 
 #### Scenario: A golden digest is mutated
 - **WHEN** the conformance command encounters a fixture whose expected digest differs from either implementation
@@ -49,3 +58,11 @@ and final result needed to distinguish it from a stale prior run.
 #### Scenario: A check fails after cross-language comparison
 - **WHEN** roster, observation, OpenSpec, or repository validation fails after a temporary structural report was generated
 - **THEN** the command SHALL return nonzero, emit no pass or deployment label, leave committed evidence byte-identical, and remove the temporary run directory
+
+#### Scenario: OpenSpec telemetry is disabled
+- **WHEN** the conformance command discovers OpenSpec or runs strict validation
+- **THEN** the process environment SHALL contain `OPENSPEC_TELEMETRY=0` and `DO_NOT_TRACK=1`
+
+#### Scenario: A stale structural payload is presented
+- **WHEN** the structural payload hash in the conformance envelope does not match the structural file selected by the current generation
+- **THEN** the command SHALL fail and SHALL NOT treat the pair as current

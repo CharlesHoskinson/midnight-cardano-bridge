@@ -9,22 +9,50 @@ import (
 
 func TestNamedSentinelVectorDetectsEqualWidthSwaps(t *testing.T) {
 	proof := make([]byte, ProofLength)
-	for i := range proof { proof[i] = byte(i + 1) }
+	for i := range proof {
+		proof[i] = byte(i + 1)
+	}
 	vk := make([]byte, VKLength)
-	for i := range vk { vk[i] = byte(255 - (i % 251)) }
-	fields := []FieldLayout{{"A",0,48},{"B",48,96},{"C",144,48},{"D",192,96},{"PoK",288,48}}
-	for _, f := range fields {
-		want := append([]byte(nil), proof[f.Offset:f.Offset+f.Length]...)
-		if !bytes.Equal(want, proof[f.Offset:f.Offset+f.Length]) { t.Fatalf("sentinel %s mismatch", f.Name) }
-		for _, g := range fields {
-			if f.Length != g.Length || f.Name == g.Name { continue }
+	for i := range vk {
+		vk[i] = byte(255 - (i % 251))
+	}
+	expectedProof := map[string][]byte{}
+	for _, f := range proofLayout {
+		expectedProof[f.Name] = append([]byte(nil), proof[f.Offset:f.Offset+f.Length]...)
+	}
+	expectedVK := map[string][]byte{}
+	for _, f := range vkLayout {
+		expectedVK[f.Name] = append([]byte(nil), vk[f.Offset:f.Offset+f.Length]...)
+	}
+	if _, err := ParseNamedExpectations(proof, vk, make([]byte, PublicScalarLength), expectedProof, expectedVK); err != nil {
+		t.Fatalf("base named sentinel parse failed: %v", err)
+	}
+	for _, f := range proofLayout {
+		for _, g := range proofLayout {
+			if f.Length != g.Length || f.Name == g.Name {
+				continue
+			}
 			mut := append([]byte(nil), proof...)
 			copy(mut[f.Offset:f.Offset+f.Length], proof[g.Offset:g.Offset+g.Length])
-			if bytes.Equal(want, mut[f.Offset:f.Offset+f.Length]) { t.Fatalf("swap %s<->%s was not detected", f.Name, g.Name) }
+			_, err := ParseNamedExpectations(mut, vk, make([]byte, PublicScalarLength), expectedProof, expectedVK)
+			if !errors.Is(err, ErrFieldMismatch) {
+				t.Fatalf("proof swap %s<-%s expected ErrFieldMismatch, got %v", f.Name, g.Name, err)
+			}
 		}
 	}
-	vkFields := []FieldLayout{{"alpha",0,48},{"beta",48,96},{"gamma",144,96},{"delta",240,96},{"IC0",336,48},{"IC1",384,48},{"K2",432,48},{"CK.G",480,96},{"CK.GSigmaNeg",576,96}}
-	for _, f := range vkFields { if len(vk[f.Offset:f.Offset+f.Length]) != f.Length { t.Fatalf("sentinel %s incomplete", f.Name) } }
+	for _, f := range vkLayout {
+		for _, g := range vkLayout {
+			if f.Length != g.Length || f.Name == g.Name {
+				continue
+			}
+			mut := append([]byte(nil), vk...)
+			copy(mut[f.Offset:f.Offset+f.Length], vk[g.Offset:g.Offset+g.Length])
+			_, err := ParseNamedExpectations(proof, mut, make([]byte, PublicScalarLength), expectedProof, expectedVK)
+			if !errors.Is(err, ErrFieldMismatch) {
+				t.Fatalf("vk swap %s<-%s expected ErrFieldMismatch, got %v", f.Name, g.Name, err)
+			}
+		}
+	}
 }
 
 func decodeScalar(t *testing.T, encoded string) []byte {

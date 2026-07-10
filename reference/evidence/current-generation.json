@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "generation_id": "b6c5bdd6abbd4471b900b7eb1189dae7",
+  "structural_sha256": "3c890476b1550236fc6f37acfb254ccf682aab8ebb09f3bbe07bcf028d40ff72",
+  "conformance_sha256": "0ce40fab628800e6c4c4b24bb11e05de85250e7816fac6d9a96c776f81f04ac6",
+  "structural_relative_path": "generations/b6c5bdd6abbd4471b900b7eb1189dae7/structural-report-v1.json",
+  "conformance_relative_path": "generations/b6c5bdd6abbd4471b900b7eb1189dae7/conformance-report-v1.json"
+}

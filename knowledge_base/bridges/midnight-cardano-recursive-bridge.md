@@ -2478,13 +2478,18 @@ current documented `cardano-node` release on 2026-07-10 is 11.0.1, released
 
 The 2026-07-10 harness host pins PowerShell 7.6.3, Rust/Cargo 1.90.0, Go
 1.25.7, Python 3.14.6, Node/npm 24.18.0/11.16.0, OpenSpec 1.5.0, Scrapling
-0.4.10, and cbor2 5.7.1. Verified `cardano-node` 11.0.1 and `cardano-cli`
-binaries are also available. The gnark 0.15.0 BSB22 harness passed its Go tests.
-`midnight-aggregation` compiled, and its IVC example passed with the exact
-features and SRS hashes recorded in sections 15 and 21. Docker is absent. WSL
-reports Ubuntu 26.04 but the required Windows optional component is disabled, so
-Compact and the proof server cannot run on this host without an environment
-change.
+0.4.10, and cbor2 5.7.1. The gnark 0.15.0 BSB22 harness passes its parser-only
+Go tests. `midnight-aggregation` compiles, and its IVC example passes with the
+exact features and SRS hashes recorded in sections 15 and 21.
+
+A second same-day host capability probe records WSL2 Ubuntu-26.04 running and
+Docker Engine 29.6.1 available inside that distribution. Windows PATH does not
+require Docker. Midnight Compact, the Midnight proof server, `cardano-node`, and
+`cardano-cli` are not found on Windows or in Ubuntu-26.04. Those tools remain
+not ready until install, version, configuration, connectivity, and a minimal
+functional probe pass. WSL2 and Docker availability are host facts only; they
+are not Midnight or Cardano deployment readiness. The machine-readable receipt
+is `reference/evidence/host-probes/host-capability-2026-07-10.json`.
 
 At `2026-07-10T11:25:55Z`, a Scrapling capture sent byte-preserved
 `chain_getFinalizedHead` and `chain_getHeader` requests to Midnight Preview. The

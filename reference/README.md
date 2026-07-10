@@ -71,21 +71,30 @@ new directory under the system temporary directory. A failure publishes no
 `structural-pass` or deployment label and leaves committed evidence untouched.
 
 The files under `reference/evidence/` are input-bound golden evidence, not a
-mutable status file for the last invocation. The conformance report binds the
-candidate structural-report hash, every deterministic input hash, verifier
-revision, exact commands and tool versions, and exit semantics. A successful
-default run requires regenerated candidates to be byte-identical to both
-committed reports.
+mutable status file for the last invocation. The structural report is the
+structural payload. The conformance report is the envelope: it binds the
+structural payload by SHA-256, every deterministic input hash, verifier
+revision, structured command records (logical tool, resolved executable, cwd,
+argv, offline environment, exit code), tool versions, and exit semantics. A
+successful default run requires regenerated candidates to be byte-identical to
+the current generation and its mirrored copies.
 
-After reviewing an intentional input change, update both reports only with a
-fully successful run:
+Publication is generation-based. `-UpdateEvidence` stages an immutable
+generation under `reference/evidence/generations/<id>/` on the repository
+volume, verifies the full pair, mirrors convenience copies, then publishes
+`current-generation.json` last. Readers reject missing, mixed, or
+hash-mismatched generations. Python dependencies install from
+`requirements.hashes.txt` with `pip --require-hashes --only-binary=:all:` for
+Windows CPython 3.14 artifacts.
+
+After reviewing an intentional input change, update evidence only with a fully
+successful run:
 
 ```powershell
 pwsh -NoProfile -File scripts/verify-reference-harness.ps1 -UpdateEvidence
 ```
 
-The update stages both candidates and replaces the committed pair only after
-every check passes. Successful conformance evidence contains:
+Successful conformance evidence contains:
 
 ```json
 {

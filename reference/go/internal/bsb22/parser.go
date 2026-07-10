@@ -1,8 +1,10 @@
 package bsb22
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/big"
 )
 
@@ -17,6 +19,7 @@ var (
 	ErrVKLength           = errors.New("BSB22 VK must be exactly 672 bytes")
 	ErrPublicScalarLength = errors.New("public scalar must be exactly 32 bytes")
 	ErrScalarRange        = errors.New("public scalar is not canonical BLS12-381 Fr")
+	ErrFieldMismatch      = errors.New("bsb22-field-mismatch")
 )
 
 type Proof struct {
@@ -87,6 +90,44 @@ func Parse(proof, vk, publicScalar []byte) (Parsed, error) {
 		FullDeciderGate:           "unresolved",
 		CardanoExecutionGate:      "unresolved",
 	}, nil
+}
+
+// ParseNamedExpectations parses proof/VK bytes and requires every named field
+// to equal the registered sentinel expectation. Equal-width swaps fail with
+// ErrFieldMismatch. This remains parser-only: CryptographicVerification is false.
+func ParseNamedExpectations(proof, vk, publicScalar []byte, expectedProof, expectedVK map[string][]byte) (Parsed, error) {
+	parsed, err := Parse(proof, vk, publicScalar)
+	if err != nil {
+		return Parsed{}, err
+	}
+	proofFields := map[string][]byte{
+		"A": parsed.Proof.A, "B": parsed.Proof.B, "C": parsed.Proof.C,
+		"D": parsed.Proof.D, "PoK": parsed.Proof.PoK,
+	}
+	vkFields := map[string][]byte{
+		"alpha": parsed.VK.Alpha, "beta": parsed.VK.Beta, "gamma": parsed.VK.Gamma,
+		"delta": parsed.VK.Delta, "IC0": parsed.VK.IC0, "IC1": parsed.VK.IC1,
+		"K2": parsed.VK.K2, "CK.G": parsed.VK.CKG, "CK.GSigmaNeg": parsed.VK.CKGSigmaNeg,
+	}
+	for _, layout := range proofLayout {
+		want, ok := expectedProof[layout.Name]
+		if !ok || len(want) != layout.Length {
+			return Parsed{}, fmt.Errorf("%w: missing proof expectation %s", ErrFieldMismatch, layout.Name)
+		}
+		if !bytes.Equal(proofFields[layout.Name], want) {
+			return Parsed{}, fmt.Errorf("%w: proof field %s", ErrFieldMismatch, layout.Name)
+		}
+	}
+	for _, layout := range vkLayout {
+		want, ok := expectedVK[layout.Name]
+		if !ok || len(want) != layout.Length {
+			return Parsed{}, fmt.Errorf("%w: missing vk expectation %s", ErrFieldMismatch, layout.Name)
+		}
+		if !bytes.Equal(vkFields[layout.Name], want) {
+			return Parsed{}, fmt.Errorf("%w: vk field %s", ErrFieldMismatch, layout.Name)
+		}
+	}
+	return parsed, nil
 }
 
 func FrModulusLittleEndian() []byte {

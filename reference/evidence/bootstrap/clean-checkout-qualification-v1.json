@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "receipt_kind": "clean-checkout-bootstrap-qualification",
+  "phase": "dependency-bootstrap-contract",
+  "network": {
+    "public_chain_endpoints_reachable": false,
+    "registry_access_required_for_full_install": true,
+    "offline_default_verification": true
+  },
+  "observed_at_utc": "2026-07-10T13:23:02.2697447Z",
+  "setup_contract": {
+    "exit_code": 0,
+    "output": "test=setup-dry-run-contract state=PASS"
+  },
+  "python_hash_lock": {
+    "path": "reference/observers/requirements.hashes.txt",
+    "package_count": 28,
+    "sha256_hash_count": 28,
+    "install_policy": "pip --require-hashes --only-binary=:all:",
+    "target": "Windows CPython 3.14 win_amd64",
+    "sha256": "19943cdc32a5e078737f09515e69d9438f50baa1d2b02ddb5363d9144d7666b8"
+  },
+  "non_claims": [
+    "This receipt does not prove a fresh empty-host registry install completed in this run",
+    "Full npm ci / pip install / cargo fetch remain an explicit networked bootstrap phase",
+    "Public Midnight, Mithril, and Cardano endpoints remain unreachable during default verification"
+  ]
+}
