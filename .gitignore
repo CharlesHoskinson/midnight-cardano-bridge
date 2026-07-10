@@ -3,3 +3,4 @@ _external/
 .deepresearch/duckdb-home/
 .venv-drt/
 node_modules/
+reference/rust/target/

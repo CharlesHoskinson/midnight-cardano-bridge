@@ -1,6 +1,6 @@
 ## 1. Rust structural harness
 
-- [ ] 1.1 **S02-RH-W01** Add failing Rust tests for canonical roster reproduction, forbidden root-set fields, domain/reset vectors, continuity keys, and blocked outcome classification; then implement the minimal library and CLI. Verification: `cargo test --manifest-path reference/rust/Cargo.toml --all-targets`.
+- [x] 1.1 **S02-RH-W01** Add failing Rust tests for canonical roster reproduction, forbidden root-set fields, domain/reset vectors, continuity keys, and blocked outcome classification; then implement the minimal library and CLI. Verification: `cargo test --manifest-path reference/rust/Cargo.toml --all-targets`.
 
 ## 2. Go structural harness and BSB22 parser
 

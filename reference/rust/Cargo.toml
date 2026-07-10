@@ -1,0 +1,19 @@
+[package]
+name = "mcb-harness"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+
+[lib]
+name = "mcb_harness"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mcb-rust"
+path = "src/main.rs"
+
+[dependencies]
+hex = "0.4.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10.9"

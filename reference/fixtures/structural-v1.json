@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "profile_id": "mcb.structural-lab.sha256-cbor.v1",
+  "roster_json": "protocol/gate-roster-v1.json",
+  "roster_cbor_hex": "protocol/gate-roster-v1.cbor.hex",
+  "root_set": {
+    "bridge_program_id": "midnight-cardano-bridge",
+    "fresh_deployment_instance_id": "00000000000000000000000000000001",
+    "source_identity_fingerprints": [
+      {
+        "chain": "cardano",
+        "identity_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+        "protocol_fingerprint": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      {
+        "chain": "midnight",
+        "identity_digest": "3333333333333333333333333333333333333333333333333333333333333333",
+        "protocol_fingerprint": "4444444444444444444444444444444444444444444444444444444444444444"
+      }
+    ],
+    "checkpoint_manifest_digests": [
+      "5555555555555555555555555555555555555555555555555555555555555555",
+      "6666666666666666666666666666666666666666666666666666666666666666"
+    ],
+    "semantic_registry_template_root": "7777777777777777777777777777777777777777777777777777777777777777",
+    "artifact_template_root": "8888888888888888888888888888888888888888888888888888888888888888",
+    "destination_abi_template_digests": [
+      "9999999999999999999999999999999999999999999999999999999999999999",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    ],
+    "deployment_recipe_digests": [
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    ],
+    "replay_policy_template_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "freshness_policy_template_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "reset_fresh_deployment_instance_id": "00000000000000000000000000000002",
+  "source_event_identity": {
+    "version": 1,
+    "source_chain_identity_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source_handler_or_namespace": "cardano.preview.bridge.v1",
+    "source_transaction_or_object_id": "abababababababababababababababababababababababababababababababab",
+    "source_action_or_event_index": 0,
+    "event_discriminator": "bridge-transfer",
+    "source_event_commitment": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+  },
+  "expected": {}
+}
