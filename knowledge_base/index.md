@@ -37,6 +37,7 @@ Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 
 ## Consensus (Midnight = Substrate **AURA** + **GRANDPA**, Cardano-SPO validators)
 - [Midnight consensus — AURA + GRANDPA](consensus/midnight-consensus-aura-grandpa.md) — **authoritative**: AURA (not BABE) block production, GRANDPA finality, validators from Cardano SPO delegation.
+- [Midnight published chain-spec validator-set sizing](consensus/midnight-validator-set-sizing.md) — public govnet/devnet/mainnet initial BEEFY/session authority counts: 6, 7, and 10.
 - [Midnight signature schemes](consensus/midnight-signature-schemes.md) — **authoritative**: GRANDPA finality signed with **Ed25519** (ECDSA for partner-chain msgs, sr25519 for AURA); Blake2-256 hashing.
 - [GRANDPA — finality gadget](consensus/grandpa-finality.md) — >2/3 precommit quorum finalizes whole chains; the "commit" justification is the Direction-A attestation object.
 - [BABE — block production](consensus/babe-block-production.md) — *Polkadot background only* (Midnight uses AURA); VRF slot lottery, probabilistic tip.

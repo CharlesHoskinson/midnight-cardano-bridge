@@ -42,11 +42,17 @@ Unlike standard Substrate chains, Midnight uses a **custom validator set selecti
 
 For a bridge, this means the GRANDPA authority set being attested is derived from Cardano SPO stake delegation (plus any permissioned validators) — the validator set and its rotation are part of what a trustless light client must track alongside GRANDPA justifications.
 
+Published resource chain specs now pin initial public-network sizes: govnet starts
+with 6 BEEFY/session authorities, devnet with 7, and mainnet with 10, all with
+`dParameter` registered candidates set to 0. See
+[Midnight published chain-spec validator-set sizing](midnight-validator-set-sizing.md).
+
 ## Takeaways
 
 - **Block production is AURA (PoA round-robin), not BABE.** Correct any earlier BABE-based assumption about Midnight.
 - **GRANDPA provides asynchronous, provable finality independent of block production** — it is the bridge attestation target, not AURA.
 - **The validator set is custom**, derived from **Cardano SPO stake delegation** with optional permissioned validators.
+- **Published initial public-network sizes are small** (govnet 6, devnet 7, mainnet 10), but bridge implementations must follow live authority-set rotation rather than baking in a static count.
 - Both AURA and GRANDPA are stock Substrate/Polkadot gadgets; Midnight's novelty is the Cardano-Partnerchain **validator-selection** extension, not the consensus gadgets themselves.
 
 ## Related
@@ -55,4 +61,5 @@ For a bridge, this means the GRANDPA authority set being attested is derived fro
 - [Sources index](/sources/index.md)
 - [GRANDPA finality](/consensus/grandpa-finality.md)
 - [BABE block production](/consensus/babe-block-production.md)
+- [Midnight published chain-spec validator-set sizing](/consensus/midnight-validator-set-sizing.md)
 - [Midnight↔Cardano recursive bridge](/bridges/midnight-cardano-recursive-bridge.md)

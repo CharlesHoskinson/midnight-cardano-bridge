@@ -290,7 +290,10 @@ which Cardano *can* verify. Three landing modes, in increasing scalability:
   **each ECDSA signature natively** (Cardano has a `verifyEcdsaSecp256k1Signature`
   builtin), check signer set-membership, enforce the current equal-weight quorum,
   and then verify a separate event/state inclusion proof. The relay object exists;
-  the Cardano on-chain verifier and event inclusion proof are not public.
+  the Cardano on-chain verifier and event inclusion proof are not public. Published
+  Midnight resource chain specs bound the initial public-network native-signature
+  workload to govnet N=6, devnet N=7, and mainnet N=10, all permissioned-only
+  at genesis; live authority rotation still has to be tracked from chain state.
 - **(Mode 1 — BLS "on both sides", the target):** switch BEEFY to **BLS12-381**
   aggregate signatures (Midnight's stack already has a
   [`bls12_381` in-circuit chip](../midnight/zk-stdlib-gadgets.md) + BLS12-381 curve
@@ -547,8 +550,8 @@ PDF pipeline for academic papers):
    Cardano verifies.
 5. **zkBEEFY circuit cost on Cardano** — the ecosystem shows secp256k1 zkBEEFY is
    feasible (<2 s prove); quantify the Groth16-wrapped verifier's *on-chain* Plutus
-   cost and proof size for the Midnight validator set size, reusing the
-   `proof-zk-recovery` Ed25519/SHA-512 gadgets.
+   cost and proof size for the Midnight validator set size (published mainnet
+   genesis N=10), reusing the `proof-zk-recovery` Ed25519/SHA-512 gadgets.
 6. ~~Midnight's exact proving system and aggregation path~~ **RESOLVED:** Midnight is **Plonk + KZG over
    BLS12-381** (+JubJub), a PSE-halo2 fork with a **universal** setup
    ([proving system](../midnight/proving-system-curves.md)); public aggregation code
@@ -570,7 +573,7 @@ PDF pipeline for academic papers):
 
 ## 10. Provenance
 
-Synthesized from 48 source records in this knowledge base; see
+Synthesized from 49 source records in this knowledge base; see
 the [source records](../sources/index.md) and the [index](../index.md). Cardano-side
 cost and the working-deployment claims derive from the `proof-zk-recovery` project
 (src-0011…src-0015), the strongest evidence in the corpus because it is *measured
@@ -588,4 +591,5 @@ full-sweep corrections from src-0039…src-0046, especially the public relay's
 actual `RelayChainProof` serialization, c2m approval gate, Mithril BLS evidence,
 Midnight aggregation code, and ledger asset/root formats. The follow-up
 deep-research-toolkit integration is recorded in src-0047…src-0048, with the
-source sweep also represented as a gated `research-runs/` claim corpus.
+source sweep also represented as a gated `research-runs/` claim corpus. Public
+resource chain-spec sizing for govnet/devnet/mainnet is recorded in src-0049.

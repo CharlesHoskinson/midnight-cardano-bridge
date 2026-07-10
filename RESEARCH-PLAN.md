@@ -141,6 +141,10 @@ load-bearing claim cross-linked to a gated KB page.
   report §8/§9/§31 + claim-interface-schema + **CIP-0165 SCLS**. **38 sources / 534 claims /
   41 pages.** Design doc gained §8a (typed-claim application layer) + Direction-B **inclusion
   anchor = Mithril-cert over CIP-0165 SCLS root** (membership/nonmembership, no header replay).
+- 2026-07-09: **Validator-set sizing follow-up (src-0049, 5 claims):** DRT-gated public
+  chain-spec extraction pins initial BEEFY/session/committee counts at govnet N=6, devnet N=7,
+  and mainnet N=10, all with `num_registered_candidates = 0`. Mode-0 budgeting can use
+  mainnet genesis N=10 as the published baseline while still tracking live authority rotation.
 - NEXT: find the Cardano-side BEEFY verifier (partner-chains smart-contracts repo); Zswap +
   NIGHT/DUST specs; remaining sibling catalogs (42/52); the BABE-design finality format when it
   lands; academic PDFs (Groth16/Plonk/zkBridge/Mina/GRANDPA/aPLONK) + EUTxO. Docling warmed.

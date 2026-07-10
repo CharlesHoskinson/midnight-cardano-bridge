@@ -42,7 +42,7 @@ captured as a deep-research-toolkit run under `research-runs/`.
 - [x] **Current: AURA + GRANDPA** — `midnight-docs/.../consensus.mdx` (src-0027); GRANDPA finality = **Ed25519** (src-0026).
 - [x] **Current bridge finality: BEEFY = ECDSA** — `midnight-node/relay` (src via read); temporary.
 - [!] **⭐ Future BABE-design finality** — blocked on future Midnight release/spec. Current public `midnight-node` still exposes AURA/GRANDPA plus BEEFY support; Direction A must stay certificate-interface based.
-- [~] **Validator-set selection & size** — runtime uses Partner Chain committee selection with `DParameter { num_permissioned_candidates, num_registered_candidates }`, `MaxAuthorities = 10_000`, and session rotation via `pallet_session_validator_management` (src-0046). Actual active N is network/config dependent and must be pinned per deployment for Mode-0 budgeting.
+- [x] **Validator-set selection & size** — runtime uses Partner Chain committee selection with `DParameter { num_permissioned_candidates, num_registered_candidates }`, `MaxAuthorities = 10_000`, and session rotation via `pallet_session_validator_management` (src-0046). Public resource chain specs now pin initial BEEFY/session/committee counts: govnet N=6, devnet N=7, mainnet N=10, all with registered candidates = 0 (src-0049). Mode-0 budgeting should use the target deployment's live authority set, but the published mainnet genesis workload is N=10 rather than the type ceiling.
 - [~] **GRANDPA justification encoding** — background encoding known from Substrate/GRANDPA sources, but current bridge path uses BEEFY-ECDSA rather than parsing GRANDPA justifications on Cardano. Keep as only relevant for Mode-2/future certificate wrapping.
 
 ## D. Proving stack, circuits & recursion
@@ -153,3 +153,4 @@ predicates are claims *against* that anchor. Directly relevant, especially §31 
 - [x] **Nonmembership / absence** — SCLS ordered-neighbor nonmembership and ledger nullifier/intent sets are the relevant complete-set mechanisms.
 - [~] **Verifier registry governance (§25)** — registry pattern locked; concrete Cardano verifier/VK governance blocked on unpublished verifier.
 - [!] **Conformance vectors + failure codes (§26/§19)** — blocked until validator/redeemer format exists.
+- [!] **Remaining sibling proof-claim catalogs** — the recorded local corpus path `C:/proofcategories/reports` is not present in this workspace, and targeted filename searches did not find `verified-claim-catalog-42.md`, `midnight-proof-claim-catalog-52.md`, or `cardano-prior-epoch-zk-proof-categories.md`. Ingestion needs the private/local corpus location.
