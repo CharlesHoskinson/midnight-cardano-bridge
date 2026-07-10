@@ -107,7 +107,14 @@ The six `S01-BLOCK-*` gates and eight `CONS-*` gates remain open. A continuation
 agent should start by reading the active OpenSpec change, all three council
 reports, and `git status`, then run the component tests before changing the
 canonical design. The full XML handoff prompt is in
-[`docs/grok-4.5-handoff.xml`](docs/grok-4.5-handoff.xml).
+[`docs/grok-4.5-handoff.xml`](docs/grok-4.5-handoff.xml). It maps the writable
+repository, read-only upstream mirrors, pinned toolchains, current Windows and
+WSL2 capabilities, and the continuation order. The project-scoped
+[`.grok/config.toml`](.grok/config.toml) exposes the installed Codex CLI to Grok
+as the `codex-auditor` MCP server. The handoff requires read-only Codex audits
+with preserved request, response, disposition, thread, and hash records. Those
+audits supplement the three-reader council and destination-chain evidence; they
+do not replace either.
 
 ## Status, and the things I do not yet know
 

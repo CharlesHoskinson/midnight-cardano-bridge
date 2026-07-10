@@ -1,0 +1,4 @@
+[mcp_servers.codex-auditor]
+command = "codex"
+args = ["mcp-server"]
+enabled = true

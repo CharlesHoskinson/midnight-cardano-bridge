@@ -1,56 +1,494 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<handoff>
-  <role>You are the continuation engineer for the Midnight/Cardano recursive trustless bridge. Work directly in the checked-out repository. Make code and documentation changes, run tests, and leave reviewable commits.</role>
+<bridge_handoff version="3" prepared_on="2026-07-10">
+  <model_profile>
+    <model>grok-4.5</model>
+    <reasoning_effort>high</reasoning_effort>
+    <context_window_tokens source="official-model-page">500000</context_window_tokens>
+    <usage>
+      Use this document as the user prompt or append it with --rules. Do not pass it
+      through --system-prompt-override, because that replaces Grok Build's own agent,
+      tool, permission, and repository instructions.
+    </usage>
+    <tuning>
+      <rule>Use high reasoning effort. Official xAI documentation says Grok 4.5 reasoning cannot be disabled.</rule>
+      <rule>Do not send presencePenalty, frequencyPenalty, or stop; the reasoning endpoint does not support them.</rule>
+      <rule>The model accepts 500,000 context tokens, but pricing changes above 200,000. Keep active context below that boundary through targeted reads and durable audit packets.</rule>
+      <rule>Parallel tool calls are useful for independent reads and reader scopes. Serialize repository edits, evidence publication, commits, and pushes.</rule>
+      <rule>Use closed schemas for machine output and validate them locally. Do not infer success from fluent prose.</rule>
+    </tuning>
+    <recommended_powershell_launch><![CDATA[
+$env:GROK_SUBAGENTS = '1'
+grok --no-auto-update `
+  --cwd C:\Users\charl\midnight-cardano-bridge `
+  --model grok-4.5 `
+  --effort high `
+  --permission-mode bypassPermissions `
+  --check `
+  --output-format plain `
+  --prompt-file .\docs\grok-4.5-handoff.xml
+    ]]></recommended_powershell_launch>
+    <launch_notes>
+      Run grok inspect first and honor every discovered AGENTS.md, CLAUDE.md, skill,
+      hook, plugin, and MCP rule. Keep instructions short in any new AGENTS.md because
+      xAI documents that short, specific project rules are followed more reliably.
+      Use subagents only for independent read-only research or review. Keep implementation
+      ownership serial so agents do not edit the same files concurrently.
+      Keep the working context below 200,000 tokens when possible. Read targeted files and
+      summaries instead of loading whole upstream mirrors. The local Grok CLI is 0.2.93.
+      Full permission mode applies to Grok's implementation session. Every Codex audit call
+      remains sandbox=read-only and approval-policy=never.
+    </launch_notes>
+  </model_profile>
+
+  <mission>
+    Close Sprint 2 of the Midnight/Cardano recursive proof bridge without inflating
+    structural harness evidence into a chain-proof or deployment claim. Implement the
+    remaining council dispositions, obtain a fresh three-reader closure, refresh bound
+    evidence once, and leave the branch committed, pushed, and reproducible.
+  </mission>
+
   <repository>
     <path>C:\Users\charl\midnight-cardano-bridge</path>
-    <branch>resolve-checklist-full-sweep</branch>
     <remote>https://github.com/CharlesHoskinson/midnight-cardano-bridge.git</remote>
-    <latest_commit>c81e552</latest_commit>
-    <important_commits>
-      <commit>4d985a7: last baseline with a complete read-only verifier and byte-identical evidence</commit>
-      <commit>54e8d36: bind source-event index presence and normalized observations to raw capture bytes</commit>
-      <commit>cee2bd2: add explicit structural CBOR type manifest and parser-only BSB22 sentinel coverage</commit>
-      <commit>c81e552: refresh evidence and publish the handoff README</commit>
-    </important_commits>
+    <branch>resolve-checklist-full-sweep</branch>
+    <handoff_parent_commit>9b2d60b</handoff_parent_commit>
+    <verified_snapshot>c81e552</verified_snapshot>
+    <identity_rule>At startup, record git rev-parse HEAD. The commit containing this file cannot embed its own SHA.</identity_rule>
+    <rule>Never reset, discard, or overwrite changes you did not author.</rule>
+    <rule>Commit coherent remediation waves and push only this feature branch.</rule>
+    <rule>Do not merge to the default branch or mark a PR ready without human direction.</rule>
   </repository>
-  <current_truth>
-    One sprint is complete and archived. Sprint 2 is implemented but task 6 is open. The program has 11 sprints and 62 work packages. The harness reports structural-pass, deployment blocked, and activation_eligible false. No Cardano or Midnight validator has accepted a bridge proof or committed a trustless cross-chain state transition. Keep all six S01-BLOCK gates and all eight CONS gates unresolved. Do not invent the 42 Cardano or 52 Midnight predicate rows.
-  </current_truth>
-  <first_actions>
-    <action>Read README.md, reference/README.md, the active OpenSpec change, tasks.md, and all three council reports under openspec/changes/sprint-02-reference-harness-poc/review-evidence/.</action>
-    <action>Run git status --short and confirm the worktree is understood before editing.</action>
-    <action>Run pwsh -NoProfile -File scripts/verify-reference-harness.ps1. Use the Go fallback at $HOME/.local/toolchains/go1.25.7/go/bin/go.exe if go is not on PATH.</action>
-    <action>Use apply_patch for manual edits. Use test-driven development: write a focused failing test, run it RED, implement the smallest fix, then run focused and full verification.</action>
-  </first_actions>
-  <open_review_findings>
-    <blocking>
-      <item>OpenSpec telemetry is not explicitly disabled before every OpenSpec invocation. Set and restore OPENSPEC_TELEMETRY=0 and DO_NOT_TRACK=1 before version discovery and validation. Add a regression using isolated config/data directories that proves no telemetry request or user-config write occurs.</item>
-    </blocking>
-    <major>
-      <item>Decide and document whether structural evidence is a payload plus conformance envelope or whether each report carries execution bindings. The current conformance report binds the structural report by hash, but the OpenSpec wording and README need one unambiguous contract. Add a stale/mixed-generation negative test.</item>
-      <item>Replace handwritten descriptive command strings and the independent-cbor-check placeholder with structured command records containing resolved executable, version, cwd, argv, offline environment, and source hash. Ensure the records describe the actual invocation.</item>
-      <item>Harden requirements.lock.txt with artifact hashes and install with pip --require-hashes for the supported Windows/Python 3.14 target. Validate hash completeness and platform scope.</item>
-      <item>Make evidence publication crash-safe. Prefer a destination-volume generation directory and a last-written current-generation manifest so readers reject incomplete or mixed generations. Test second-write failure and interruption semantics.</item>
-      <item>Bind the PowerShell control tests and a real clean-checkout bootstrap qualification to release evidence, while keeping the default verifier offline and free of public-chain requests. Do not recurse when the late-failure test invokes a child verifier.</item>
-    </major>
-    <minor>
-      <item>WhatIf setup must report PLANNED or ready=false, not READY.</item>
-      <item>The standalone comparison command should enforce the documented tool versions or require a validated tool manifest.</item>
-    </minor>
-  </open_review_findings>
-  <verification_contract>
-    <item>All public web pulls must use the repository Scrapling environment and preserve exact request/response provenance. Do not use another web client or web search tool.</item>
-    <item>Rust and Go must remain independent implementations. The Go BSB22 component is parser-only and must never claim subgroup checks, pairings, full-decider soundness, or Cardano execution.</item>
-    <item>Default verification must be read-only, offline, temporary-output isolated, and fail closed. Only explicit update mode may publish input-bound evidence.</item>
-    <item>Use npm --offline run openspec:validate, git diff --check, Rust tests, Go tests plus vet, Python observer tests, cross-language comparison, independent cbor2 checks, setup/control tests, and a fresh three-reader council before closure.</item>
-    <item>Do not mark task 6 complete, archive Sprint 2, or claim deployment until fresh proof, consensus, and operator reports contain zero Blocking and zero unresolved Major findings.</item>
-  </verification_contract>
-  <research_and_tuning>
-    Official xAI pages currently describe Grok 4.5 as a coding, agentic-task, and knowledge-work model. The official reasoning guide says grok-4.5 supports reasoning_effort low, medium, and high; high is the default, reasoning cannot be disabled, and presencePenalty, frequencyPenalty, and stop are unsupported for reasoning models. Use high for this multi-step bridge audit, medium for long analysis that is less latency-sensitive, and low only for simple tool calls. The official safety page lists model cards for Grok 4 Fast, Grok Code Fast 1, and Grok 4, but no Grok 4.5 system card was listed in the current scrape. Treat the official Grok 4 model card as background only; do not transfer its safety claims to Grok 4.5 without evidence.
-    <reference>https://x.ai/news/grok-4-5</reference>
-    <reference>https://docs.x.ai/developers/model-capabilities/text/reasoning</reference>
-    <reference>https://x.ai/safety</reference>
-    <reference>https://data.x.ai/2025-08-20-grok-4-model-card.pdf</reference>
-  </research_and_tuning>
-  <deliverable>Continue until remaining review findings are fixed and reread or documented as a technically justified disposition. Commit intentional changes, refresh evidence only after all checks pass, and report commit SHAs, test commands, exact remaining open gates, and whether deployment is still blocked. Keep canonical design prose plain and do not add revision narration to it.</deliverable>
-</handoff>
+
+  <repository_map>
+    <workspace path="C:\Users\charl\midnight-cardano-bridge" disposition="writable">
+      This is the only program repository. Run git, tests, OpenSpec, commits, and pushes here.
+    </workspace>
+    <area path="knowledge_base/bridges/midnight-cardano-recursive-bridge.md" authority="canonical-design">
+      The complete 25-section bridge design. Preserve exactly 25 numbered sections and keep
+      present-tense system facts free of iteration history.
+    </area>
+    <area path="knowledge_base/proof-claims" authority="predicate-catalog">
+      Admission rules and status for the blocked 42 Cardano and 52 Midnight predicates.
+      A count is not a catalog. Each admitted row needs source-backed semantics, anchor,
+      witness, output, finality, freshness, and destination-use fields.
+    </area>
+    <area path="protocol" authority="wire-and-gate-contracts">
+      Machine-readable schemas, fixtures, domain profiles, and the canonical gate roster.
+    </area>
+    <area path="reference/rust" authority="rust-structural-harness">
+      Rust canonicalization, hashing, classification, and structural contract checks.
+    </area>
+    <area path="reference/go" authority="go-structural-and-bsb22-harness">
+      Independent deterministic CBOR checks and the parser-only gnark BSB22 boundary.
+    </area>
+    <area path="reference/observers" authority="public-observation-boundary">
+      Python adapters. All public HTTP reads pass through Scrapling and remain unsigned
+      observations unless a separate authenticated proof validates them.
+    </area>
+    <area path="reference/evidence" authority="bound-golden-evidence">
+      Input-bound golden reports. They are not mutable last-run status and may be refreshed
+      only through explicit update mode after implementation and review state stop changing.
+    </area>
+    <area path="openspec" authority="normative-change-state">
+      Stable capability specifications and active sprint changes. Repository-local
+      openspec skills and openspec/config.yaml are mandatory.
+    </area>
+    <area path="docs/superpowers" authority="approved-program-design-and-plans">
+      The approved 11-sprint, 62-package program design and executable plans.
+    </area>
+    <area path="scripts" authority="setup-verification-and-control-tests">
+      PowerShell setup, comparison, verifier, evidence publication, and regression entrypoints.
+    </area>
+    <area path="research-runs" authority="durable-source-research">
+      Deep Research Toolkit runs with fetched material, extracted claims, and quote-gate output.
+    </area>
+    <upstream_mirrors path="_external" disposition="read-only-evidence">
+      <repo name="deep-research-toolkit" role="source ingestion, quote gates, compilation, retrieval, and contradiction checks" />
+      <repo name="midnight-docs" role="official Midnight documentation and release constraints" />
+      <repo name="midnight-ledger" role="Midnight transaction, state, and ledger semantics" />
+      <repo name="midnight-node" role="AURA, GRANDPA, BEEFY, MMR, relay, and runtime implementation" />
+      <repo name="midnight-zk" role="Halo2/Plonkish, KZG, aggregation, and ZKIR implementation" />
+      <repo name="mithril" role="Cardano certificate chain, AVK evolution, and signed-entity implementation" />
+      <repo name="partner-chains" role="Cardano and Substrate interoperability source material" />
+      <repo name="cardano-ledger" role="Cardano era, ledger state, serialization, and transition rules" />
+      <repo name="plutus" role="Plutus V3 and BLS12-381 execution surface" />
+      <repo name="CIPs" role="CIP-0038, CIP-0133, CIP-0165, and related standards text" />
+      <repo name="apk-proofs" role="committee-key and aggregate public-key proof research" />
+      <rule>Use these repositories to trace primary source code and history. Do not edit, commit, or push them as part of bridge work.</rule>
+    </upstream_mirrors>
+  </repository_map>
+
+  <host_environment observed_at="2026-07-10" recheck_required="true">
+    <host os="Windows NT 10.0.26200.0" shell="PowerShell 7.6.3" architecture="amd64" />
+    <tool name="git" version="2.55.0.windows.1" resolution="PATH" />
+    <tool name="gh" version="2.95.0" resolution="PATH" note="Never print credentials or tokens." />
+    <tool name="node" version="24.18.0" resolution="PATH" />
+    <tool name="npm" version="11.16.0" resolution="PATH" />
+    <tool name="openspec" version="1.5.0" resolution="node_modules/.bin/openspec.cmd" />
+    <tool name="python" version="3.14.6" resolution=".venv-scrapling/Scripts/python.exe" />
+    <tool name="scrapling" version="0.4.10" resolution=".venv-scrapling" />
+    <tool name="cbor2" version="5.7.1" resolution=".venv-scrapling" />
+    <tool name="cargo" version="1.90.0" resolution="$HOME/.cargo/bin/cargo.exe" note="Not on PATH in the observed shell." />
+    <tool name="rustc" version="1.90.0" resolution="$HOME/.cargo/bin/rustc.exe" note="Not on PATH in the observed shell." />
+    <tool name="go" version="1.25.7" resolution="$HOME/.local/toolchains/go1.25.7/go/bin/go.exe" note="Not on PATH in the observed shell." />
+    <tool name="grok" version="0.2.93" resolution="PATH" />
+    <tool name="codex" version="0.144.1" model_observed="gpt-5.6-sol" resolution="PATH" />
+    <wsl distribution="Ubuntu-26.04" version="2" kernel="6.18.33.2-microsoft-standard-WSL2" status="working" />
+    <docker location="WSL2" client="29.6.1" server="29.6.1" status="working" />
+    <chain_tool name="Compact" status="not-found" scope="Windows-and-WSL-PATH" />
+    <chain_tool name="cardano-node" status="not-found" scope="Windows-and-WSL-PATH-and-user-workspace-search" documented_target="11.0.1" />
+    <chain_tool name="cardano-cli" status="not-found" scope="Windows-PATH-and-user-workspace-search" documented_target="11.0.0.0" />
+    <warning>
+      The canonical design's dated local probe says Docker is absent, WSL is disabled, and
+      Cardano binaries are available. Those statements no longer match the observed host.
+      Re-probe, preserve command output, and correct the current environment record without
+      treating Docker availability as Midnight or Cardano deployment readiness.
+    </warning>
+  </host_environment>
+
+  <tooling_and_research>
+    <openspec>
+      Read AGENTS.md and openspec/config.yaml first. Use the repository skills under
+      .codex/skills/openspec-* for proposal, exploration, application, synchronization,
+      review, and archive work. Validate with npm run openspec:validate.
+    </openspec>
+    <deep_research_toolkit>
+      The toolkit mirror is _external/deep-research-toolkit, its environment is .venv-drt,
+      and project policy is .deepresearch.yml. Durable runs live in research-runs. Use the
+      toolkit's fetch, claim extraction, verbatim quote gate, compiler, retrieval planner,
+      and contradiction checks. Never admit a load-bearing chain claim from model memory.
+    </deep_research_toolkit>
+    <web>
+      Every public web pull uses Scrapling. Record URL, request method and body, retrieval
+      time, response status, content hash, adapter revision, and the exact quote supporting
+      each admitted claim. Prefer specifications, source repositories, release artifacts,
+      and chain-owned documentation.
+    </web>
+    <shell>
+      Use PowerShell on Windows. Resolve pinned tools through the setup/verifier functions or
+      the explicit paths above. Do not silently substitute globally installed versions.
+    </shell>
+  </tooling_and_research>
+
+  <agent_workflow_tools>
+    <discovery>
+      grok inspect is authoritative for loaded rules, skills, hooks, plugins, permissions,
+      and MCP servers. Run it again after changing configuration. Duplicate skill names can
+      come from user and plugin scopes; follow one current copy, not both in sequence.
+    </discovery>
+    <skill name="using-superpowers" use="before any other work" />
+    <skill name="executing-plans" use="execute the approved written Sprint 2 plan with checkpoints" />
+    <skill name="test-driven-development" use="every behavior change" />
+    <skill name="systematic-debugging" use="every unexpected result or failing test" />
+    <skill name="receiving-code-review" use="evaluate Codex and council findings against code and evidence" />
+    <skill name="requesting-code-review" use="before closure" />
+    <skill name="verification-before-completion" use="before any success, commit, or push claim" />
+    <skill name="dispatching-parallel-agents" use="only independent read-only research or reader scopes" />
+    <skill name="humanizer" source="C:/Users/charl/.codex/skills/humanizer/SKILL.md" use="every documentation draft and final pass" />
+    <tool name="Deep Research Toolkit" source="_external/deep-research-toolkit/skills">
+      Use knowledge-extraction and research-knowledge-graph for admitted claims,
+      knowledge-compiler and retrieval-planner for dossiers and contradictions, and the
+      verbatim quote gate before a chain fact enters the canonical design.
+    </tool>
+    <tool name="Scrapling" source=".venv-scrapling">
+      This is the only public web transport for the project. Other agents may propose URLs,
+      but the recorded fetch must pass through Scrapling.
+    </tool>
+  </agent_workflow_tools>
+
+  <ground_truth>
+    <program total_sprints="11" total_work_packages="62" completed_sprints="1" active_sprint="2" />
+    <sprint_2_state>Implementation exists; OpenSpec task 6.1 remains open.</sprint_2_state>
+    <last_verified_result structural_result="structural-pass"
+                          deployment_outcome="blocked"
+                          activation_eligible="false"
+                          cryptographic_verification="false"
+                          destination_execution_confirmed="false" />
+    <roster entries="14" activation_blockers="6" consensus_gates="8"
+            cbor_bytes="7705"
+            sha256="2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f" />
+    <predicate_catalog cardano_required="42" midnight_required="52" state="missing-source-backed-rows" />
+    <non_claims>
+      <item>No Cardano validator has accepted the complete wrapped Midnight relation.</item>
+      <item>No Midnight operation has accepted the external Cardano proof atomically.</item>
+      <item>The Go BSB22 component is a byte parser, not a proof verifier.</item>
+      <item>Midnight and Mithril captures are unsigned endpoint observations.</item>
+      <item>All six S01-BLOCK gates and all eight CONS gates remain open.</item>
+    </non_claims>
+  </ground_truth>
+
+  <mandatory_reads order="strict">
+    <file>AGENTS.md</file>
+    <file>README.md</file>
+    <file>reference/README.md</file>
+    <file>EXAMINATION-CHECKLIST.md</file>
+    <file>openspec/config.yaml</file>
+    <file>.deepresearch.yml</file>
+    <file>.grok/config.toml</file>
+    <file>C:/Users/charl/.codex/skills/humanizer/SKILL.md</file>
+    <file>knowledge_base/bridges/midnight-cardano-recursive-bridge.md</file>
+    <file>docs/superpowers/plans/2026-07-10-reference-harness-poc.md</file>
+    <file>openspec/changes/sprint-02-reference-harness-poc/design.md</file>
+    <file>openspec/changes/sprint-02-reference-harness-poc/tasks.md</file>
+    <file>openspec/changes/sprint-02-reference-harness-poc/review-evidence/proof-reader.md</file>
+    <file>openspec/changes/sprint-02-reference-harness-poc/review-evidence/consensus-reader.md</file>
+    <file>openspec/changes/sprint-02-reference-harness-poc/review-evidence/operator-reader.md</file>
+  </mandatory_reads>
+
+  <preflight>
+    <step>Run git status --short, git branch --show-current, git log -8 --oneline, and grok inspect.</step>
+    <step>Confirm the branch contains 54e8d36, cee2bd2, c81e552, and 9b2d60b.</step>
+    <step>For every _external child repository used, record its full HEAD SHA, origin URL, branch or detached state, and git status. Do not fetch or update it during preflight.</step>
+    <step>Run gh auth status without printing token material; record only account, host, and authentication result.</step>
+    <step>Run grok mcp doctor codex-auditor --json and require healthy=true with two tools discovered.</step>
+    <step>Record Windows, WSL2, Docker, Compact, cardano-node, cardano-cli, Rust, Go, Python, Node, OpenSpec, Grok, and Codex versions or explicit not-found results.</step>
+    <step>Run pwsh -NoProfile -File scripts/verify-reference-harness.ps1 and retain its exact output.</step>
+    <step>If go is absent from PATH, use $HOME/.local/toolchains/go1.25.7/go/bin/go.exe.</step>
+    <step>If cargo is absent from PATH, use $HOME/.cargo/bin/cargo.exe.</step>
+    <step>Do not update evidence during preflight. A failure must be investigated before any claim of progress.</step>
+  </preflight>
+
+  <codex_audit_channel>
+    <purpose>
+      Codex is an independent audit reader. Grok owns implementation; Codex challenges the
+      patch, evidence, tests, and claims. Codex must not edit the repository during an audit.
+    </purpose>
+    <identity_limit>
+      This channel starts a Codex CLI session on the same machine. It does not connect to the
+      exact live chat that prepared this handoff and it does not inherit hidden conversation
+      state. Every request must carry the repository SHA, scope, acceptance criteria, known
+      non-claims, and commands needed to reproduce the evidence.
+    </identity_limit>
+    <project_mcp>
+      The committed .grok/config.toml registers codex-auditor as a stdio server backed by
+      "codex mcp-server". The local handshake was checked against MCP protocol 2025-06-18;
+      Grok discovered two tools.
+      <tool name="codex-auditor__codex">
+        Start one audit with prompt set to the complete request packet, cwd set to
+        C:\Users\charl\midnight-cardano-bridge, sandbox set to read-only,
+        approval-policy set to never, and model set to gpt-5.6-sol. Preserve the returned
+        threadId and content. Do not set base-instructions.
+      </tool>
+      <tool name="codex-auditor__codex-reply">
+        Continue only the same audit using its threadId and a complete follow-up prompt.
+        Use this for evidence-backed dispositions and clarification. Start a new codex tool
+        call, with a fresh thread, for the final reread.
+      </tool>
+      <failure_rule>
+        If MCP health, authentication, model selection, or a tool call fails, use the CLI
+        fallback below. Do not replace gpt-5.6-sol silently and do not treat a timeout or an
+        empty response as approval.
+      </failure_rule>
+    </project_mcp>
+    <request_packet><![CDATA[
+<codex_audit_request version="1">
+  <audit_id>stable wave or closure identifier</audit_id>
+  <role>Independent read-only bridge proof and implementation auditor</role>
+  <repository>C:\Users\charl\midnight-cardano-bridge</repository>
+  <branch>resolve-checklist-full-sweep</branch>
+  <head_sha>full git rev-parse HEAD value</head_sha>
+  <base_sha>full comparison base SHA</base_sha>
+  <scope>One remediation wave, one bounded diff, or one closure question</scope>
+  <changed_files>Exact git diff --name-status output for the scope</changed_files>
+  <acceptance_criteria>Concrete requirements and failure conditions</acceptance_criteria>
+  <known_non_claims>Open cryptographic, consensus, destination, and deployment gates</known_non_claims>
+  <verification>Commands already run with exit codes and evidence paths</verification>
+  <questions>Specific claims Codex must try to falsify</questions>
+  <response_contract>
+    Findings first, ordered Blocking, Major, Minor. Each finding must include a stable id,
+    file and line, violated requirement, technical consequence, reproduction or inspection
+    method, and minimum acceptable disposition. End with exact B/M/m counts, residual test
+    gaps, and verdict pass or changes-required. Do not edit files.
+  </response_contract>
+</codex_audit_request>
+    ]]></request_packet>
+    <recording_contract>
+      Store each request, verbatim response, and Grok disposition under
+      openspec/changes/sprint-02-reference-harness-poc/review-evidence/codex/&lt;audit-id&gt;/.
+      For CLI fallback, also store transcript.jsonl and extract the session id from it.
+      Record request, response, and transcript SHA-256 values, Codex threadId or CLI session
+      id, model, repository HEAD, and UTC time. Never rewrite a prior response. A disposition is fixed, rejected with
+      cited evidence, or deferred with human approval. Deferred Blocking or Major findings
+      keep the sprint open.
+    </recording_contract>
+    <cli_fallback><![CDATA[
+$repo = 'C:\Users\charl\midnight-cardano-bridge'
+$auditId = 'replace-with-stable-audit-id'
+$auditDir = Join-Path $repo "openspec\changes\sprint-02-reference-harness-poc\review-evidence\codex\$auditId"
+$requestPath = Join-Path $auditDir 'request.xml'
+$responsePath = Join-Path $auditDir 'response.md'
+$transcriptPath = Join-Path $auditDir 'transcript.jsonl'
+New-Item -ItemType Directory -Force -Path $auditDir | Out-Null
+$prompt = Get-Content -Raw -LiteralPath $requestPath
+$prompt | codex -a never exec --ephemeral `
+  -C $repo `
+  -s read-only `
+  -m gpt-5.6-sol `
+  --json `
+  --color never `
+  -o $responsePath `
+  - | Tee-Object -FilePath $transcriptPath | Out-Null
+$exitCode = $LASTEXITCODE
+if ($exitCode -ne 0 -or -not (Test-Path -LiteralPath $responsePath)) {
+  throw "Codex audit failed or produced no response"
+}
+Get-FileHash -Algorithm SHA256 -LiteralPath $requestPath, $responsePath, $transcriptPath
+    ]]></cli_fallback>
+    <cadence>
+      <step>Request one bounded Codex audit after each coherent remediation commit.</step>
+      <step>Answer findings with code, tests, or cited evidence. Do not answer with intent.</step>
+      <step>Use codex-reply to test dispositions in the same thread.</step>
+      <step>After all waves, start a fresh Codex audit over the complete closure diff.</step>
+      <step>The Codex audit supplements the proof, consensus, and operator council. It cannot replace those readers or any chain receipt.</step>
+    </cadence>
+  </codex_audit_channel>
+
+  <engineering_rules>
+    <rule id="tdd">For every behavior change, add one focused failing regression, run it RED for the expected reason, implement the smallest fix, then run focused and full GREEN verification.</rule>
+    <rule id="edits">Use apply_patch for manual edits. Preserve unrelated worktree changes.</rule>
+    <rule id="sources">Use Scrapling for every public web pull. Preserve exact request and response provenance. Admit new design claims only through primary sources and the Deep Research Toolkit evidence gate.</rule>
+    <rule id="prose">Use the humanizer skill on documentation. Keep technical prose plain, specific, and free of revision narration.</rule>
+    <rule id="schemas">Use structured parsers and closed schemas. Do not rely on ad hoc string matching for security or evidence state.</rule>
+    <rule id="claims">Never invent predicate rows, chain facts, proof success, testnet receipts, or gate closure.</rule>
+    <rule id="evidence">Default verification is offline, read-only, fail-closed, and temporary-output isolated. Only explicit update mode may publish evidence.</rule>
+    <rule id="review">An implementer cannot approve its own work. Fresh readers receive the current snapshot and acceptance criteria, not prior review narration.</rule>
+    <rule id="codex-audit">Use Codex only as a read-only auditor. Preserve requests, responses, dispositions, thread ids, and hashes. Never summarize away an unresolved finding.</rule>
+  </engineering_rules>
+
+  <remediation_plan>
+    <wave id="A" name="telemetry-boundary" severity="BLOCKING">
+      <problem>OpenSpec telemetry is not explicitly disabled before version discovery and validation.</problem>
+      <required_result>Set and restore OPENSPEC_TELEMETRY=0 and DO_NOT_TRACK=1 before every OpenSpec invocation. Test with isolated config and data directories that no telemetry connection is attempted and no user config is written.</required_result>
+    </wave>
+
+    <wave id="B" name="proof-vector-closure" severity="MAJOR">
+      <problem>The CBOR manifest and BSB22 sentinel remediation require an independent technical reread.</problem>
+      <required_result>Bind structural-cbor-schema-v1.json to Rust, Go, and the independent cbor2 checker at the field/type level, not only by member counts.</required_result>
+      <required_result>Add a versioned BSB22 proof/VK fixture with a distinct sentinel for every named field. Drive every relevant equal-width proof and VK swap through Parse, compare against the registered named expectation, and return a stable parser-only mismatch code. Bind execution into the combined verifier and evidence.</required_result>
+      <required_result>Keep S01-BLOCK-04/full-decider and S01-BLOCK-06/cardano-execution unresolved and cryptographic_verification=false.</required_result>
+    </wave>
+
+    <wave id="C" name="evidence-contract" severity="MAJOR">
+      <problem>The repository does not state one exact structural-payload/conformance-envelope contract.</problem>
+      <required_result>Choose one unambiguous contract. Prefer a structural payload bound by hash from a conformance envelope rather than duplicating the execution manifest. Align OpenSpec, code, tests, and README. Add stale payload, stale envelope, and mixed-generation negatives.</required_result>
+    </wave>
+
+    <wave id="D" name="command-provenance" severity="MAJOR">
+      <problem>Evidence records descriptive command strings, including a non-executable placeholder.</problem>
+      <required_result>Generate structured records from the same invocation wrapper that runs each command. Record logical tool, resolved executable identity, pinned version, cwd, argv, relevant offline environment, and inline-source SHA-256. Test that records match actual invocations.</required_result>
+    </wave>
+
+    <wave id="E" name="python-artifact-lock" severity="MAJOR">
+      <problem>The Python lock pins versions but not artifacts.</problem>
+      <required_result>Commit hashes for every accepted Windows CPython 3.14 artifact, install with pip --require-hashes and binary-only policy, and test target-platform and hash completeness. Rebuild the venv from that lock before accepting it.</required_result>
+    </wave>
+
+    <wave id="F" name="crash-safe-publication" severity="MAJOR">
+      <problem>Two sequential file replacements are not a crash-atomic evidence transaction and depend on TEMP sharing the repository volume.</problem>
+      <required_result>Stage an immutable generation on the destination volume, verify the full pair, and publish a small current-generation manifest last. Readers must reject missing, mixed, or incomplete generations. Test second-write failure, interruption before pointer publication, startup recovery, and a TEMP directory on another volume or an equivalent injected path-root condition.</required_result>
+    </wave>
+
+    <wave id="G" name="control-and-bootstrap-evidence" severity="MAJOR">
+      <problem>The canonical verifier omits its PowerShell control tests and a real clean-checkout bootstrap qualification.</problem>
+      <required_result>Run control tests without recursive verifier invocation. Add a registry-backed clean-checkout qualification as a separate, explicitly networked dependency-bootstrap phase; keep public-chain endpoints unreachable. Bind a deterministic qualification receipt into offline conformance.</required_result>
+    </wave>
+
+    <wave id="H" name="minor-operator-fixes" severity="MINOR">
+      <required_result>WhatIf setup reports PLANNED or ready=false. READY is reserved for a completed install and exact lock match.</required_result>
+      <required_result>The standalone comparison validates exact Cargo, Rust, and Go versions or consumes a previously validated tool manifest.</required_result>
+      <required_result>The combined verifier runs and binds the late-failure regression.</required_result>
+    </wave>
+
+    <wave id="I" name="host-capability-reconciliation" severity="MAJOR">
+      <problem>The canonical design's dated host probe no longer matches the machine: WSL2 and Docker now work, while Cardano binaries were not found.</problem>
+      <required_result>Repeat the host probes from a clean PowerShell process and inside Ubuntu-26.04. Preserve exact commands, paths, versions, and failures in a dated machine-readable receipt.</required_result>
+      <required_result>Update the canonical 25-section design, README, harness environment contract, and any affected OpenSpec text to state the current capabilities. Keep versioned historical evidence immutable.</required_result>
+      <required_result>Do not mark Compact, the Midnight proof server, cardano-node, cardano-cli, or either testnet deployment ready until install, version, configuration, connectivity, and a minimal functional probe pass.</required_result>
+    </wave>
+  </remediation_plan>
+
+  <required_verification>
+    <command>pwsh -NoProfile -File scripts/setup-reference-harness.ps1 -WhatIf</command>
+    <command>pwsh -NoProfile -File scripts/tests/setup-reference-harness.contract.ps1</command>
+    <command>pwsh -NoProfile -File scripts/tests/compare-reference-harness.Tests.ps1</command>
+    <command>pwsh -NoProfile -File scripts/tests/verify-reference-harness.integration.ps1</command>
+    <command>cargo test --locked --offline --manifest-path reference/rust/Cargo.toml --all-targets</command>
+    <command cwd="reference/go">go test ./...</command>
+    <command cwd="reference/go">go vet ./...</command>
+    <command>.\.venv-scrapling\Scripts\python.exe -B -m unittest discover -s reference/observers/tests -v</command>
+    <command>npm --offline run openspec:validate</command>
+    <command>git diff --check</command>
+    <command>pwsh -NoProfile -File scripts/verify-reference-harness.ps1 -UpdateEvidence</command>
+    <command>pwsh -NoProfile -File scripts/verify-reference-harness.ps1</command>
+  </required_verification>
+
+  <closure_protocol>
+    <step>After all remediation waves pass, commit the implementation snapshot.</step>
+    <step>For every coherent remediation commit, preserve a bounded Codex request, response, disposition, threadId, and hashes. No Codex Blocking or Major finding may remain unresolved.</step>
+    <step>Start a fresh Codex closure audit against the final implementation snapshot. A same-thread follow-up is not a fresh reread.</step>
+    <step>Dispatch fresh proof, consensus, and operator readers in parallel. They may write only their own report files.</step>
+    <step>Require file-and-line citations, commands, evidence, disposition, and exact Blocking/Major/Minor counts.</step>
+    <step>Resolve every Blocking and Major finding with TDD, then request a fresh reread. Do not downgrade a finding merely to close the sprint.</step>
+    <step>Create openspec/changes/sprint-02-reference-harness-poc/review.md using the repository OpenSpec review instructions. Record SHA-256 for each final reader report.</step>
+    <step>Mark task 6.1 complete only when all three final reports have Blocking=0 and Major=0.</step>
+    <step>Refresh evidence after review artifacts and task state stop changing, then run the default verifier byte-identically.</step>
+    <step>Archive Sprint 2 only if OpenSpec archive instructions permit it and all stable-spec merges validate. Otherwise leave the reviewed change active.</step>
+    <step>Commit and push resolve-checklist-full-sweep. Do not merge it.</step>
+  </closure_protocol>
+
+  <acceptance_gates>
+    <gate id="code">All focused, component, integration, and full verification commands exit zero.</gate>
+    <gate id="evidence">A failed or interrupted run publishes no pass/deployment label and cannot select a partial generation.</gate>
+    <gate id="network">Default verification performs no network request and writes no user-global configuration.</gate>
+    <gate id="review">Fresh proof, consensus, and operator counts are Blocking=0 and Major=0.</gate>
+    <gate id="codex-audit">The fresh Codex closure audit reports Blocking=0 and Major=0, and every earlier Codex finding has a preserved evidence-backed disposition.</gate>
+    <gate id="openspec">Strict OpenSpec validation passes after review/task changes.</gate>
+    <gate id="design">The canonical design still has exactly 25 numbered sections and contains no iteration narration.</gate>
+    <gate id="truth">Deployment remains blocked and activation_eligible=false unless real destination-chain receipts and every roster gate exist. This sprint is not expected to change that state.</gate>
+  </acceptance_gates>
+
+  <final_response_schema>
+    Return one XML document with this shape:
+    <completion_report>
+      <status>complete|blocked</status>
+      <branch_commit>full SHA</branch_commit>
+      <pushed_remote>URL or not-pushed reason</pushed_remote>
+      <implemented>concise list of actual changes</implemented>
+      <red_green_evidence>failing tests observed, then passing commands</red_green_evidence>
+      <council_counts proof="B/M/m" consensus="B/M/m" operator="B/M/m" />
+      <codex_audit thread_id="..." request_sha256="..." response_sha256="..." counts="B/M/m" verdict="..." />
+      <open_chain_gates>exact S01-BLOCK and CONS state</open_chain_gates>
+      <deployment_state structural_result="..." deployment_outcome="..." activation_eligible="..." />
+      <residual_risks>facts only</residual_risks>
+    </completion_report>
+  </final_response_schema>
+
+  <official_xai_references>
+    <reference purpose="Grok 4.5 capabilities and 500K context">https://docs.x.ai/developers/models/grok-4.5</reference>
+    <reference purpose="reasoning effort and unsupported penalties">https://docs.x.ai/developers/model-capabilities/text/reasoning</reference>
+    <reference purpose="strict JSON Schema output">https://docs.x.ai/developers/model-capabilities/text/structured-outputs</reference>
+    <reference purpose="parallel function calling and tool choice">https://docs.x.ai/developers/tools/function-calling</reference>
+    <reference purpose="AGENTS.md and rule precedence">https://docs.x.ai/build/features/project-rules</reference>
+    <reference purpose="headless launch and no-auto-update">https://docs.x.ai/build/cli/headless-scripting</reference>
+    <reference purpose="permissions and modes">https://docs.x.ai/build/modes-and-commands</reference>
+    <reference purpose="current model-card index">https://x.ai/safety</reference>
+    <reference purpose="launch announcement">https://x.ai/news/grok-4-5</reference>
+  </official_xai_references>
+
+  <local_integration_probes observed_at="2026-07-10">
+    <probe command="codex --version" result="codex-cli 0.144.1" />
+    <probe command="codex exec --help" result="read-only sandbox, ephemeral sessions, model selection, cwd, and output-last-message supported" />
+    <probe command="codex mcp-server --help" result="stdio MCP server supported" />
+    <probe command="grok mcp doctor codex-auditor --json" result="healthy; protocol 2025-06-18; two tools discovered" />
+    <probe command="codex-auditor__codex smoke call" result="CODEX_MCP_OK using read-only and approval-policy never" />
+    <probe command="codex CLI smoke call" result="AUDIT_CHANNEL_OK using gpt-5.6-sol, read-only, approval never, and ephemeral mode" />
+    <note>These probes establish transport and configuration only. They do not approve the bridge implementation.</note>
+  </local_integration_probes>
+
+  <system_card_status>
+    On 2026-07-10, Scrapling checks of the official xAI safety page and sitemap
+    found Grok 4, Grok 4 Fast, and Grok Code Fast 1 model cards, but no separate
+    Grok 4.5 model or system card. Use the Grok 4 card only as historical background.
+    Do not transfer its capability, safety, or evaluation claims to Grok 4.5.
+  </system_card_status>
+</bridge_handoff>
