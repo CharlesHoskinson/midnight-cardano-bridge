@@ -17,7 +17,7 @@ Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 - [Canonical 25-section bridge design](bridges/midnight-cardano-recursive-bridge.md): current readable system design and source-linked evidence boundary.
 - [Council-reviewed program design](../docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md): 11 sprints, 62 work packages, fixed proof paths, gates, and completion outcomes.
 - [Predicate catalog status](proof-claims/predicate-catalog-status.md): required 42 Cardano and 52 Midnight records, recovery search, admission gates, and live-test subset rules.
-- [OpenSpec workflow](../openspec/config.yaml): repository context and artifact rules; see the active [Sprint 1 proposal](../openspec/changes/sprint-01-foundation/proposal.md) and the [`openspec/specs/`](../openspec/specs/) stable capability directory populated by accepted archives.
+- [OpenSpec workflow](../openspec/config.yaml): repository context and artifact rules. See the active [Sprint 1 proposal](../openspec/changes/sprint-01-foundation/proposal.md) and the [`openspec/specs/` landing page](../openspec/specs/README.md) for stable capability directory navigation. No stable capability has been published.
 
 ## Standards
 - [CIP-0381: Plutus support for pairings over BLS12-381](standards/cip-0381.md) — BLS12-381 pairing builtins enabling on-chain Groth16 verification.
@@ -26,10 +26,10 @@ Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 ## Cardano
 - [plutus-groth: pure-Plutus Groth16 verifier](cardano/groth16-verifier-plutus.md) — cost baseline: ~133× over mainnet budget, Hydra-only in V2.
 - [ak-381: Aiken Groth16 verifier](cardano/ak-381-aiken-groth16.md) — PlutusV3 BLS builtins, standard Circom/SnarkJs proof format.
-- [Ouroboros Peras (CIP-0140): faster settlement/finality](cardano/ouroboros-peras-finality.md) — ~2-min certificate-based finality; the light-client finality witness.
-- [Halo2-Plutus verifier (IOG)](cardano/halo2-plutus-verifier.md) — Cardano verifies Halo2/KZG (BLS12-381) proofs directly; the Groth16-free path for Direction A.
-- [Mithril — stake-threshold BLS certificates](cardano/mithril-bls-certificates.md) — certifies any deterministic Cardano-state function; the Cardano-side BLS certificate for Direction B.
-- [CIP-0165 — canonical ledger-state root (SCLS)](standards/cip-0165.md) — deterministic Merkle `root_hash`@slot for UTxO membership/nonmembership; **Mithril-certifiable** → the Direction-B inclusion anchor.
+- [Ouroboros Peras (CIP-0140): faster settlement/finality](cardano/ouroboros-peras-finality.md): Proposed. It is research input, not the selected or deployed light-client witness.
+- [Halo2-Plutus verifier (IOG)](cardano/halo2-plutus-verifier.md): direct Halo2/KZG verification is a separately measured production alternative only. The PoC Cardano landing is full-decider BSB22 commitment-Groth16.
+- [Mithril stake-threshold certificates](cardano/mithril-bls-certificates.md): public Mithril SCLS certification has not been observed. The Direction-B public profile requires validation of the full certificate chain from an authenticated bootstrap.
+- [CIP-0165 canonical ledger-state root (SCLS)](standards/cip-0165.md): Proposed. Its deterministic `root_hash` at a slot is the gated Direction-B inclusion artifact, not evidence that public Mithril SCLS certification exists.
 
 ## Midnight
 - [Midnight — overview & dual-state ledger](midnight/overview.md) — only public state on-chain; 128-byte zk-SNARK proofs; a native Cardano bridge already exists.
@@ -49,15 +49,15 @@ Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 - [GRANDPA — finality gadget](consensus/grandpa-finality.md) — >2/3 precommit quorum finalizes whole chains; the "commit" justification is the Direction-A attestation object.
 - [BABE — block production](consensus/babe-block-production.md) — *Polkadot background only* (Midnight uses AURA); VRF slot lottery, probabilistic tip.
 - [Polkadot hybrid consensus (overview)](consensus/polkadot-hybrid-consensus.md) — provable/irreversible finality as an independent service; **BEEFY** = remote finality-proof verification (the bridge precedent).
-- [BEEFY — canonical protocol](consensus/beefy.md) — signed commitment = (block# ‖ MMR root ‖ validator-set-id) + 2/3+1 sigs; the exact object the Cardano verifier checks.
+- [BEEFY canonical protocol](consensus/beefy.md): a signed commitment binds the block number, MMR root, and validator-set id with 2/3+1 signatures. The selected PoC constrains this source object inside the wrapped relation; raw native verification is a separate production candidate.
 - [BEEFY light client (MMR, ECDSA/BLS, zkBEEFY)](consensus/beefy-light-client.md) — verification steps; **zkBEEFY** SNARK-wraps signatures to constant cost; BLS12-381 path ≈ near-native on Cardano.
 - [BEEFY implementation notes](consensus/beefy-implementation.md) — rounds, mandatory blocks (validator-set handoff), session boundaries.
 
 ## Proof systems
 - [Proof-system fundamentals](proof-systems/proof-systems-fundamentals.md) — statement/witness, NIZK, knowledge-soundness, succinctness (shared vocabulary).
 - [PLONKish arithmetization (Halo2)](proof-systems/halo2-plonkish.md) — custom gates + lookups; deterministic universal keygen (no per-circuit SRS).
-- [Commitment Groth16 (gnark)](proof-systems/commitment-groth16.md) — Pedersen commitment + PoK collapses witness wires into one public scalar.
-- [Groth16 trusted-setup ceremony](proof-systems/groth16-trusted-setup-ceremony.md) — per-circuit 2-phase MPC; 1-of-N honest; avoidable via universal KZG.
+- [Commitment Groth16 (gnark)](proof-systems/commitment-groth16.md): BSB22 commitment `D`, the typed `claim_digest`, and the aggregation `claims_hash` are distinct bindings and cannot replace one another.
+- [Groth16 trusted-setup ceremony](proof-systems/groth16-trusted-setup-ceremony.md): both an authenticated universal/updatable KZG SRS and a circuit-specific BSB22 Groth16 setup/VK are required. The KZG SRS does not replace the wrapper setup.
 - [APK proofs / committee key scheme](proof-systems/apk-proofs-committee-key.md) — accountable ≥t-of-committed-keys BLS proof; the shared light-client core for both directions.
 
 ## Cardano — on-chain Groth16 cost

@@ -11,7 +11,7 @@ This repository contains the full design document at [`knowledge_base/bridges/mi
 - The [canonical living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md) is the current, source-linked system description with exactly 25 numbered sections.
 - The [council-reviewed program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) defines the 11-sprint, 62-work-package execution program and its proof-of-concept boundaries.
 - The [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the blocked 42 Cardano plus 52 Midnight catalog gate, searched locations, and row-admission rules without inventing entries.
-- The [OpenSpec workflow](openspec/config.yaml) carries normative requirements through active proposal, delta-spec, design, task, and review artifacts. The active [Sprint 1 change](openspec/changes/sprint-01-foundation/proposal.md) contains the current deltas; accepted capability requirements publish to [`openspec/specs/`](openspec/specs/) when a change is archived.
+- The [OpenSpec workflow](openspec/config.yaml) carries normative requirements through active proposal, delta-spec, design, task, and review artifacts. The active [Sprint 1 change](openspec/changes/sprint-01-foundation/proposal.md) contains the current deltas. The [`openspec/specs/` landing page](openspec/specs/README.md) lists stable capability specs published by validated archived changes; none are published yet.
 
 ## Why proofs instead of a committee
 
@@ -51,7 +51,7 @@ Midnight runs a Substrate consensus. Block production is AURA today, not BABE, a
 
 The current `RelayChainProof` carries a signed commitment containing the MMR-root payload, block number, validator-set id and ECDSA votes, plus a Merkle `AuthoritiesProof` against a `keyset_commitment`. The relay uses stake and authority payloads while constructing that proof, but does not serialize the full stake data or an event-to-MMR inclusion path in the Cardano-facing object. A complete validator must bind the authority-set transition, finalized commitment, MMR inclusion, predicate and typed output before settlement.
 
-There is one honest gap worth stating plainly. The Cardano-side on-chain validator that consumes that PlutusData is not in the public `midnight-node` repository (the Aiken file there is an unrelated vesting skeleton). Locating or specifying it is the top open item.
+No public Cardano validator consumes the raw `RelayChainProof` with native ECDSA. That direct verifier is a separately measured production candidate, not the selected proof-of-concept verifier. The selected PoC boundary remains open: the complete wrapped BEEFY/MMR relation, the full Halo2/KZG decider inside BSB22, and the BSB22 Plutus validator must be implemented and measured together.
 
 ## The Cardano-side anchor for the reverse leg
 
