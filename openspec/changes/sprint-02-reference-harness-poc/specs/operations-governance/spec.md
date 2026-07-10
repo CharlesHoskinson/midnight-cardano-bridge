@@ -8,9 +8,12 @@ behavior, and reset isolation. Each structural root, deployment-domain,
 continuity, and gate-record-set digest preimage SHALL be
 `u64_be(domain_byte_length) || UTF8(domain) || u64_be(body_byte_length) || body`.
 The harness SHALL emit the canonical bodies and complete preimages as lowercase
-hex so independent implementations compare bytes before comparing digests. All
-digest-like fixture members are fixed lowercase hexadecimal text in this
-diagnostic profile; they are not production typed byte strings. Every result SHALL carry
+hex so independent implementations compare bytes before comparing digests. Fixture
+members remain lowercase hexadecimal text at the JSON boundary. For CBOR encoding,
+the versioned machine-readable schema at `reference/fixtures/structural-cbor-schema-v1.json`
+is normative: fields marked `bytes` SHALL use the canonical lowercase-hex-to-CBOR-
+byte-string projection; fields marked `text`, `uint`, or `bool` SHALL use those exact
+CBOR major types. Every result SHALL carry
 `activation_eligible = false` until the source-backed `CONS-DOMAIN-01` artifact
 selects and authorizes a production profile.
 

@@ -7,6 +7,26 @@ import (
 	"testing"
 )
 
+func TestNamedSentinelVectorDetectsEqualWidthSwaps(t *testing.T) {
+	proof := make([]byte, ProofLength)
+	for i := range proof { proof[i] = byte(i + 1) }
+	vk := make([]byte, VKLength)
+	for i := range vk { vk[i] = byte(255 - (i % 251)) }
+	fields := []FieldLayout{{"A",0,48},{"B",48,96},{"C",144,48},{"D",192,96},{"PoK",288,48}}
+	for _, f := range fields {
+		want := append([]byte(nil), proof[f.Offset:f.Offset+f.Length]...)
+		if !bytes.Equal(want, proof[f.Offset:f.Offset+f.Length]) { t.Fatalf("sentinel %s mismatch", f.Name) }
+		for _, g := range fields {
+			if f.Length != g.Length || f.Name == g.Name { continue }
+			mut := append([]byte(nil), proof...)
+			copy(mut[f.Offset:f.Offset+f.Length], proof[g.Offset:g.Offset+g.Length])
+			if bytes.Equal(want, mut[f.Offset:f.Offset+f.Length]) { t.Fatalf("swap %s<->%s was not detected", f.Name, g.Name) }
+		}
+	}
+	vkFields := []FieldLayout{{"alpha",0,48},{"beta",48,96},{"gamma",144,96},{"delta",240,96},{"IC0",336,48},{"IC1",384,48},{"K2",432,48},{"CK.G",480,96},{"CK.GSigmaNeg",576,96}}
+	for _, f := range vkFields { if len(vk[f.Offset:f.Offset+f.Length]) != f.Length { t.Fatalf("sentinel %s incomplete", f.Name) } }
+}
+
 func decodeScalar(t *testing.T, encoded string) []byte {
 	t.Helper()
 	value, err := hex.DecodeString(encoded)

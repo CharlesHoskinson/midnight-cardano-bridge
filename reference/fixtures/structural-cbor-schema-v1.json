@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "profile": "mcb.structural-lab.sha256-cbor.v1",
+  "projection": "canonical lowercase hexadecimal fixture strings named below are decoded to CBOR major type 2 byte strings; all other strings remain major type 3 text strings",
+  "root_set": {
+    "bridge_program_id": "text", "fresh_deployment_instance_id": "bytes",
+    "source_identity_fingerprints": [{"chain":"text","identity_digest":"bytes","protocol_fingerprint":"bytes"}],
+    "checkpoint_manifest_digests": ["bytes"], "semantic_registry_template_root":"bytes",
+    "artifact_template_root":"bytes", "destination_abi_template_digests":["bytes"],
+    "deployment_recipe_digests":["bytes"], "replay_policy_template_digest":"bytes",
+    "freshness_policy_template_digest":"bytes"
+  },
+  "event": {
+    "version":"uint", "source_chain_identity_digest":"bytes", "source_handler_or_namespace":"text",
+    "source_transaction_or_object_id":"bytes", "source_action_or_event_index":"uint",
+    "event_discriminator":"text", "source_event_commitment":"bytes"
+  },
+  "gate_record": {"gate_id":"text", "status":"text", "evidence_digest":"bytes", "evidence_retention_valid":"bool"}
+}
