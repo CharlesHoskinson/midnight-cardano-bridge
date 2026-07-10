@@ -1,0 +1,23 @@
+schema: proof-bridge
+context: |
+  Project: Bidirectional Cardano and Midnight proof bridge.
+  Canonical design: knowledge_base/bridges/midnight-cardano-recursive-bridge.md.
+  Proof paths: Cardano to Midnight uses Halo2/Plonk; Midnight to Cardano uses
+  full-decider BSB22 commitment-Groth16 over BLS12-381.
+  Source policy: primary sources and verbatim-gated Deep Research Toolkit packs.
+  PoC roots are immutable within a deployment domain.
+  Missing predicate catalog rows may not be invented.
+rules:
+  proposal:
+    - Name affected capability specs and hard feasibility gates.
+  specs:
+    - Use MUST or SHALL and at least one WHEN/THEN scenario per requirement.
+    - State trust assumptions and negative behavior for security requirements.
+  design:
+    - Bind every proof statement to a source protocol fingerprint and deployment domain.
+    - Include failure outcomes and rollback or freeze behavior.
+  tasks:
+    - Give each task a stable work-package id and verification command.
+  review:
+    - Use independent proof, consensus, and operator readers.
+    - Resolve every blocking and major question before archive.
