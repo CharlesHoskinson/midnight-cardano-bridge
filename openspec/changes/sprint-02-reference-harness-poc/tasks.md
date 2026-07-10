@@ -8,7 +8,7 @@
 
 ## 3. Shared cross-language fixtures
 
-- [ ] 3.1 **S02-RH-W03** Publish bounded structural fixtures and expected reports, compare parsed Rust and Go outputs byte-for-byte, and include mutation/reset/replay vectors. Verification: `powershell -NoProfile -File scripts/compare-reference-harness.ps1`.
+- [x] 3.1 **S02-RH-W03** Publish bounded structural fixtures and expected reports, compare parsed Rust and Go outputs byte-for-byte, and include mutation/reset/replay vectors. Verification: `powershell -NoProfile -File scripts/compare-reference-harness.ps1`.
 
 ## 4. Scrapling observation adapters
 
