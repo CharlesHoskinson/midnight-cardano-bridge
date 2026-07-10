@@ -1,0 +1,23 @@
+{
+  "adapter_revision": "mcb.scrapling-observer.v1",
+  "chain": "midnight",
+  "data": {
+    "affected_gates": [
+      "S01-BLOCK-02",
+      "S01-BLOCK-03",
+      "S01-BLOCK-05"
+    ],
+    "finalized_block_number": 1543955,
+    "finalized_head": "0x7c7285d93d8672eb2769283ee7e536d1177c73068fc6aac575d994f70f56238e",
+    "gate_status": "unresolved",
+    "state_root": "0xcadece9b50ae6e8d37c749e12cbbd90c8d5dc40b1b482969ce09de6850a5823a"
+  },
+  "endpoint": "https://rpc.preview.midnight.network",
+  "network": "preview",
+  "observed_at": "2026-07-10T10:55:04Z",
+  "raw_response_sha256": "b6b992bc0d7ea0c8f4808fa96221101ff870a288c0bf254b58c77ea9687fb292",
+  "request_body_sha256": "621dbdc8745579ce4c2e13ba04ea8ee16f5ba1f892349cf3d409a27d9c2f506e",
+  "request_method": "POST:chain_getFinalizedHead+chain_getHeader",
+  "schema_version": 1,
+  "trust": "unsigned-observation"
+}

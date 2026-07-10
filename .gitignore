@@ -4,3 +4,5 @@ _external/
 .venv-drt/
 node_modules/
 reference/rust/target/
+__pycache__/
+*.py[cod]

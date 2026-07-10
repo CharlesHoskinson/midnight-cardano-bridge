@@ -1,0 +1,26 @@
+{
+  "adapter_revision": "mcb.scrapling-observer.v1",
+  "chain": "cardano",
+  "data": {
+    "affected_gates": [
+      "S01-BLOCK-01",
+      "S01-BLOCK-03",
+      "S01-BLOCK-05"
+    ],
+    "certificate_count": 20,
+    "gate_status": "unresolved",
+    "observed_scls_entity": false,
+    "signed_entity_counts": {
+      "CardanoDatabase": 2,
+      "CardanoTransactions": 18
+    }
+  },
+  "endpoint": "https://aggregator.pre-release-preview.api.mithril.network/aggregator/certificates",
+  "network": "pre-release-preview",
+  "observed_at": "2026-07-10T10:55:09Z",
+  "raw_response_sha256": "09a7f6e2fddeabd4c9ad7fb27283d5407de21b46a247013de9b65ad41b35e43d",
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "request_method": "GET",
+  "schema_version": 1,
+  "trust": "unsigned-observation"
+}

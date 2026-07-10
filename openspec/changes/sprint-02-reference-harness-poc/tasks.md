@@ -12,7 +12,7 @@
 
 ## 4. Scrapling observation adapters
 
-- [ ] 4.1 **S02-RH-W04** Add failing Python `unittest` cases for Midnight RPC and Mithril response normalization, provenance, trust-label rejection, and captured fixtures; then implement Scrapling-only transport and the observation CLI. Verification: `.\.venv-scrapling\Scripts\python.exe -m unittest discover -s reference/observers/tests -v`.
+- [x] 4.1 **S02-RH-W04** Add failing Python `unittest` cases for Midnight RPC and Mithril response normalization, provenance, trust-label rejection, and captured fixtures; then implement Scrapling-only transport and the observation CLI. Verification: `.\.venv-scrapling\Scripts\python.exe -m unittest discover -s reference/observers/tests -v`.
 
 ## 5. Combined verification and documentation
 
