@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "generated_from": {
+    "event_count": 29,
+    "last_event_id": "kge-0029"
+  },
+  "edges": [
+    { "subject": "component.mpc-ceremony", "predicate": "human-gate", "object": "sprint.s8-human-ceremony" },
+    { "subject": "decision.program-outcome", "predicate": "verified-by", "object": "sprint.s13-public-closure" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "blocked-by", "object": "risk.midnight-event-path" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "blocked-by", "object": "risk.predicate-catalogs" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "blocked-by", "object": "risk.public-scls" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "executed-by", "object": "decision.execution-model" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "governed-by", "object": "decision.program-outcome" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "requires", "object": "decision.predicate-coverage" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "starts-at", "object": "sprint.s0-control-plane" },
+    { "subject": "program.public-testnet-proof-bridge", "predicate": "uses", "object": "component.mpc-ceremony" },
+    { "subject": "program.wiki", "predicate": "uses-pattern", "object": "source.external.karpathy-llm-wiki.2026-07-10" },
+    { "subject": "risk.midnight-event-path", "predicate": "owned-by", "object": "sprint.s2-public-feasibility" },
+    { "subject": "risk.public-scls", "predicate": "owned-by", "object": "sprint.s2-public-feasibility" }
+  ]
+}

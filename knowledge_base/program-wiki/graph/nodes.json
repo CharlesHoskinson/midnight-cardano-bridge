@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "generated_from": {
+    "event_count": 29,
+    "last_event_id": "kge-0029"
+  },
+  "nodes": [
+    { "id": "component.mpc-ceremony", "type": "component" },
+    { "id": "decision.execution-model", "type": "decision" },
+    { "id": "decision.predicate-coverage", "type": "decision" },
+    { "id": "decision.program-outcome", "type": "decision" },
+    { "id": "program.public-testnet-proof-bridge", "type": "program", "package_count": 100, "sprint_count": 14 },
+    { "id": "program.wiki", "type": "knowledge-base" },
+    { "id": "risk.midnight-event-path", "type": "risk" },
+    { "id": "risk.predicate-catalogs", "type": "risk" },
+    { "id": "risk.public-scls", "type": "risk" },
+    { "id": "source.external.karpathy-llm-wiki.2026-07-10", "type": "source-receipt" },
+    { "id": "sprint.s0-control-plane", "type": "sprint" },
+    { "id": "sprint.s13-public-closure", "type": "sprint" },
+    { "id": "sprint.s2-public-feasibility", "type": "sprint" },
+    { "id": "sprint.s8-human-ceremony", "type": "sprint" }
+  ]
+}
