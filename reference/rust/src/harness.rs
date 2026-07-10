@@ -174,7 +174,7 @@ pub fn run_fixture(
     }
 
     let classifier = evaluate_classifier(roster, &fixture.outcome_classifier)?;
-    let gate_record_set_cbor = cbor::encode_json(&classifier.gate_records)?;
+    let gate_record_set_cbor = cbor::encode(&build_gate_records_cbor(&classifier.gate_records)?)?;
     let (gate_record_set_preimage, gate_record_set_digest) =
         framed_digest(GATE_RECORD_SET_DOMAIN, &gate_record_set_cbor);
 
@@ -423,6 +423,62 @@ fn build_root_set_cbor(root: &StructuralDeploymentRootSetV1) -> Result<CborValue
             digest_value(&root.freshness_policy_template_digest, "root-set-schema")?,
         ),
     ]))
+}
+
+fn build_gate_records_cbor(records: &JsonValue) -> Result<CborValue, HarnessError> {
+    let array = records
+        .as_array()
+        .ok_or_else(|| HarnessError::new("gate-record-shape", "gate records must be an array"))?;
+    let mut out = Vec::with_capacity(array.len());
+    for record in array {
+        let object = record
+            .as_object()
+            .ok_or_else(|| HarnessError::new("gate-record-shape", "gate record must be an object"))?;
+        let mut entries = Vec::with_capacity(object.len());
+        for (key, value) in object {
+            let projected = if key == "evidence_digest" {
+                match value.as_str() {
+                    Some(hex) => match decode_hex(hex, 32, "gate-record-schema") {
+                        Ok(bytes) => CborValue::Bytes(bytes),
+                        // Invalid overlays remain executable classifier row-1 vectors;
+                        // they keep text so encoding does not abort the structural report.
+                        Err(_) => CborValue::Text(hex.to_string()),
+                    },
+                    None => json_to_cbor_value(value)?,
+                }
+            } else {
+                json_to_cbor_value(value)?
+            };
+            entries.push((key.clone(), projected));
+        }
+        out.push(CborValue::Map(entries));
+    }
+    Ok(CborValue::Array(out))
+}
+
+fn json_to_cbor_value(value: &JsonValue) -> Result<CborValue, HarnessError> {
+    match value {
+        JsonValue::Number(number) => number
+            .as_u64()
+            .map(CborValue::Unsigned)
+            .ok_or_else(|| HarnessError::new("unsupported-cbor-value", "only unsigned integers")),
+        JsonValue::String(text) => Ok(CborValue::Text(text.clone())),
+        JsonValue::Bool(flag) => Ok(CborValue::Bool(*flag)),
+        JsonValue::Array(values) => values
+            .iter()
+            .map(json_to_cbor_value)
+            .collect::<Result<Vec<_>, _>>()
+            .map(CborValue::Array),
+        JsonValue::Object(map) => map
+            .iter()
+            .map(|(key, value)| Ok((key.clone(), json_to_cbor_value(value)?)))
+            .collect::<Result<Vec<_>, _>>()
+            .map(CborValue::Map),
+        JsonValue::Null => Err(HarnessError::new(
+            "unsupported-cbor-value",
+            "null is outside the structural profile",
+        )),
+    }
 }
 
 fn build_source_event_cbor(event: &SourceEventIdentityV1) -> Result<CborValue, HarnessError> {

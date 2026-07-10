@@ -1,0 +1,49 @@
+<codex_audit_request version="1">
+  <audit_id>closure-sprint2-4968a71</audit_id>
+  <role>Independent read-only bridge proof and implementation auditor</role>
+  <repository>C:\Users\charl\midnight-cardano-bridge</repository>
+  <branch>resolve-checklist-full-sweep</branch>
+  <head_sha>4968a71a8373c6a38a6b37af6ca89df30627ed32</head_sha>
+  <base_sha>5b4f9bfb88e8addeefb974903d74acc14cf8c83a</base_sha>
+  <scope>Sprint 2 closure remediation waves A-I against council findings</scope>
+  <changed_files>
+M	knowledge_base/bridges/midnight-cardano-recursive-bridge.md
+M	openspec/changes/sprint-02-reference-harness-poc/specs/reference-harness/spec.md
+M	reference/README.md
+A	reference/evidence/bootstrap/clean-checkout-qualification-v1.json
+M	reference/evidence/conformance-report-v1.json
+A	reference/evidence/current-generation.json
+A	reference/evidence/generations/b6c5bdd6abbd4471b900b7eb1189dae7/conformance-report-v1.json
+A	reference/evidence/generations/b6c5bdd6abbd4471b900b7eb1189dae7/generation-manifest.json
+A	reference/evidence/generations/b6c5bdd6abbd4471b900b7eb1189dae7/structural-report-v1.json
+A	reference/evidence/host-probes/host-capability-2026-07-10.json
+M	reference/go/internal/bsb22/parser.go
+M	reference/go/internal/bsb22/parser_test.go
+A	reference/observers/requirements.hashes.txt
+M	scripts/compare-reference-harness.ps1
+M	scripts/setup-reference-harness.ps1
+A	scripts/tests/openspec-telemetry.contract.ps1
+M	scripts/tests/setup-reference-harness.contract.ps1
+M	scripts/tests/verify-reference-harness.integration.ps1
+M	scripts/verify-reference-harness.ps1
+
+  </changed_files>
+  <acceptance_criteria>
+    OPENSPEC_TELEMETRY=0 and DO_NOT_TRACK=1 before OpenSpec; CBOR schema field/type bound; BSB22 named-sentinel swaps return bsb22-field-mismatch; structural payload + conformance envelope contract; structured command provenance; Python require-hashes lock; crash-safe generation publication; control tests without recursive verifier; host probe reconciled; deployment remains blocked and activation_eligible=false; cryptographic_verification=false; all S01-BLOCK and CONS gates open.
+  </acceptance_criteria>
+  <known_non_claims>
+    No Cardano validator accepted wrapped Midnight relation. No Midnight operation accepted external Cardano proof. Go BSB22 is parser-only. Observations are unsigned. Six S01-BLOCK and eight CONS gates remain open. Docker/WSL are not deployment readiness.
+  </known_non_claims>
+  <verification>
+    pwsh scripts/verify-reference-harness.ps1 exit 0; -UpdateEvidence exit 0; default byte-identical; go test bsb22 PASS; setup -WhatIf PLANNED; control tests PASS.
+  </verification>
+  <questions>
+    1. Do any claims inflate structural-pass into cryptographic or deployment success?
+    2. Is generation-pointer publication crash-safe enough for the documented contract?
+    3. Are command records actually produced by the invocation wrapper?
+    4. Any Blocking or Major gaps remaining from the prior council findings?
+  </questions>
+  <response_contract>
+    Findings first, ordered Blocking, Major, Minor. Each finding must include stable id, file and line, violated requirement, technical consequence, reproduction method, and minimum acceptable disposition. End with exact B/M/m counts, residual test gaps, and verdict pass or changes-required. Do not edit files.
+  </response_contract>
+</codex_audit_request>

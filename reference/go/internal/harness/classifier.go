@@ -26,7 +26,15 @@ func evaluateClassifier(roster map[string]any, input outcomeClassifierInput) (cl
 		}
 		record["gate_id"] = status.GateID
 		record["status"] = status.Status
-		record["evidence_digest"] = status.EvidenceDigest
+		// Schema marks evidence_digest as CBOR major type 2 (bytes).
+		digest, err := decodeCanonicalHex(status.EvidenceDigest, 32)
+		if err != nil {
+			// Keep classifier validity handling below; still surface a stable empty
+			// placeholder so encoding does not panic on invalid overlay fixtures.
+			record["evidence_digest"] = status.EvidenceDigest
+		} else {
+			record["evidence_digest"] = digest
+		}
 		record["evidence_retention_valid"] = status.EvidenceRetentionValid
 		records = append(records, record)
 	}

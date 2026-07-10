@@ -20,4 +20,4 @@
 
 ## 6. Independent review
 
-- [ ] 6.1 **S02-RH-W06** Run proof-systems, consensus, and operator readers over the implementation and evidence; resolve every blocking and major finding, record output hashes in `review.md`, and rerun all verification. Verification: `npm run openspec:validate` plus `git diff --check` and the combined verifier.
+- [x] 6.1 **S02-RH-W06** Run proof-systems, consensus, and operator readers over the implementation and evidence; resolve every blocking and major finding, record output hashes in `review.md`, and rerun all verification. Verification: `npm run openspec:validate` plus `git diff --check` and the combined verifier.

@@ -12,6 +12,14 @@ foreach ($token in @('OPENSPEC_TELEMETRY', 'DO_NOT_TRACK', "OPENSPEC_TELEMETRY =
     }
 }
 
+# The first *call* to Get-ToolVersions (version discovery) must follow an opt-out assignment.
+$callMarker = '$toolVersions = Get-ToolVersions'
+$firstOptOut = $verifierSource.IndexOf("OPENSPEC_TELEMETRY = '0'", [StringComparison]::Ordinal)
+$versionCall = $verifierSource.IndexOf($callMarker, [StringComparison]::Ordinal)
+if ($firstOptOut -lt 0 -or $versionCall -lt 0 -or $firstOptOut -gt $versionCall) {
+    throw 'OpenSpec version discovery must occur only after OPENSPEC_TELEMETRY=0 is assigned'
+}
+
 $tempRoot = Join-Path $env:TEMP ('mcb-openspec-telemetry-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $tempRoot | Out-Null
 try {

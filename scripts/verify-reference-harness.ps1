@@ -357,7 +357,7 @@ for entry in roster_entries:
     record.update({
         "gate_id": status["gate_id"],
         "status": status["status"],
-        "evidence_digest": status["evidence_digest"],
+        "evidence_digest": bytes.fromhex(status["evidence_digest"]),
         "evidence_retention_valid": status["evidence_retention_valid"],
     })
     merged_gate_records.append(record)
@@ -904,6 +904,15 @@ try {
         compare = (Resolve-Path -LiteralPath (Join-Path $repoRoot 'scripts\compare-reference-harness.ps1') -ErrorAction Stop).Path
     }
 
+    # Telemetry opt-out must be active before any OpenSpec discovery call
+    # (including version probes inside Get-ToolVersions).
+    $savedTelemetry = @{
+        OPENSPEC_TELEMETRY = [Environment]::GetEnvironmentVariable('OPENSPEC_TELEMETRY')
+        DO_NOT_TRACK = [Environment]::GetEnvironmentVariable('DO_NOT_TRACK')
+    }
+    $env:OPENSPEC_TELEMETRY = '0'
+    $env:DO_NOT_TRACK = '1'
+
     $script:CurrentCheck = 'tool-versions'
     $toolVersions = Get-ToolVersions -Tools $tools
     $pythonDistributionVersions = Get-PythonDistributionVersions -Python $tools.python
@@ -923,6 +932,12 @@ try {
     $runRoot = Join-Path ([IO.Path]::GetTempPath()) ('mcb-reference-verify-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $runRoot | Out-Null
     $savedEnvironment = Set-RunEnvironment -RunDirectory $runRoot -Tools $tools
+    # Merge early telemetry saves so Restore-Environment still restores caller state.
+    foreach ($name in $savedTelemetry.Keys) {
+        if (-not $savedEnvironment.ContainsKey($name)) {
+            $savedEnvironment[$name] = $savedTelemetry[$name]
+        }
+    }
     if ($env:OPENSPEC_TELEMETRY -ne '0' -or $env:DO_NOT_TRACK -ne '1') {
         throw 'OpenSpec telemetry opt-out environment was not applied'
     }
