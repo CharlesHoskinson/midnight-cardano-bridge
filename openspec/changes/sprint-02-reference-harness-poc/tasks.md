@@ -16,7 +16,7 @@
 
 ## 5. Combined verification and documentation
 
-- [ ] 5.1 **S02-RH-W05** Add one noninteractive verifier that runs Rust, Go, Python, cross-language, roster, and strict OpenSpec checks and emits `structural-pass` with deployment outcome `blocked`. Document commands and gate limits in `reference/README.md`. Verification: `powershell -NoProfile -File scripts/verify-reference-harness.ps1`.
+- [x] 5.1 **S02-RH-W05** Add one noninteractive verifier that runs Rust, Go, Python, cross-language, roster, and strict OpenSpec checks and emits `structural-pass` with deployment outcome `blocked`. Document commands and gate limits in `reference/README.md`. Verification: `pwsh -NoProfile -File scripts/verify-reference-harness.ps1`.
 
 ## 6. Independent review
 

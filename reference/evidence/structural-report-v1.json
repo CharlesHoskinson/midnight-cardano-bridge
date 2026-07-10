@@ -1,20 +1,20 @@
 {
-    "schema_version":  1,
-    "fixture":  "reference/fixtures/structural-v1.json",
-    "verified_implementations":  [
-                                     "rust",
-                                     "go"
-                                 ],
-    "profile_id":  "mcb.structural-lab.sha256-cbor.v1",
-    "roster_sha256":  "2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f",
-    "roster_cbor_bytes":  7705,
-    "root_set_digest":  "37bd614c370e42ab554c05b39b97ad2d625a88e8dbbea9e882d1f31cb5125fd4",
-    "deployment_domain":  "ff73f84b447dfec218429dd29a4604d923516690b72a2d7c089ec180dc223102",
-    "reset_root_set_digest":  "cd755878f7f00a875a6b7ec32cc9912cb53e2b53566e16618558a32dcc2fad26",
-    "reset_deployment_domain":  "1e38cff40a491e5ddb4b9b2c1563f80738df2305b1a1ba957249fe3dd45090ca",
-    "continuity_key":  "7a3d0419bdbf4c60e878eda06a2327e04c894e9b4f4c9bf18e331bfa421a0725",
-    "reset_continuity_key":  "7a3d0419bdbf4c60e878eda06a2327e04c894e9b4f4c9bf18e331bfa421a0725",
-    "structural_result":  "structural-pass",
-    "deployment_outcome":  "blocked",
-    "activation_eligible":  false
+  "schema_version": 1,
+  "fixture": "reference/fixtures/structural-v1.json",
+  "verified_implementations": [
+    "rust",
+    "go"
+  ],
+  "profile_id": "mcb.structural-lab.sha256-cbor.v1",
+  "roster_sha256": "2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f",
+  "roster_cbor_bytes": 7705,
+  "root_set_digest": "37bd614c370e42ab554c05b39b97ad2d625a88e8dbbea9e882d1f31cb5125fd4",
+  "deployment_domain": "ff73f84b447dfec218429dd29a4604d923516690b72a2d7c089ec180dc223102",
+  "reset_root_set_digest": "cd755878f7f00a875a6b7ec32cc9912cb53e2b53566e16618558a32dcc2fad26",
+  "reset_deployment_domain": "1e38cff40a491e5ddb4b9b2c1563f80738df2305b1a1ba957249fe3dd45090ca",
+  "continuity_key": "7a3d0419bdbf4c60e878eda06a2327e04c894e9b4f4c9bf18e331bfa421a0725",
+  "reset_continuity_key": "7a3d0419bdbf4c60e878eda06a2327e04c894e9b4f4c9bf18e331bfa421a0725",
+  "structural_result": "structural-pass",
+  "deployment_outcome": "blocked",
+  "activation_eligible": false
 }

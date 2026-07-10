@@ -12,7 +12,8 @@ This repository contains the full design document at [`knowledge_base/bridges/mi
 - The [council-reviewed program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) defines the 11-sprint, 62-work-package execution program and its proof-of-concept boundaries.
 - The [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the blocked 42 Cardano plus 52 Midnight catalog gate, searched locations, and row-admission rules without inventing entries.
 - The [machine-readable gate roster](protocol/gate-roster-v1.json) is the byte-exact source for all six implementation blockers and eight consensus evidence gates.
-- The [OpenSpec workflow](openspec/config.yaml) carries normative requirements through active proposal, delta-spec, design, task, and review artifacts. The active [Sprint 1 change](openspec/changes/sprint-01-foundation/proposal.md) contains the current deltas. The [`openspec/specs/` landing page](openspec/specs/README.md) lists stable capability specs published by validated archived changes; none are published yet.
+- The [reference harness](reference/README.md) independently checks structural contracts in Rust and Go, parses the bounded BSB22 layout, and captures unsigned testnet observations through Scrapling.
+- The [OpenSpec workflow](openspec/config.yaml) carries normative requirements through proposal, delta-spec, design, task, review, and archive. Sprint 1 is archived under [`openspec/changes/archive/2026-07-10-sprint-01-foundation/`](openspec/changes/archive/2026-07-10-sprint-01-foundation/), its 12 capability specs are published under [`openspec/specs/`](openspec/specs/README.md), and [Sprint 2](openspec/changes/sprint-02-reference-harness-poc/proposal.md) is active.
 
 ## Why proofs instead of a committee
 
@@ -70,6 +71,8 @@ Sources include the Cardano CIPs (0381, 0133, 0140 Peras, 0165), the Midnight re
 
 Start with the [canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md). It is the synthesis, and it links down into everything else. Use the [program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) for work-package ordering, the [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) for the 94-record gate, and [OpenSpec](openspec/config.yaml) for normative requirements and review state.
 
+Run `pwsh -NoProfile -File scripts/verify-reference-harness.ps1` for the current executable PoC. A clean run reports `structural-pass` and deployment outcome `blocked`. The result covers reproducible encodings, parser boundaries, and unsigned observation provenance. It does not claim proof verification or testnet settlement.
+
 The knowledge base is organized by domain:
 
 - `knowledge_base/cardano/` covers Cardano-side verification, finality, and Mithril.
@@ -85,6 +88,8 @@ The knowledge base is organized by domain:
 ## Status, and the things I do not yet know
 
 This is a buildable foundation with explicit feasibility gates. The shared claim protocol, fixed proof directions, bootstrap manifests, validator behavior and test outcomes are specified; the following dependencies are not yet closed.
+
+The Sprint 2 harness reproduces the 7,705-byte gate roster in Rust and Go, checks the BSB22 byte grammar without performing cryptographic verification, and records dated Midnight and Mithril Preview responses as unsigned observations. Neither destination chain has accepted a bridge-authorized state transition, so the deployment classifier remains `blocked`.
 
 Several items are open and named in the design and the checklist:
 

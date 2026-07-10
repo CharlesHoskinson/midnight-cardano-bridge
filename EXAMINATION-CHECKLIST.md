@@ -3,7 +3,8 @@
 This checklist records examined evidence and open work against the
 [canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md),
 the [11-sprint program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md),
-and the [Sprint 1 OpenSpec change](openspec/changes/sprint-01-foundation/proposal.md).
+the [archived Sprint 1 OpenSpec change](openspec/changes/archive/2026-07-10-sprint-01-foundation/proposal.md),
+and the [active Sprint 2 harness change](openspec/changes/sprint-02-reference-harness-poc/proposal.md).
 `RESEARCH-PLAN.md` remains the source-corpus and evidence ledger.
 
 **Status legend:** `[ ]` not started · `[~]` partially examined · `[x]` examined/answered · `[!]` blocked by unpublished upstream artifact or measurement-only work.
@@ -13,7 +14,9 @@ Each item: *what to examine — where (repo/file/source) — the question it ans
 
 - [x] **Program shape:** the approved program has 11 dependency-bounded sprints and 62 work packages. The [program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) is the execution boundary.
 - [x] **Canonical narrative:** the [living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md) has exactly 25 numbered top-level sections in this approved order: Document control; Purpose and scope; System model; Terminology and invariants; Security and trust model; Bootstrap and roots of trust; Shared claim protocol; Predicate registry; Cardano predicate catalog; Midnight predicate catalog; Cardano state anchoring; Cardano to Midnight proof path; Midnight state anchoring; Midnight to Cardano proof path; Proof systems and setup; Reference harness; Trustless transaction protocol; Destination validators; Relaying and data availability; Governance and upgrades; Economics and performance; Conformance and security testing; Testnet deployment; Production path and residual risks; Appendices.
-- [~] **Normative requirements:** the custom OpenSpec workflow has a proposal, 12 capability deltas, design, tasks, and initialized review. The current change lives under [`openspec/changes/sprint-01-foundation/`](openspec/changes/sprint-01-foundation/README.md); accepted requirements appear on the [`openspec/specs/` landing page](openspec/specs/README.md) only after review, validation, and archive.
+- [x] **Normative foundation:** Sprint 1 passed research, editorial, and three-reader council review, then archived to [`openspec/changes/archive/2026-07-10-sprint-01-foundation/`](openspec/changes/archive/2026-07-10-sprint-01-foundation/). Its 12 accepted capability specs are published under [`openspec/specs/`](openspec/specs/README.md). The Sprint 2 reference harness remains an active change until its own review closes.
+- [x] **Structural harness:** Rust and Go independently reproduce the 7,705-byte roster and structural root/domain/reset vectors. The Go BSB22 parser enforces lengths, offsets, and scalar range without claiming cryptographic verification. The [combined verifier](reference/README.md) reports `structural-pass`, deployment `blocked`, and `activation_eligible=false`.
+- [x] **Unsigned endpoint observations:** Scrapling captured dated Midnight Preview finalized-head/header responses and a Mithril pre-release Preview certificate listing. Each record binds request and raw-response digests and carries `trust=unsigned-observation`; none closes a gate.
 - [!] **Predicate admission:** registry population requires exactly 42 unique Cardano and 52 unique Midnight records. The [catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the missing sources and the hard count, uniqueness, schema, and provenance gates. No filler row is permitted.
 
 ### Six activation gates
@@ -37,15 +40,17 @@ The final two gates cover the destination execution boundaries:
 - [x] `midnight-aggregation` compiles, and the native IVC example passes with the exact upstream feature set and authenticated SRS files. This is component feasibility, not a bridge proof.
 - [x] Midnight Preview RPC and Mithril Preview aggregator observations were captured, and the prior single-operator BSB22 Cardano landing was independently confirmed. None is a deployment trust root.
 - [!] Docker is absent and the installed WSL distribution cannot run until the required Windows component is enabled. Compact and the proof server therefore remain unavailable on this host.
-- [~] Sprint 1 review still requires a compiled Deep Research Toolkit dossier, a Humanizer pass, independent proof-systems, consensus, and implementer/operator council reads, question dispositions, a clean rewrite, a preservation pass, a fresh reread, and strict OpenSpec and repository verification.
+- [x] Sprint 1 review compiled the Deep Research Toolkit dossier, passed the Humanizer scan, closed proof-systems, consensus, and operator council findings, preserved the 25-section design, and passed strict OpenSpec and repository verification.
+- [~] Sprint 2 implementation has completed the Rust harness, Go harness and BSB22 parser, cross-language vectors, Scrapling adapters, live unsigned observations, and combined verification. Independent proof, consensus, and operator review is still required before archive.
 
 Program evidence is labeled `live-pass` only when both selected public testnets
 accept claim-authorized transactions under the named public trust profiles.
 `degraded-lab` requires both directions to execute but permits a declared fixture
 or project-operated root. `blocked` records an incomplete relation, path,
 execution surface, catalog gate, or public dependency with its reproducer, owner,
-affected interface, and resume evidence. No deployment outcome is assigned yet,
-and the open gates prohibit a `live-pass` claim.
+affected interface, and resume evidence. The current structural run assigns
+deployment outcome `blocked`; the open gates prohibit `degraded-lab` and
+`live-pass` claims.
 
 Cloned repos live in ignored `_external/`: `midnight-zk`, `midnight-docs`, `midnight-ledger`,
 `midnight-node`, `mithril`, `partner-chains`, `CIPs`, `plutus`, `cardano-ledger`,

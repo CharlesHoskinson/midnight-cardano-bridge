@@ -79,6 +79,15 @@ class ObservationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing-provenance"):
             validate_observation(record)
 
+    def test_captured_observations_are_unsigned_and_leave_gates_open(self):
+        evidence_dir = OBSERVER_DIR.parent / "evidence" / "observations"
+        for path in evidence_dir.glob("*-unsigned.json"):
+            with self.subTest(path=path.name):
+                record = json.loads(path.read_text(encoding="utf-8"))
+                validate_observation(record)
+                self.assertEqual(record["trust"], "unsigned-observation")
+                self.assertEqual(record["data"]["gate_status"], "unresolved")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "profile_id": "mcb.structural-lab.sha256-cbor.v1",
+  "verified_components": [
+    "rust-structural-harness",
+    "go-structural-harness",
+    "go-bsb22-parser-only",
+    "scrapling-observation-normalizer",
+    "cross-language-vectors",
+    "gate-roster-publication",
+    "openspec-strict"
+  ],
+  "roster_sha256": "2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f",
+  "roster_cbor_bytes": 7705,
+  "open_activation_gate_count": 6,
+  "unresolved_consensus_gate_count": 8,
+  "observation_trust": "unsigned-observation",
+  "observation_file_sha256": {
+    "midnight-preview-unsigned.json": "b43cd2311e350ba32b920b312cb94b2a05da797d0d7d6683083f8d33c1dcbbad",
+    "mithril-preview-unsigned.json": "b8fe6c9cb9be1bcac0d6ff0f8876822f075cf1dcf2fd5ab5ddd85b2008615022"
+  },
+  "cryptographic_verification": false,
+  "destination_execution_confirmed": false,
+  "structural_result": "structural-pass",
+  "deployment_outcome": "blocked",
+  "activation_eligible": false
+}
