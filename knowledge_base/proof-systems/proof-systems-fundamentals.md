@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Proof-system fundamentals — NIZK, SNARKs, soundness, zero-knowledge
+title: Proof-system fundamentals: NIZK, SNARKs, soundness, zero-knowledge
 timestamp: '2026-07-09T14:19:48Z'
 description: Shared proof-system vocabulary (statement, witness, soundness, knowledge
   soundness, zero knowledge, SNARK) grounding both directions of the recursive Midnight<->Cardano
@@ -18,7 +18,7 @@ status: researched
 okf_version: '1.0'
 ---
 
-# Proof-system fundamentals — NIZK, SNARKs, soundness, zero-knowledge
+# Proof-system fundamentals: NIZK, SNARKs, soundness, zero-knowledge
 
 This page fixes the shared vocabulary that both legs of the recursive
 Midnight<->Cardano bridge are built on. The source is the halo2 Book's
@@ -31,7 +31,7 @@ instantiation of these terms lives in
 
 Both bridge directions are proof systems in exactly this sense, so pinning down the
 terms once avoids re-deriving them per leg: **Groth16** on the Midnight -> Cardano
-leg and **Plonk/Halo2** on the Cardano -> Midnight leg are both zk-SNARKs — they
+leg and **Plonk/Halo2** on the Cardano -> Midnight leg are both zk-SNARKs. They
 differ in setup and arithmetization, not in the core statement/witness/soundness
 contract described here.
 
@@ -46,12 +46,12 @@ contract described here.
   system is a **circuit**; the language used to express circuits is an
   **arithmetization** (typically polynomial constraints over a field).
 - **Witness.** The prover computes intermediate **advice** values from the inputs;
-  the private inputs plus advice together are the **witness** — in the halo2 usage,
+  the private inputs plus advice together are the **witness**. In the Halo2 usage,
   everything the prover feeds the circuit, not just the secret inputs.
 
 ## The security contract
 
-- **Non-interactive argument.** A prover creates a **proof** — data that convinces
+- **Non-interactive argument.** A prover creates a **proof**, which is data that convinces
   a **verifier** that *there exists* a witness for which the statement holds, with no
   interaction.
 - **Soundness.** The property that proofs cannot falsely convince a verifier.
@@ -63,27 +63,28 @@ contract described here.
   witness, not merely that one exists.
 - **Zero knowledge.** The proof reveals nothing about the witness beyond that a
   witness exists and was known to the prover.
-- **Succinctness and SNARKs.** A proof system is **succinct** if proofs are short —
+- **Succinctness and SNARKs.** A proof system is **succinct** if proofs are short,
   polylogarithmic in circuit size. A succinct NARK is a **SNARK**; a **zk-SNARK** is
   a zero-knowledge SNARK.
 
 ## Proof size vs. verification cost (why the bridge is asymmetric)
 
-A crucial caveat from the source: succinctness constrains **proof size**, and a
+The source distinguishes proof size from verifier work: succinctness constrains **proof size**, and a
 SNARK **need not** have verification time polylogarithmic in the circuit size. Proof
 size and verification cost are separate budgets. This is exactly the axis the bridge
 design exploits:
 
 - **Midnight -> Cardano (Groth16).** Groth16 gives constant-size proofs and a fixed,
-  cheap verifier (a few pairings) — the right choice when the verifier is an on-chain
+  cheap verifier (a few pairings), which fits an on-chain
   Plutus script with a hard execution budget.
-- **Cardano -> Midnight (Plonk/Halo2).** A universal/transparent setup removes the
-  per-circuit trusted ceremony and suits recursion on the Midnight side, at the cost
-  of a heavier verifier that Midnight can afford off-chain.
+- **Cardano -> Midnight (Plonk/Halo2).** The selected KZG-backed Halo2 stack uses
+  an updatable universal trusted SRS. It avoids a new SRS ceremony for each
+  circuit, but it is not transparent. Its heavier verifier fits the Midnight
+  execution surface better than Cardano's on-chain Plutus budget.
 
 In both directions the object being checked is a **circuit** encoding a **relation**,
 with a **public-input / private-witness** split, verified **non-interactively** and
-**succinctly** with **knowledge soundness** — the shared contract this page names.
+**succinctly** with **knowledge soundness**. That is the shared contract this page names.
 
 > Scope note: this is a definitional concept page. It does not specify curves,
 > setup ceremonies, recursion mechanics, or performance figures; those are covered by

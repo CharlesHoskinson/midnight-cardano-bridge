@@ -1,7 +1,7 @@
 ---
 type: Concept
-title: Midnight — zero-knowledge proof model (Halo2/Plonkish)
-timestamp: '2026-07-09T14:18:25Z'
+title: Midnight zero-knowledge proof model (Halo2/Plonkish)
+timestamp: '2026-07-11T04:03:12Z'
 description: How Midnight's zk-SNARK proving model works and what it implies for a
   recursive Midnight<->Cardano bridge.
 resource: https://docs.midnight.network/concepts/zero-knowledge-proofs
@@ -17,7 +17,7 @@ status: researched
 okf_version: '1.0'
 ---
 
-# Midnight — zero-knowledge proof model (Halo2/Plonkish)
+# Midnight zero-knowledge proof model (Halo2/Plonkish)
 
 This page summarizes Midnight's official concept documentation on zero-knowledge
 proofs and draws out the implications for a recursive, trustless
@@ -30,12 +30,14 @@ and the [knowledge base index](/index.md) for related material.
 > Plonkish), the curve, the trusted-setup ceremony, recursion, or the proof
 > server. Claims below are limited to what the page actually asserts; the
 > bridge analysis flags where a claim is a design implication rather than a
-> documented fact.
+> documented fact. More specific Midnight implementation sources resolve the
+> selected backend as Plonk/Halo2 with KZG over BLS12-381 and an updatable
+> universal trusted SRS.
 
 ## What the source establishes
 
-- **Midnight uses zk-SNARKs** — "zero-knowledge succinct non-interactive
-  arguments of knowledge" — a class of ZKPs chosen for compact proofs and
+- **Midnight uses zk-SNARKs**, or "zero-knowledge succinct non-interactive
+  arguments of knowledge," a class of ZKPs chosen for compact proofs and
   efficient verification.
 - **Succinctness**: proof size stays small relative to the size of the
   statement, giving efficient verification and reduced data transfer.
@@ -66,12 +68,13 @@ directions.
 The relevant fact the source pins down is the **setup phase producing public
 parameters shared by prover and verifier**. Any statement verified on the
 Midnight side is expressed as an **arithmetic circuit** with a **private
-witness / public input** split and checked succinctly and non-interactively —
-exactly the shape a Plonkish/Halo2 verifier consumes. What this page does *not*
-confirm is whether Midnight's parameters come from a **universal/updatable** or
-**transparent** setup (as Plonk and Halo2 respectively allow) versus a
-per-circuit ceremony. That distinction is central to a *trustless* bridge and
-must be resolved from a more specific Midnight source before relying on it.
+witness / public input** split and checked succinctly and non-interactively,
+exactly the shape a Plonkish/Halo2 verifier consumes. Halo2 is an
+arithmetization framework and can be paired with IPA or KZG; it does not imply a
+transparent setup. The selected Midnight implementation uses KZG over BLS12-381
+with an updatable universal trusted SRS, as documented in
+[proving system and curves](proving-system-curves.md) and
+[proof recursion](midnight-proofs-recursion.md).
 
 ### Midnight -> Cardano (a Groth16 prover feeding a Plutus verifier)
 
@@ -81,22 +84,20 @@ witness/circuit/public-parameter framing is compatible with that, but Groth16 on
 Cardano imposes concrete constraints documented elsewhere in this KB:
 
 - the on-chain verifier and BLS12-381 point/serialization contract in
-  [ak-381 — Aiken Groth16 verifier](/cardano/ak-381-aiken-groth16.md);
+  [ak-381: Aiken Groth16 verifier](/cardano/ak-381-aiken-groth16.md);
 - the Plutus-side verification mechanics in
   [Groth16 verifier on Plutus](/cardano/groth16-verifier-plutus.md).
 
-Because Groth16 requires a **per-circuit trusted setup** (an MPC ceremony
-yielding prover/verification keys), the "setup phase / public parameters"
-described generically here becomes a hard, circuit-specific requirement on the
-Midnight -> Cardano direction — the opposite trust posture from a transparent
-Halo2 setup on the reverse leg.
+The commitment-Groth16 BSB22 wrapper uses reusable Phase 1 material followed by
+a circuit-specific Phase 2 that yields proving and verification keys. Both
+directions inherit the KZG SRS trust assumption. The Midnight -> Cardano path
+adds the BSB22 Phase 2 assumption for each distinct wrapper circuit; the reverse
+leg is not transparent.
 
-## Open questions for the study
+## Resolved and open questions
 
-- Which concrete proving system does Midnight run (Halo2/Plonkish IOP + which
-  polynomial commitment), and on which curve? (Not stated on this page.)
-- Is Midnight's setup transparent/universal or per-circuit? This determines
-  whether the Cardano -> Midnight verification leg is genuinely trustless.
+- Resolved by the specific implementation sources: the selected Midnight stack
+  is Plonk/Halo2 with KZG over BLS12-381 and a universal/updatable trusted SRS.
 - Does Midnight support **proof recursion / composition** (needed to keep a
   recursive bridge's verification cost bounded)? Not addressed by this source.
 - Where does proving run (client-side witness generation, proof server), and

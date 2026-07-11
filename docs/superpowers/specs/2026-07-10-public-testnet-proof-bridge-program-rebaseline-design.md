@@ -42,11 +42,17 @@ that namespace. Existing ids such as `S02-RH-W01` keep their historical meaning.
 
 ## Current state
 
-The committed baseline is `78bd432af06c9ef68e006ab2147da68fce29af6d`.
-The branch currently has unfinished changes to `README.md`,
-`docs/grok-4.5-handoff.xml`, and `runlogs/`. Sprint 0 must inventory and preserve
-those changes. It may revise them through tests, but it must not treat them as
-accepted merely because they already exist.
+The historical harness closure target is
+`78bd432af06c9ef68e006ab2147da68fce29af6d`. The approved design source commit is
+`3db35fa9a7e7257359f5def4bb216c60356643b8`. Neither value is the Sprint 0
+execution base. The controller records the later committed planning baseline at
+execution start.
+
+At design approval, the canonical worktree carried unfinished changes to
+`README.md`, `docs/grok-4.5-handoff.xml`, and `runlogs/`. Sprint 0 inventories
+every then-current porcelain entry, preserves its exact bytes, and assigns its
+reconciliation owner before adoption. Existing bytes are not accepted merely
+because they predate the controller.
 
 The current structural harness passes in the canonical checkout. Its closure is
 reopened because the saved Codex audit is `changes-required`, council reports do
@@ -77,6 +83,26 @@ dependencies, artifacts, commands, gates, and invalidation rules. Program state
 is reduced from append-only events. A manifest is a derived view and may be
 regenerated; it is not the history.
 
+One fenced controller broker owns global event order outside package clones.
+It runs under a dedicated service SID and owns ACL-protected journal and
+canonical Git roots. Package and model children run under stripped restricted
+tokens that can modify only their assigned full clone and scratch roots. They
+cannot write, delete, rename, take ownership of, or change the DACL on controller
+or canonical Git storage. A private capability channel is their only
+package-to-controller path. The broker writes
+each event as a complete immutable object, flushes it, atomically publishes it
+with durable rename semantics, and verifies the final bytes. Accepted
+per-attempt segments enter Git through a serialized control transaction.
+Parallel clones never append the same file or assign a global sequence.
+
+The broker runs as a native SCM-compatible service, not as `pwsh.exe` registered
+directly with the service manager. `ControllerIdentityV1` binds its
+service-account-protected non-exportable ECDSA P-256 key and public trust anchor.
+Each worker receives a private inherited channel and a single-attempt capability
+bound to package, lease, fence, snapshot, methods, expiry, and monotonic nonces.
+Service restart preserves the identity and durable head but invalidates worker
+channels.
+
 The event model records:
 
 - sprint and package attempts;
@@ -94,6 +120,29 @@ Allowed package states are `pending`, `ready`, `leased`, `running`,
 sealing does not mean success. Program completion is legal only after the public
 classifier returns `live-pass` in Sprint 13.
 
+Sprint 0 publishes a `GateRosterV2` with `roster_stage=base`. It contains no
+invented proof-family rows and is permanently ineligible for public execution,
+activation, or classification. PBT-S04-W06 publishes a separate
+`roster_stage=family-complete` roster whose first `base_entry_count` entries are
+the ordered, byte-identical base entries. It preserves the base digest, binds the
+admitted direction-family matrix root, and appends only admitted family rows.
+PBT-S12-W01 binds both artifacts in `DeploymentIntentV1` before deployment.
+PBT-S12-W02 produces observations, ABI instances, root contexts, activation and
+deployment receipts under that intent, then freezes `RunIntentV1` before
+execution preflight. The PBT-S13 classifier verifies the
+base prefix and evaluates every base and family gate. Roster entries carry only
+`initial_state=unresolved`. Append-only `GateEvaluationV1` records carry current
+state, evidence, expiry, supersession, and invalidation. Base-prefix entries use
+one logical identity under the base roster origin and have one effective current
+evaluation; their history may contain superseded or invalidated evaluations.
+Only appended family entries use the family-complete roster origin. Each definition fixes
+`activation_required` and its earliest activation stage. `ActivationDecisionV1`
+consumes only the canonical predeployment subset; it cannot require deployment,
+execution, public-receipt, final-review, or classifier evidence before those
+events occur. PBT-S12-W07 produces nonterminal
+classifier-readiness evidence. The terminal classifier receipt is not an input
+gate.
+
 ### Attempts and recovery
 
 Every package execution gets a unique attempt id. A new attempt references the
@@ -105,6 +154,12 @@ paths. Recovery first reconciles running commands and repository state. It does
 not assume that a missing final response means failure or success. Commands with
 unknown submission status are reconciled by their canonical request or
 transaction body before they may be repeated.
+
+Every lease carries a monotonic fencing epoch. Long work renews its lease. The
+controller checks the current epoch at command start and result, artifact
+publication, signing, external submission, repository integration, and push.
+Expiry or renewal loss stops the complete host, WSL-distro, or container
+execution boundary and blocks a stale writer.
 
 ### Command supervisor
 
@@ -121,11 +176,27 @@ captures stay outside Git until the secret scanner passes.
 
 ### Repository transaction
 
-Each mutating package uses an isolated worktree or an explicitly leased canonical
-checkout. Before a push, the controller fetches the remote, compares the expected
-remote SHA, checks the allowed path set, rejects unrelated changes, and uses a
-normal non-force push. It verifies the remote SHA after the push. A concurrent
-human or agent commit cancels the lease and forces reconciliation.
+Each mutating package uses an independent full clone under the restricted worker
+boundary. Before a push, the controller records a supervised fetch, compares the
+expected remote SHA, checks the allowed path set, rejects unrelated changes, and
+uses a normal non-force push. It records another fetch after the push and verifies
+the remote SHA. A concurrent human or agent commit cancels the lease and forces
+reconciliation.
+
+The empty broker repository is seeded once after W05 from an operator-created
+bundle that contains the committed planning baseline through the W05 supervisor
+commit. The authenticated administrative channel streams bytes and a complete
+object manifest; the service never opens the user's repository. The broker
+verifies lineage, refs, remote, object inventory, and a signed initialization
+receipt before generating a worker bundle. Every later worker pack enters a
+bounded no-execute quarantine with strict object, delta, path, platform-name,
+allowlist, and resource checks before atomic import.
+
+In implementation, mutating workers use full per-attempt clones with independent
+Git directories and object databases. Only the broker can import a verified tree
+into canonical Git. HTTPS publication uses a qualified noninteractive credential
+provider under the service identity. Git receives an opaque allowlisted handle,
+never a credential in argv, environment, streams, records, or receipts.
 
 ### Program snapshots
 
@@ -137,6 +208,7 @@ human or agent commit cancels the lease and forces reconciliation.
 - the source-receipt set;
 - the program-wiki graph head and synthesis digest;
 - toolchain, host, and network manifests;
+- controller identity and, for publication, the qualified public credential-handle receipt;
 - proof, setup, registry, ABI, and deployment artifacts;
 - the public evidence prefix available at review time.
 
@@ -148,14 +220,56 @@ Dispositions never alter reader-authored findings or counts.
 
 Each sprint owns one OpenSpec change with requirements, design, tasks, package
 ids, tests, review, and closure evidence. The program controller may generate a
-packet only from a validated change and matching `ProgramPlanV1` entry. A checked
-task without its declared receipt is invalid state.
+bounded discovery packet from immutable external-input requirements before those
+inputs resolve. It may generate a resolved implementation packet only after the
+discovery outputs bind qualified tools, networks, sources, and receipts. Both
+packet types require a validated change and matching `ProgramPlanV1` entry. A
+checked task without its declared receipt is invalid state.
 
-After a sprint passes review, accepted requirements merge into stable OpenSpec
-before a dependent sprint begins. The canonical bridge design remains exactly
-25 numbered sections. Sprints update its current system state and evidence but
-do not add revision narration to the canonical text. Historical decisions stay
-in OpenSpec archives and the program wiki.
+Accepted requirements merge into stable OpenSpec and pass strict validation in
+the committed review candidate. The canonical bridge design remains exactly 25
+numbered sections. Sprints update its current system state and evidence but do
+not add revision narration to the canonical text. Historical decisions stay in
+OpenSpec archives and the program wiki.
+
+A reviewed implementation snapshot cannot contain its own reader outputs.
+`ClosureEnvelopeV1` binds that immutable snapshot to later review, disposition,
+archive, final-event, deterministic raw wiki closure receipt, source-node and
+graph materialization updates, wiki-log, inventory, seal, and, only in PBT-S13,
+classifier receipts. Its typed delta enumerates allowed object digests, event and
+state transitions, source digests, wiki predicates, and inventory additions. It
+excludes its own fixed path and blob. The validator checks that file separately
+and requires the full tree delta to equal the inventory plus exactly
+`program/closures/<sprint-id>/closure-envelope-v1.json`. The envelope contains no
+own-blob, final-tree, or final-commit digest. After review, OpenSpec
+relocation into the archive is byte-identical. A relocation-only archive
+candidate is committed and validated before the archive receipt exists; the
+controller's `FinalizeClosure` action then materializes the typed attestations,
+validates the complete non-self-referential delta, commits and integrates the
+final closure tree, and returns distinct closure-source and canonical-integration
+commits, their byte-identical tree, external envelope digest, and integration
+receipt. `Publish` accepts only the returned context and targets the integration
+commit.
+No receipt binds a tree that contains itself. Any code, stable requirement,
+design, registry, proof artifact, ABI, or deployment change creates a new
+snapshot and repeats affected reviews. Successor sprints require a valid closure
+envelope, OpenSpec archive receipt, and a separately schema-checked immutable
+`RemoteConfirmationBundleV1`. Its signed receipt binds the envelope, remote,
+branch, fence, immutable public credential-handle receipt, review-probe receipt,
+new pre-fetch and pre-sign probe receipts, expected SHA, pushed SHA, observed
+SHA, pre-push fetch, ordered one or two push attempts, post-push fetch command
+records, every raw stream, and the snapshot-bound
+`ControllerIdentityV1`. The bundle contains those exact records and stream
+bytes, their manifests, all three probe receipts, the immutable public
+credential-handle receipt, identity, and a
+noncircular payload manifest. It is completed and verified in a same-volume
+temporary directory, published by one non-replacing durable rename, then
+verified again before the event. A lost push response is reconciled by a
+read-only fetch and never causes a blind retry. Before each package lease, the
+controller imports every missing bundle in that package's cumulative transitive
+`[closed]` predecessor set and rejects missing or unapproved imports. The
+in-tree envelope does not attempt to contain its own blob, final tree, or commit
+id.
 
 ## Program wiki
 
@@ -210,8 +324,8 @@ errors but is not a consensus proof.
 The minimum Midnight source knowledge is:
 
 - public chain-spec and genesis identity;
-- the initial ordered AURA, GRANDPA, and BEEFY state required by the selected
-  public profile;
+- the initial ordered authority state required by one selected public finality
+  profile;
 - every mandatory authority transition through the accepted point;
 - runtime and consensus fingerprints;
 - the exact event or state fact, containing header, parent-bound MMR leaf,
@@ -220,13 +334,19 @@ The minimum Midnight source knowledge is:
 
 Endpoint observations do not satisfy these requirements. Sprint 2 must obtain
 publicly reproducible data and rejecting prototypes on the unmodified network.
+The selected profile states whether BEEFY certifies GRANDPA-finalized state and
+whether AURA or GRANDPA facts are proved relations or official profile
+assumptions. AURA authorship, GRANDPA finality, and BEEFY commitments are not
+interchangeable roots.
 
 ### Destination and proof roots
 
-Each deployment domain immutably binds the destination network identity,
-deployed code hashes, registry activation, ABI instance, proof-suite ids,
-verifier keys, KZG SRS, Groth16 transcripts, and recovery policy. Relayers and
-provers are not trusted roots. Their outputs are checked against these values.
+Each deployment domain derives from the domain-neutral root set. Domain-bound
+registry-activation, artifact-authorization, ABI-instance, and deployment records
+then immutably bind destination network identity, deployed code hashes,
+proof-suite ids, verifier keys, KZG SRS, Groth16 transcripts, and recovery policy.
+Relayers and provers are not trusted roots. Their outputs are checked against
+these values.
 
 ## Proof paths
 
@@ -246,19 +366,33 @@ the public program stops.
 
 ### Midnight to Cardano
 
-The Midnight finality relation verifies the ordered BEEFY authority state and
-commitment. The inclusion relation proves the event or state fact through its
-header and MMR leaf. Predicate circuits produce the typed result. Halo2 recursion
-aggregates these relations and enforces the final KZG decision.
+The Midnight finality relation verifies the selected public profile, ordered
+BEEFY authority state, and commitment. The inclusion relation proves the event
+or state fact through its runtime, header, parent-bound MMR leaf, MMR root, and
+commitment. Predicate circuits produce the typed result. Halo2 recursion
+aggregates these relations and produces the canonical transcript and
+accumulator plus a native reference decision.
 
-Commitment-Groth16 BSB22 wraps the complete decision relation. The Plutus
+Commitment-Groth16 BSB22 recomputes the complete KZG decision relation in R1CS.
+It does not wrap an externally supplied accept bit. The Plutus
 validator reconstructs the canonical claim digest as an explicit public input,
 checks the commitment-aware proof, and applies the four destination-local state
 changes in one Cardano transaction. The BSB22 commitment does not replace the
 public-input equality constraint.
 
+The frozen KZG binding profile states whether verifier material is circuit
+constant or authenticated input and fixes its degree, encoding, transcript,
+input slots, and equality constraints. Constant material must be qualified
+before circuit freeze. Later material changes invalidate the circuit and setup.
+
 Sprint 2 must reject an invalid final accumulator and measure the complete
 Plutus boundary before circuit implementation continues.
+
+For both destinations, every rejection stage records `NO_CHANGE` for tracked
+source state, application state, value state, and replay state. Parsing,
+registry, policy, freshness, replay, proof, and settlement failures cannot alter
+one owner while preserving the others. An absent value is represented as the
+typed state `ValueStateV1=Absent(reason)`.
 
 ## Reference harness on both sides
 
@@ -284,14 +418,19 @@ receipt validate against the same program snapshot.
 
 ## Predicate scope
 
-Sprint 3 admits exactly 94 source-backed records. Count, uniqueness, schema, and
-provenance are one gate over the same canonical bytes. No agent may invent,
-rename, split, or duplicate predicates to reach the count.
+Sprint 3 recovers exactly 94 source-backed records. W01 through W05 apply count,
+uniqueness, source-row schema, and provenance as one gate over the same canonical
+bytes. Each immutable recovered row contains its source statement, formal
+relation, witness, bounded inputs, typed output, source-semantic anchor, raw
+vectors, and provenance. No agent may invent, rename, split, or duplicate
+predicates to reach the count.
 
-Each record binds its source statement, formal relation, witness, bounded inputs,
-typed output, anchor, finality and freshness policy, proof-template family,
-artifacts, destination use, and required vectors. Every record passes local
-round-trip, positive, negative, and cross-predicate substitution tests.
+W06 through W08 create separate admission records keyed to the recovered catalog
+digest and the demonstrated PBT-S02 public profiles. The joined admitted view,
+not the recovered catalog bytes, binds finality and freshness policy,
+proof-template family, artifact slots, destination use, and conformance vectors.
+Every admitted record passes local round-trip, positive, negative, and
+cross-predicate substitution tests. Admission never rewrites source recovery.
 
 The public execution matrix is the Cartesian set of two directions and all
 proof-template families authorized for that direction. A confirmed destination
@@ -307,10 +446,33 @@ keys, wallets, fixed beacons, and single-operator setup artifacts are excluded.
 
 The local framework must become circuit-generic and support real, gigabyte-scale
 transcripts. It needs atomic publication, crash recovery, bounded parsing,
-future-beacon commitment followed by post-contribution resolution, contributor
-attestations, timeouts, object storage, and a second verifier implementation.
-Agent personas exercise honest, malicious, stale, malformed, interrupted, and
-replayed participant behavior. Those tests establish software behavior only.
+contributor attestations, timeouts, object storage, and a second verifier
+implementation. New or update ceremonies also need transcript-specific future
+beacon commitments followed by post-contribution resolution.
+`CeremonyBeaconScheduleV1` is keyed by setup kind, stable transcript id,
+SRS-profile id, phase, and circuit id or an explicit no-circuit sentinel. Each
+unique tuple for a new KZG transcript, Groth16 Phase 1, or per-circuit Phase 2 has
+its own precommitment, close point, domain, future resolution, sealed head,
+counted contributor set, acknowledgements, and public anchor.
+
+A sealed historical KZG SRS follows a separate `historical-qualified` path.
+`HistoricalCeremonyQualificationV1` verifies the ceremony's original
+precommitment, contribution chronology, post-contribution beacon, public anchors,
+transcript algebra, sealed head, and exact final bytes. The bridge never attaches
+a new beacon to historical bytes. If the original evidence is unavailable and a
+destination requires those constant-bound bytes, the program blocks or
+rebaselines. Agent personas exercise both modes, including honest, malicious,
+stale, malformed, interrupted, cross-beacon, cross-circuit,
+same-transcript/different-SRS, duplicate-tuple, replayed, and retroactive-beacon
+behavior. Those tests establish software behavior only.
+
+KZG qualification is algebraic, not metadata-only. Two independent
+implementations replay every contribution under the selected ceremony protocol,
+verify its PoK or equivalent contribution proof, check the update relation over
+all declared G1 and G2 powers, preserve degree and prefix, prove cross-group
+consistency, and match the final bytes to the sealed head. Altered, omitted,
+duplicated, reordered, inconsistent, truncated, or cross-transcript powers
+reject.
 
 Sprint 7 freezes the exact constraint systems, public-input order, compiler and
 toolchain, proof profiles, circuit hashes, and verifier manifests. Sprint 8 then
@@ -320,12 +482,34 @@ environments, not distinct names or agent processes.
 
 The accepted setup binds every contribution, transcript chain, curve and
 subgroup check, beacon derivation, KZG inventory, Groth16 phase, proving key, and
-verifying key. Transcript-derived VK bytes must equal the harness, registry,
-destination verifier, deployment payload, and conformance artifacts.
+verifying key. In the pinned commitment-aware gnark suite, Phase 1 verifies
+`tau`, `alpha`, and `beta` updates. Each circuit's Phase 2 verifies `delta` and
+one `sigma` update and PoK per commitment, derives every `GSigmaNeg`, and fixes
+`gamma` to the standard BLS12-381 G2 generator. Every counted human publishes a
+signed contribution receipt and acknowledges inclusion in each final sealed
+transcript head they joined. Every accepted head has its own predeclared public
+timestamp or anchor. A coordinator-produced valid tail that omits a counted
+contribution fails the participation policy.
+
+Transcript-derived VK bytes must bind to and satisfy the immutable registry slot
+constraints and equal the harness, destination verifier, deployment payload, and
+conformance copies.
+Sprint 8 publishes `RegistryActivationV1`, domain-bound artifact authorization,
+deployment roots and domain, ABI templates, and deployment recipes. Concrete ABI
+instances remain absent until S12 deployment observations. Sprint 8 does not
+mutate semantic registry bytes or template roots.
 
 Any change to the frozen circuit, statement, compiler, setup profile, or verifier
 manifest invalidates the affected setup and returns the program to Sprint 7.
 Sprints 9 through 13 are mechanically unreachable until Sprint 8 closes.
+
+PBT-S09 replaces the current stable conformance wording that requires a receipt
+to bind the run-evidence manifest that later indexes it. Destination receipts
+bind the immutable run intent. An immutable evidence-head record is created only
+after its indexed receipts and binds its predecessor head plus those receipt
+digests. The terminal classifier binds the final head. The PBT-S09 OpenSpec delta
+must update both receipt and evidence-index requirements together and add cycle
+and self-digest rejection vectors before the stable specification changes.
 
 ## Environment and key boundary
 
@@ -341,9 +525,12 @@ record public addresses, transaction ids, balances, fee reserves, and bounded
 retry outcomes without recording credentials.
 
 Public resets are observed, not induced. A reset, unknown runtime fingerprint,
-or incompatible upgrade freezes the affected domain. Recovery abandons or tears
-down the old off-chain deployment and creates a new deployment domain. Old-domain
-proofs must reject.
+semantic runtime change, finality change, official-root change, or incompatible
+upgrade returns to PBT-S02 and invalidates dependent circuits, setup, deployment,
+and public receipts. Only endpoint drift or a fingerprint transition already
+authorized by the frozen runtime policy may re-enter at deployment or execution.
+Recovery abandons or tears down the old off-chain deployment and creates a new
+deployment domain. Old-domain proofs must reject.
 
 ## Sprint model
 
@@ -369,8 +556,8 @@ artifacts, tests, and receipts rather than elapsed time.
 | PBT-S05 | 6 | Cardano to Midnight Halo2 path | A Cardano source fact reaches the exact Midnight operation statement with complete negative vectors. |
 | PBT-S06 | 7 | Midnight to Cardano Halo2 plus BSB22 Groth16 path | A Midnight fact reaches the exact Plutus statement and complete final-decider relation. |
 | PBT-S07 | 8 | Production circuits, verifiers, imported MPC hardening, circuit freeze | Reproducible builds accept goldens, reject adversarial vectors, meet feasibility limits, and publish the freeze digest. |
-| PBT-S08 | 6 | Human setup ceremonies, transcript verification, artifact and ABI freeze | Independent contributions verify and every deployed artifact matches the accepted transcript. |
-| PBT-S09 | 7 | Reference harness, relayers, destination-local atomic settlement | Every proof-template family completes locally in both directions with restart and replay safety. |
+| PBT-S08 | 6 | Human setup ceremonies, transcript verification, registry activation, and artifact/deployment-input freeze | Independent contributions verify and every authorized artifact matches the accepted transcript. |
+| PBT-S09 | 7 | Reference harness, relayers, destination-local atomic settlement | Every authorized direction-family row completes locally with restart and replay safety. |
 | PBT-S10 | 7 | All-94 conformance, faults, security, and performance | All rows, families, mutations, faults, and thresholds pass against frozen artifacts. |
 | PBT-S11 | 6 | Public-testnet identities, funding, environments, roots, reset and deployment readiness | Clean readiness qualification reports no capability, funding, secret, root, freshness, or deployment gap. |
 | PBT-S12 | 7 | Public deployment and all-family execution | Public receipts cover every direction and family, drills pass, and the evidence snapshot is frozen. |
@@ -391,7 +578,7 @@ PBT-S08 -> PBT-S09 -> PBT-S10 -> PBT-S11 -> PBT-S12 -> PBT-S13
 
 PBT-S03 research may continue while PBT-S02 runs, but PBT-S04 cannot start
 unless PBT-S02 is fully demonstrated. PBT-S05 and PBT-S06 may run in isolated
-worktrees after PBT-S04. Their shared
+full clones after PBT-S04. Their shared
 interfaces and integration commit remain serialized.
 
 ## Package contract

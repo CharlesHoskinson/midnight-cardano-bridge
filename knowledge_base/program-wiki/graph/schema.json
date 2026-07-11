@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ProgramWikiGraphEventV1",
+  "title": "ProgramWikiGraphEventV1V2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,8 +16,24 @@
     "source_path",
     "source_sha256"
   ],
+  "oneOf": [
+    {
+      "properties": {
+        "schema_version": { "const": 1 },
+        "sequence": { "type": "integer", "minimum": 1, "maximum": 29 }
+      },
+      "not": { "required": ["source_snapshot"] }
+    },
+    {
+      "properties": {
+        "schema_version": { "const": 2 },
+        "sequence": { "type": "integer", "minimum": 30 }
+      },
+      "required": ["source_snapshot"]
+    }
+  ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "enum": [1, 2] },
     "sequence": { "type": "integer", "minimum": 1 },
     "event_id": { "type": "string", "pattern": "^kge-[0-9]{4,}$" },
     "at_utc": { "type": "string", "format": "date-time" },
@@ -29,6 +45,7 @@
     "object": { "type": "string", "minLength": 1 },
     "source_id": { "$ref": "#/definitions/id" },
     "source_path": { "type": "string", "minLength": 1 },
+    "source_snapshot": { "const": "self" },
     "source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
   },
   "definitions": {

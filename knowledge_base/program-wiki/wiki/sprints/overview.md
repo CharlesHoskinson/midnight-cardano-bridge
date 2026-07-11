@@ -3,9 +3,11 @@ id: program.sprints
 type: sprint
 title: Sprint map
 status: active
-updated_at: 2026-07-10T15:02:07Z
+updated_at: 2026-07-11T05:16:21Z
 sources:
   - docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md
+  - docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md
+  - docs/superpowers/plans/2026-07-10-pbt-s00-program-control-plane.md
 ---
 
 # Sprint map
@@ -20,7 +22,7 @@ sources:
 | PBT-S05 | 6 | Cardano to Midnight proof path |
 | PBT-S06 | 7 | Midnight to Cardano proof path |
 | PBT-S07 | 8 | Production circuits, verifiers, MPC framework hardening, circuit freeze |
-| PBT-S08 | 6 | Human ceremonies and artifact freeze |
+| PBT-S08 | 6 | Human ceremonies, registry activation, and artifact/deployment-input freeze |
 | PBT-S09 | 7 | Harness, relayers, and destination-local settlement |
 | PBT-S10 | 7 | Conformance, faults, security, and performance |
 | PBT-S11 | 6 | Public-testnet readiness |
@@ -38,3 +40,13 @@ PBT-S02[demonstrated] + PBT-S03 -> PBT-S04
 PBT-S04 -> (PBT-S05 || PBT-S06)
 PBT-S05 + PBT-S06 -> PBT-S07 -> PBT-S08 -> PBT-S09 -> PBT-S10 -> PBT-S11 -> PBT-S12 -> PBT-S13
 ```
+
+The master plan fixes every package dependency, primary artifact, and exit or
+stop condition. Sprint 0 also has a code-level plan with exact files, tests,
+commands, and commit boundaries. Later code-level plans are generated from
+closed predecessor snapshots and validated OpenSpec changes. This keeps
+unresolved public-chain interfaces out of the authoritative plan.
+
+Sprint 3 uses two bounded packets under one OpenSpec change. W01-W05 recover and
+validate source rows after Sprint 1. W06-W08 wait for the demonstrated Sprint 2
+snapshot before assigning proof families or destination use.

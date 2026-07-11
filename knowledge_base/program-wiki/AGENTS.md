@@ -17,6 +17,13 @@ decisions change. A page must never present synthesis as a primary source.
 `graph/events.jsonl` is append-only. `graph/nodes.json` and `graph/edges.json`
 are materialized views and must reproduce exactly from the event stream.
 
+Events `kge-0001` through `kge-0029` are the immutable V1 prefix from Git blob
+`c79bae81f4bdb87c5c7eef1baeeef190f8be5f65`. Its SHA-256 is
+`401d2fc42de6d52fc0b52633364c9a428ec364a2fa8daf8d3c4b6226b1e51e50`.
+V1 events do not contain `source_snapshot`; the validator resolves their sources
+against its explicit snapshot argument. Events from `kge-0030` onward are V2
+and require `source_snapshot: self`. Never convert a V1 event to V2 in place.
+
 ## Required page metadata
 
 Every maintained wiki page begins with YAML frontmatter containing:

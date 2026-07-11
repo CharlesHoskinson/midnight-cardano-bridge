@@ -24,32 +24,34 @@ okf_version: '1.0'
 ## 1. Document control
 
 This page is the canonical readable design for the bridge program. The active
-[Sprint 1 OpenSpec change](../../openspec/changes/sprint-01-foundation/design.md)
-contains the normative foundation, negative scenarios, implementation tasks, and
-review record. The
-[program design](../../docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md)
-sets the approved proof paths and program boundaries. Neither record is deployment
-evidence.
+[public-testnet program rebaseline](../../docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md)
+sets the approved proof paths and program boundaries. The
+[100-package implementation register](../../docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md)
+and the [PBT-S00 control-plane plan](../../docs/superpowers/plans/2026-07-10-pbt-s00-program-control-plane.md)
+govern execution. Each sprint owns its own validated OpenSpec change; no active
+Sprint 1 artifact has standing authority over the rebaselined program. These
+records are design and execution authority, not deployment evidence.
 
 | Field | Value |
 | --- | --- |
-| Design state | Foundation design; no bridge deployment outcome has been assigned |
+| Design state | Public-testnet program approved for controlled implementation; deployment remains blocked |
 | Evidence cutoff | 2026-07-10 |
 | Selected Cardano to Midnight path | Midnight Halo2/Plonkish verification over BLS12-381 |
 | Selected Midnight to Cardano path | Full-decider BSB22 commitment-Groth16 over BLS12-381 |
-| Bootstrap mode for the proof of concept | Approved checkpoint manifest |
-| Production bootstrap target | Verification from source genesis and independent certification roots |
-| Normative change | `openspec/changes/sprint-01-foundation/` |
+| Bootstrap mode for the proof of concept | Exact public genesis, official chain rules, and independently verified official finality roots |
+| Program id | `mcb.public-testnet-livepass.v2` |
+| First normative change | `openspec/changes/pbt-s00-program-control-plane/` when created by PBT-S00-W01 |
 | Source register | [Knowledge-base source records](../sources/index.md) |
 
 Direct Halo2/KZG verification on Cardano, native BEEFY-ECDSA verification, and a
 future BLS finality adapter are production candidates. They are not substitutes
 for either selected proof-of-concept path under the same suite id. The six named
-foundation blockers in section 24 remain open. The Deep Research Toolkit dossier
-and independent proof-systems, consensus, and implementer/operator evidence are
-recorded in the OpenSpec review artifact. Acceptance requires zero blocking and
-zero unresolved major review questions. Git history and the review artifact carry
-the process record; the body below describes only the current system and evidence.
+foundation blockers in section 24 remain open. Every closure snapshot receives a
+fresh Codex audit plus proof, consensus, operator, and security reader scopes.
+Each scope must report zero Blocking, zero Major, and zero Minor findings against
+the same `ProgramSnapshotV1`; a fix creates a new snapshot and repeats affected
+readers. Git history, OpenSpec, runlogs, and the program wiki carry the process
+record. The body below describes only the current system and evidence.
 
 ## 2. Purpose and scope
 
@@ -323,8 +325,10 @@ SemanticRegistryTemplateV1 = (
 
 ArtifactTemplateV1 = (
   artifact kind, logical graph slot, suite and architecture template ids,
-  canonical encoding, exact length, content hash, build or setup template,
-  owner and enforcement template
+  canonical encoding and length constraints,
+  content mode fixed or authorization-required,
+  optional fixed-content hash, authorization evidence-schema id,
+  build or setup template, owner and enforcement template
 )
 
 DestinationAbiTemplateV1 = (
@@ -334,6 +338,12 @@ DestinationAbiTemplateV1 = (
   receipt and error-schema templates
 )
 ```
+
+For a preexisting immutable constant, `content mode = fixed` requires its exact
+length and content hash. A circuit, VK, SRS, proving key, transcript, or other
+generated output uses `authorization-required`; its later
+`ArtifactAuthorizationV1` carries the exact length, hash, and evidence while
+satisfying the template constraints.
 
 Semantic registry leaves do not contain a deployment domain, registry
 activation, artifact authorization, concrete destination instance, or runtime
@@ -346,7 +356,8 @@ values.
 The digest graph has this fixed topological order:
 
 ```text
-canonical source, catalog, schema, code, setup, and policy bytes
+canonical source, catalog, schema, code-template, setup-template,
+and ceremony-policy bytes
   -> source protocol fingerprints
   -> semantic registry template leaves -> semantic_registry_template_root
   -> artifact template leaves -> artifact_template_root
@@ -415,17 +426,19 @@ The domain-bound records are separate outputs:
 RegistryActivationV1 = (
   version, root_set_digest, deployment_domain,
   semantic_registry_template_root, destination_identity_digests,
-  activated_entry_set_digest, lifecycle_state_digest
+  activated_entry_set_digest, lifecycle_policy_digest, initial_status
 )
 
 ArtifactAuthorizationV1 = (
   version, root_set_digest, deployment_domain,
   registry_activation_digest, artifact_template_root,
-  artifact_template_digest, graph_slot, content_hash, lifecycle_status
+  artifact_template_digest, graph_slot, canonical_encoding_profile_id,
+  content_length, content_hash, authorization_evidence_manifest_digest,
+  independent_verification_set_digest, lifecycle_status
 )
 
 DeploymentObservationV1 = (
-  version, root_set_digest, deployment_domain,
+  version, deployment_intent_digest, root_set_digest, deployment_domain,
   fresh_deployment_instance_id,
   destination_network_identity_digest,
   destination_abi_template_digest,
@@ -436,7 +449,7 @@ DeploymentObservationV1 = (
 )
 
 DestinationAbiInstanceV1 = (
-  version, root_set_digest, deployment_domain,
+  version, deployment_intent_digest, root_set_digest, deployment_domain,
   destination_abi_template_digest,
   verifier_or_operation_template_hash, deployment_recipe_digest,
   concrete_destination_instance_id, deployed_code_hash,
@@ -445,24 +458,29 @@ DestinationAbiInstanceV1 = (
 )
 
 RootContextV1 = (
-  root_set_digest, deployment_domain, checkpoint_manifest_digest,
+  deployment_intent_digest, root_set_digest, deployment_domain,
+  checkpoint_manifest_digest,
   source_identity_digest, source_protocol_fingerprint,
   registry_activation_digest, artifact_authorization_root,
   destination_network_identity_digest, destination_abi_instance_digest
 )
 
 ActivationDecisionV1 = (
-  version, intended_profile, root_context_digest,
+  version, deployment_intent_digest, intended_profile, root_context_digest,
   checkpoint_manifest_digest, root_set_digest, deployment_domain,
   fresh_deployment_instance_id, registry_activation_digest,
   artifact_authorization_root, destination_abi_instance_digest,
-  gate_roster_digest, ordered_gate_record_set_digest,
+  base_gate_roster_digest, family_gate_roster_digest,
+  base_entry_count, admitted_matrix_root,
+  activation_gate_subset_digest,
+  ordered_activation_gate_evaluation_set_digest,
   activation_policy_digest, decision_time, decision,
   canonical_approval_set_digest
 )
 
 DeploymentReceiptV1 = (
-  version, activation_decision_digest, root_context_digest,
+  version, deployment_intent_digest, activation_decision_digest,
+  root_context_digest,
   checkpoint_manifest_digest, root_set_digest, deployment_domain,
   fresh_deployment_instance_id, destination_network_identity_digest,
   destination_abi_instance_digest, concrete_destination_instance_id,
@@ -474,8 +492,12 @@ DeploymentReceiptV1 = (
 `RootContextV1` is deployment and source context only. Predicate, suite,
 architecture, role, VK selection, freshness limits, and replay semantics belong
 to the per-claim `ResolvedProofContextV1` in section 7. The deployment controller
-produces `ActivationDecisionV1` only after it verifies the roster, every required
-gate record, and the approval threshold fixed by the pre-domain activation policy.
+produces `ActivationDecisionV1` only after it verifies both rosters, prefix and
+matrix bindings, every current evaluation in the roster-defined predeployment
+activation subset, and the approval threshold fixed by the pre-domain activation
+policy. Post-deployment execution, public-receipt, final-review, and classifier
+gates are excluded from that subset and cannot block the deployment that will
+produce their evidence.
 The chain-specific deployer first deploys the approved template and recipe. Two
 chain observers reproduce `DeploymentObservationV1` from the confirmed deployment
 transaction, concrete instance id, and deployed code bytes. The ABI instance
@@ -497,7 +519,7 @@ labels:
 | source identity and fingerprint | exact fields | exact equality | exact equality | bound through root context | bound through root context |
 | registry activation, artifact root, ABI instance | excluded | excluded | exact equality | exact equality | exact equality |
 | destination network and deployed instance | network template only | network template only | network exact equality | ABI-instance equality | concrete instance exact equality |
-| roster digest | policy template reference only | template equality | excluded | exact published digest | bound through activation decision |
+| base and family roster digests, base count, matrix root | policy template references only | template equality | excluded | exact published values | bound through activation decision |
 
 `DeploymentObservationV1` is the sole producer of the concrete destination
 instance id and deployed code hash. Its template and recipe digests equal the
@@ -506,11 +528,13 @@ context binds the ABI-instance digest; and the activation decision and final
 receipt bind that same root context. Two direction manifests, their observations,
 and the root set also use one byte-identical fresh deployment instance id.
 
-The destination continuing state stores the root context, activation-decision
-digest, and deployment-receipt digest. Construction payloads, runtime calls,
-proofs, replay keys, and settlement receipts bind the same root context and their
-per-claim resolved proof context. None of these domain-bound records or their
-digests is reachable from `DeploymentRootSetV1`.
+The destination continuing state stores the root context and activation-decision
+digest. The external activation manifest stores the later deployment receipt,
+which authenticates that state without being included in its own preimage.
+Construction payloads, runtime calls, proofs, replay keys, and settlement
+receipts bind the same root context and their per-claim resolved proof context.
+None of these domain-bound records or their digests is reachable from
+`DeploymentRootSetV1`.
 
 `CONS-DOMAIN-01` includes two independently implemented golden derivations. Each
 starts from the same ordered source bytes and compares canonical bytes and
@@ -561,7 +585,7 @@ from the smallest consensus-backed execution interval exposed to the operation.
 Endpoint tips and wall clocks are telemetry only unless separately authenticated
 by the same finality relation. These checks run after proof verification has
 authenticated `S`; a preflight age estimate is advisory only. The exact owners
-of `CONS-FRESH-01` are the ordered `owners[]` in `GateRosterV1`. The freshness-
+of `CONS-FRESH-01` are the ordered `owners[]` in its base `GateRosterV2` entry. The freshness-
 profile and artifact-format teams are contributors, and the destination verifier
 is an enforcement locus. Activation requires both source adapters, both
 destination rules, filled numeric bounds, and independent boundary and era-
@@ -611,22 +635,9 @@ The proof of concept uses approved checkpoint manifests. This is a
 weak-subjectivity choice. Reproducing a checkpoint from independent nodes detects
 operator mistakes but does not turn the checkpoint into a consensus-derived root.
 
-Every recursive base, step, terminal role, and outer statement carries the
-post-domain context derived in section 4:
-
-```text
-RootContextV1 = (
-  root_set_digest,
-  deployment_domain,
-  checkpoint_manifest_digest,
-  source_identity_digest,
-  source_protocol_fingerprint,
-  registry_activation_digest,
-  artifact_authorization_root,
-  destination_network_identity_digest,
-  destination_abi_instance_digest
-)
-```
+Every recursive base, step, terminal role, and outer statement carries the exact
+`RootContextV1` defined in section 4. That byte-level definition includes
+`deployment_intent_digest`; this section does not define a shorter variant.
 
 The minimum semantic recursive states are:
 
@@ -901,18 +912,23 @@ Trust, proof artifacts, runs, and private operations have different owners:
 | Layer | Contents | Binding and publication |
 | --- | --- | --- |
 | Root template manifest | Domain-neutral source and destination identities, checkpoint, finality and anchor templates, fingerprint policy, semantic registry template root, destination code templates, deployment recipes, replay, recovery, and approval templates | Public; feeds `DeploymentRootSetV1` |
-| Artifact template manifest | Domain-neutral suite slots, schemas, circuits, VKs, SRS and setup templates, proving-key hashes, build and transcript evidence | Public; its template root feeds `DeploymentRootSetV1` |
-| Activation manifest | `RegistryActivationV1`, artifact authorization root, deployment observations, destination ABI instances, `ActivationDecisionV1`, concrete deployed destination ids, and `DeploymentReceiptV1` records | Public, domain-bound, and stored in destination state; never feeds the root set |
-| Run intent | Immutable `RunIntentV1`: run id, selected profile, root-set and domain values, activation and deployment-receipt digests, published roster bytes/digest, software revisions, non-secret endpoint discovery intent, funded-role ids, probe/metric and confirmation profiles, evidence-retention profile, declared evidence locations, and preflight policy | Public post-domain intent fixed before preflight; contains no run result, preflight receipt, or run-evidence manifest |
-| Preflight receipt | `PreflightReceiptV1`: run-intent digest, observed endpoint identities and revisions, checks performed, funded-role observations, probe discovery, times, results, and evidence digests | Public post-preflight evidence; cannot feed or alter the run intent |
-| Run evidence manifest | `RunEvidenceManifestV1`: run-intent digest, ordered preflight-receipt digests, later job/transaction/confirmation/evidence records, and outcome inputs | Append-only public evidence assembled after preflight; never feeds the run intent or root set |
+| Artifact template manifest | Domain-neutral suite, circuit-role, VK, SRS, setup, build-policy, and ceremony-policy slots with typed authorization and evidence-schema ids; no generated key, transcript, contribution, or deployment value | Public; its immutable template root feeds `DeploymentRootSetV1` |
+| Activation manifest | `RegistryActivationV1`, artifact authorization root, deployment observations, destination ABI instances, `ActivationDecisionV1`, concrete deployed destination ids, and `DeploymentReceiptV1` records | Public and domain-bound; the continuing state stores the registry activation, root context, and activation-decision digest, while the external manifest stores the deployment receipt; neither feeds the root set |
+| Deployment intent | Immutable `DeploymentIntentV1`: deployment/run id, selected public profiles, root-set and domain values, registry-activation digest, artifact authorizations, base and family-complete roster bytes and digests, base entry count, admitted matrix root, activation-subset digest, ABI templates, deployment recipes, expected networks and endpoint policies, key roles, funding requirements, source implementation snapshot and confirmed predecessor remote SHA, authorization-event head, and stop policy | Public and fixed before deployment preflight; contains no controller lease or fencing epoch, observed endpoint, deployment observation, concrete instance, ABI instance, activation decision, deployment receipt, or execution result |
+| Deployment preflight receipt | `DeploymentPreflightReceiptV1`: deployment-intent digest, observed network and endpoint identities, tool and key-role checks, funding observations, times, results, and evidence digests | Public evidence produced before deployment; cannot feed or alter the deployment intent |
+| Run intent | Immutable `RunIntentV1`: run id, deployment-intent digest, activation-decision and deployment-receipt digests, concrete root contexts and destination instances, both roster bindings, software revisions, probe/metric and confirmation profiles, evidence-retention profile, declared evidence locations, and execution-preflight policy | Public and fixed after successful deployment and initialization but before proof execution preflight; contains no execution-preflight result, proof, transaction result, or run-evidence manifest |
+| Execution preflight receipt | `ExecutionPreflightReceiptV1`: run-intent digest, observed deployed component identities and revisions, funded-role observations, probe discovery, times, checks, results, and evidence digests | Public post-deployment evidence; cannot feed or alter the run intent |
+| Run evidence manifest | Chained `RunEvidenceManifestV1` heads: run-intent digest, optional predecessor-head digest, ordered newly indexed execution-preflight/job/transaction/confirmation/evidence record digests, cumulative count, and accumulator | Immutable append-only public head chain assembled after the indexed records exist; receipts never bind their current or future head, and the final classifier binds the terminal head |
 | Operator overlay | Credentials, signing handles, secret-store locations, local sockets, funding sources, and limits | Private and never hashed into the domain |
 
 Canonical generation records the bytes, digest, tool revision, input digests,
-approvals, and an independent verification command. `RunIntentV1` contains no
-observed result. Every `PreflightReceiptV1` and every later evidence record binds
-the immutable run-intent digest; `RunEvidenceManifestV1` references those
-receipts without being in their preimage. Funding and collateral observations do
+approvals, and an independent verification command. `DeploymentIntentV1`
+contains no deployment result, and `RunIntentV1` contains no proof-execution
+result. Deployment receipts bind the deployment-intent digest. Every
+`ExecutionPreflightReceiptV1` and later execution record binds the immutable
+run-intent digest. Each immutable `RunEvidenceManifestV1` head is created after
+the records it adds and references their digests plus its predecessor head; no
+record binds its current or future manifest head. Funding and collateral observations do
 not invent or publish secret values or chain-specific amounts. Concrete
 identities, checkpoint values,
 freshness limits, approver keys, endpoint values, funding quantities, VK/SRS
@@ -1043,7 +1059,7 @@ Validation order is fixed:
 
 ```text
 bounded common-frame and QueryV1 decode
--> bind the published GateRosterV1 digest and active destination RootContextV1
+-> bind the published base and family-complete GateRosterV2 digests and active destination RootContextV1
 -> authenticate active RegistryActivationV1 and resolve the query
 -> construct and authenticate ResolvedProofContextV1
 -> optional source collection and proof production under that resolution
@@ -1064,8 +1080,8 @@ or permanently reject a claim and is repeated after proof verification. Final
 freshness consumes the proof-authenticated `S` and the resolution-bound adapters,
 units, conversion rule, integer width, and bounds. Final replay and policy checks
 consume the same resolved predicate and canonical typed result. Registry and
-roster binding occur before preflight, source collection, witness construction,
-or proving.
+both-roster binding occur before preflight, source collection, witness
+construction, or proving.
 
 Malformed, aliased, out-of-range, duplicate, unknown-critical, or trailing typed
 result data fails before public-input reconstruction and consumes no replay state.
@@ -1104,8 +1120,9 @@ activation, artifact authorization, destination instance, runtime lifecycle
 state, or receipt. The ordered semantic leaves produce
 `semantic_registry_template_root`, which feeds `DeploymentRootSetV1`.
 `RegistryActivationV1` is derived only after the domain and binds the template
-root, selected destination identities, activated entry set, and lifecycle state.
-Destination state stores its digest as the active registry authority.
+root, selected destination identities, activated entry set, lifecycle policy,
+and initial status. Destination state later stores its digest as the active
+registry authority; the activation record does not hash that later state.
 
 Authorization follows a nested artifact-binding graph:
 
@@ -1152,11 +1169,11 @@ for verification.
 | --- | --- | --- | --- |
 | Checkpoint manifest, root-set digest, and domain | Destination continuing state | Recursive base and every claim | Root-context equality |
 | Semantic registry template and activation | Destination continuing state | Before result decoding and public-input reconstruction | Template membership plus exact activation digest |
-| Midnight operation VK | Artifact authorization and Midnight ABI instance | Runtime proof verification | Canonical VK bytes, template slot, and deployed code hash |
-| BSB22 wrapper VK | Artifact authorization and Cardano ABI instance | Runtime proof verification | Exact 672-byte ABI template, authorization, and deployed digest |
-| Inner and aggregation VKs | Activated registry and artifact authorization | Circuit constants or authenticated in-circuit membership | Role-specific template and authorization equality |
-| KZG verifier SRS subset | Artifact template and authorization records | Operation verifier and full-decider circuit | Exact points, prefix, and degree; never prover-selected |
-| BSB22 commitment key | BSB22 ABI profile | Cardano verification and phase 2 | Exact key bytes and committed-wire manifest |
+| Midnight operation VK | Artifact authorization and Midnight ABI instance | Runtime proof verification | Template-slot constraints plus equality among the authorization's exact VK bytes/hash, the ABI instance's VK content reference, the deployment payload's VK field, and the operation VK read by the deployed verifier; deployed code hash is checked separately |
+| BSB22 wrapper VK | Artifact authorization and Cardano ABI instance | Runtime proof verification | The 672-byte committed-VK ABI grammar stays separate from the authorization's exact VK bytes/hash; the ABI instance's committed-VK reference and the validator's decoded reference-input VK equal that authorization, while validator code hash is checked separately |
+| Inner and aggregation VKs | Activated registry and artifact authorization | Circuit constants or authenticated in-circuit membership | Role-specific template constraints and authorized-content equality |
+| KZG verifier SRS subset | Artifact template and authorization records | Operation verifier and full-decider circuit | Template degree/prefix constraints plus exact authorized points; never prover-selected |
+| BSB22 commitment key | Phase-2 output and artifact authorization; the BSB22 ABI profile owns only the grammar | Cardano verification and phase 2 | Committed-wire constraints plus exact authorized `CK.G` and `GSigmaNeg` bytes equal the ABI-instance references and deployed verifier inputs |
 | Groth16 phase 1 and phase 2 | Deployment governance | Deployment gate | Verified receipts and ceremony/deployed VK byte equality |
 | Proving-key hash | Reproducible build record | Build and proving audit | Circuit and setup equality, not per-claim authority |
 | Transcript and challenge profile | Verifier source and suite profile | Proof generation and verification | Exact schedule, version, and content digest |
@@ -1165,22 +1182,28 @@ for verification.
 If a VK, SRS point, or transcript parameter is a witness rather than a circuit
 constant, the relation authenticates it against the artifact authorization root
 in `RootContextV1`. Canonical representation alone does not authorize it.
-Deployment checks byte equality among ceremony output, artifact template,
-domain-bound authorization, ABI instance, and deployed VK before activation.
+Deployment checks that the ceremony output satisfies the immutable template
+constraints, that the domain-bound authorization carries its exact length and
+hash, and that the ABI instance and deployed VK are byte-equal to that authorized
+content before activation.
 
 ### Artifact resolution and gate records
 
 An `ArtifactTemplateRefV1` identifies artifact kind and graph slot, suite and
-architecture templates, encoding, exact length, content hash, and artifact
-template membership proof. It is domain neutral. The post-domain
-`ArtifactAuthorizationV1` binds that template reference to the root-set digest,
-domain, registry activation, and lifecycle status. `ArtifactFetchHintV1` carries
+architecture templates, encoding and length constraints, fixed or
+authorization-required content mode, optional fixed-content hash, authorization
+evidence schema, and artifact-template membership proof. It is domain neutral.
+The post-domain `ArtifactAuthorizationV1` binds that template reference to the
+root-set digest, domain, registry activation, exact content length and hash,
+evidence and independent-verification manifests, and lifecycle status.
+`ArtifactFetchHintV1` carries
 advisory locations and is neither a root-set input nor an authorization record.
 
 The resolver starts from the registry resolution and exact root context. It
 checks registry activation, artifact authorization, template-root membership,
 logical graph slot, and ABI-instance expectations before fetching. It then
-checks exact length, encoding, and content hash before cache or use. Caches are
+checks template constraints followed by the authorization's exact length,
+encoding, and content hash before cache or use. Caches are
 keyed by content hash and retain the domain-bound authorization proof. Offline
 bundles use the same contract. Missing, malformed, hash-mismatched, and
 well-formed but unauthorized artifacts have distinct permanent or retryable
@@ -1192,6 +1215,8 @@ versioned content-addressed record rather than by a placeholder convention:
 
 ```text
 GateDeliverableV1 = (
+  entry_origin_roster_sha256,
+  entry_digest,
   gate_id,
   owners[],
   interfaces[],
@@ -1210,8 +1235,11 @@ GateDeliverableV1 = (
 )
 ```
 
-The first six fields are copied byte-for-byte and in order from the decoded
-roster entry. Omission, addition, substitution, or reordering fails
+The origin digest identifies the base roster for a base-prefix entry and the
+family-complete roster for an appended family entry. `entry_digest`
+authenticates the canonical entry bytes. The next six fields are copied
+byte-for-byte and in order from that decoded entry. Omission, addition,
+substitution, or reordering fails
 `exact-roster-entry` before outcome evaluation. Other parties are contributors
 or enforcement loci, never additional gate owners. Activation requires an
 accepted template content hash under the semantic registry and artifact
@@ -1234,12 +1262,15 @@ Authenticated GitHub code searches on 2026-07-10 for those filenames and
 distinctive phrases returned zero results before the search API rate limit.
 This is evidence of the search performed, not proof that the files do not exist.
 
-Each recovered Cardano row must name its id and version, ledger era and namespace,
-natural-language and formal statement, public inputs and typed outputs, private
-witness, accepted anchor, finality and freshness rule, proof-template family,
-suite and architecture, complete VK/SRS graph, selector and parameter hash,
-destination context, replay behavior, positive and negative vectors, transaction
-use, primary sources, and implementation status.
+Each recovered Cardano row must name its id and version, ledger era and
+namespace, natural-language and formal statement, bounded public inputs and
+typed outputs, private witness, source-semantic anchor, raw source vectors, and
+primary-source locators and digests. Recovery records source semantics and
+provenance only. It does not assign a proof-template family, suite, circuit, VK,
+SRS, setup, demonstrated finality or freshness profile, destination policy,
+deployment domain, or implementation status. PBT-S03-W06 through W08 add those
+admission decisions in separate records after PBT-S02 has demonstrated the
+public profiles; they never rewrite the recovered catalog rows.
 
 Known Cardano namespaces, UTxO semantics, governance facts, or examples in the
 derived claim-interface report do not identify the missing 42 statements. No row
@@ -1255,8 +1286,9 @@ record source is absent. Searches found no
 2026-07-10 returned no exact filename or distinctive phrase match before rate
 limiting. The number 52 does not encode predicate semantics.
 
-Each recovered Midnight row has the same registry fields as a Cardano row and
-must also identify the public ledger source it can authenticate. Candidate anchor
+Each recovered Midnight row has the same source-semantic and provenance fields
+as a Cardano row and must also identify the public ledger source described by
+the source statement. Candidate anchor
 families include contract state, Zswap commitment and nullifier roots, DUST roots,
 public transaction data, and consensus-authorized system effects
 ([Midnight transaction types](../midnight/transaction-types.md)). A family name is
@@ -1296,8 +1328,8 @@ A 2026-07-10 query of the official `pre-release-preview` aggregator returned 20
 certificates: 18 `CardanoTransactions` and 2 `CardanoDatabase`, with no SCLS
 entity. That sample supports the open gate but does not prove that every
 aggregator profile lacks an extension. A project-operated SCLS signer population
-uses a distinct lab anchor profile and caps the program outcome at
-`degraded-lab`.
+uses a distinct lab anchor profile and cannot satisfy the program outcome. The
+public classifier remains blocked.
 
 Certification and SCLS validity compose only through exact message equality. The
 registered Cardano anchor profile defines:
@@ -1366,8 +1398,8 @@ separate caller copies. The adapter includes every source-native field that can
 change the signed message and does not invent a field absent from the selected
 source profile.
 
-The exact owners of `CONS-CARDANO-01` are the ordered `owners[]` in
-`GateRosterV1`. The Cardano-identity and SCLS-tree-profile teams are
+The exact owners of `CONS-CARDANO-01` are the ordered `owners[]` in its base
+`GateRosterV2` entry. The Cardano-identity and SCLS-tree-profile teams are
 contributors; the Mithril relation and SCLS inclusion adapter are enforcement
 loci before predicate evaluation. Activation
 requires a source-backed signed-entity projection, both canonical descriptor
@@ -1376,7 +1408,7 @@ forms, minimum/maximum key, empty/singleton/odd/padded tree, namespace omission,
 padding, direction, depth, index, neighbor, tombstone, identity, and certificate
 mutation vectors, plus two independent native message encoders and two
 independent tree-witness encoders. The required evidence ids are defined by the
-sole machine-readable roster. Public availability remains the separate
+base `GateRosterV2` entry. Public availability remains the separate
 `S01-BLOCK-02/public-scls-availability` gate.
 
 [Ouroboros Peras](../cardano/ouroboros-peras-finality.md) is also Proposed. Its
@@ -1637,10 +1669,12 @@ committed instances, and the aggregation toolkit
 ([recursion](../midnight/midnight-proofs-recursion.md)). It does not use a curve
 cycle.
 
-The KZG SRS is universal and updatable, but it is still trusted setup. Its
-contributors, transcript, maximum degree, accepted prefix, download source, and
-content hash belong in the registry. On 2026-07-10, two files obtained from the
-official Midnight trusted-setup catalog were verified:
+The KZG SRS is universal and updatable, but it is still trusted setup. Registry
+resolution binds the maximum-degree, accepted-prefix, and evidence-schema slots.
+Concrete contributor, transcript, download-source, and content-hash evidence
+lives in fixed template content when already known or in domain-bound
+`ArtifactAuthorizationV1` and `ArtifactFetchHintV1` records. On 2026-07-10, two files
+obtained from the official Midnight trusted-setup catalog were verified:
 
 | Artifact | Bytes | SHA-256 |
 | --- | ---: | --- |
@@ -1649,6 +1683,23 @@ official Midnight trusted-setup catalog were verified:
 
 These hashes authenticate the files used by the local probe. They are not yet an
 approved bridge SRS manifest.
+
+KZG admission requires more than a file hash, beacon, or transcript head. Two
+independent implementations replay every
+contribution, verify its PoK or equivalent contribution proof, check the update
+relation across every declared G1 and G2 power, preserve the selected degree and
+prefix, prove cross-group consistency, and match the final SRS bytes to the
+sealed head. Vectors alter, omit, duplicate, reorder, or substitute one power and
+exercise identity, off-curve, non-subgroup, inconsistent-power, truncated-prefix,
+and cross-transcript cases. Each must reject.
+
+`KzgBindingProfileV1` fixes whether verifier SRS material is a circuit constant
+or an authenticated input. It also fixes degree, point encoding, transcript
+identity, public-input slots, registry equality constraints, and destination
+support. Constant-bound bytes must be qualified before the wrapper constraint
+system freezes. A later constant change returns to circuit freeze and invalidates
+phase 2. An authenticated-input profile may select ceremony output later only
+when the frozen slots and equality constraints remain unchanged.
 
 BSB22 commitment-Groth16 requires a separate two-phase setup: reusable Powers of
 Tau followed by circuit-specific phase 2. Its soundness depends on at least one
@@ -1659,17 +1710,52 @@ VK
 Every circuit architecture change requires a new phase 2 and a new suite or
 domain according to policy.
 
-The KZG and Groth16 inventories remain independent even though both use
-BLS12-381. A bridge artifact template manifest records:
+The pinned commitment-aware gnark suite updates `tau`, `alpha`, and `beta` in
+Phase 1. Each circuit's Phase 2 updates `delta` and one `sigma` per commitment
+group. Independent replay verifies every update PoK, the corresponding G1 and
+G2 points, inverse-scaled delta terms, and the derived
+`GSigmaNeg = -[sigma]G2`. Key sealing fixes `gamma` to the standard BLS12-381 G2
+generator; gamma is not a contributed Phase 2 secret.
 
-- suite, curve, transcript, challenge, subgroup, and point-encoding rules;
-- circuit source and architecture hashes, K or constraint domain, and selectors;
-- all inner, aggregation, wrapper, and destination VK hashes;
-- proving-key hashes without committing large or secret material to git;
-- KZG SRS catalog entry, degree, prefix, contributions, and transcript;
-- Groth16 phase 1 and phase 2 transcripts, contribution receipts, beacon, and
-  independent verification;
-- build toolchain and reproducibility evidence.
+The participant policy freezes the minimum human count and independence rules.
+Each counted person publishes a signed contribution receipt and later
+acknowledges that contribution's inclusion in the final sealed head for each
+transcript they joined. A setup tuple selects either `historical-qualified` or
+`new-or-update` mode. `CeremonyBeaconScheduleV1` applies only to new or update
+ceremonies and is keyed by setup kind, transcript id, SRS-profile id, phase, and
+circuit id or an explicit no-circuit sentinel. The full tuple is unique. Each
+new KZG transcript, Groth16 Phase 1, and per-circuit Phase 2 has a separate
+precommitted future beacon, close point, domain separation, counted contributor
+set, sealed head, acknowledgements, and public timestamp or anchor.
+
+`HistoricalCeremonyQualificationV1` applies to sealed historical KZG bytes. It
+verifies the original precommitment, contribution chronology, original
+post-contribution beacon, transcript and update algebra, sealed head, public
+anchors, and exact final SRS bytes. It never creates a retroactive schedule. If
+that evidence is unavailable and a destination requires the historical bytes as
+circuit constants, the program blocks or rebaselines rather than changing them.
+A beacon revealed for one transcript cannot seal a later transcript. A valid
+tail that omits a counted contribution fails the policy. Agent simulations test
+software behavior but never satisfy a human contribution gate.
+
+The KZG and Groth16 inventories remain independent even though both use
+BLS12-381. The immutable bridge artifact template manifest records:
+
+- suite, curve, transcript, challenge, subgroup, and point-encoding rule ids;
+- circuit roles, allowed architecture parameters, constraint-domain slots, and
+  selector-binding rules;
+- logical inner, aggregation, wrapper, destination VK, proving-key, and SRS slots;
+- KZG degree and prefix policy plus transcript and SRS-profile identity fields;
+- Groth16 phase, circuit, committed-wire, transcript, contribution, beacon,
+  sealed-head, anchor, and verification evidence-schema ids;
+- build-toolchain and reproducibility policies.
+
+Later `ArtifactAuthorizationV1` records fill those typed slots with concrete
+circuit source and architecture hashes, VK and proving-key hashes, KZG SRS bytes
+and transcript, Groth16 Phase 1 and Phase 2 transcripts, contribution receipts,
+beacon schedule, sealed heads, public anchors, and independent verification.
+Authorization and deployment records bind the immutable template digest. They
+do not mutate the template or feed their own digests back into its root.
 
 The BSB22 suite also binds one content-addressed committed-wire manifest to the
 wrapper R1CS and circuit-specific phase 2:
@@ -1687,8 +1773,10 @@ wrapper R1CS and circuit-specific phase 2:
 `D` and its PoK establish knowledge of those committed variables. They establish
 equality to the destination claim only through the listed R1CS constraints. A
 wire-map or R1CS mismatch blocks phase-2 output and deployed VK use. Setup
-activation checks byte equality among ceremony output, the ABI profile, the
-registry slot, and the deployed destination VK.
+activation checks that the ceremony output satisfies the ABI-profile and
+registry-slot constraints, that its exact content hash equals the domain-bound
+authorization, and that the deployment payload's VK field and destination
+verifier's VK bytes are byte-equal to that authorized content.
 
 The suite profile, aggregation profile, full-decider profile, BSB22 ABI,
 committed-wire manifest, SRS subset, and setup receipts are separate immutable
@@ -1722,7 +1810,7 @@ Fixtures have two noninterchangeable provenance profiles:
 | Kind | Required binding | Comparison and outcome use |
 | --- | --- | --- |
 | `captured-public` | Raw authenticated source bundle, original root template and activation manifests, domain, source receipts, content hashes, and pinned clock | Must reproduce byte-identical statements under the same manifests and domain; offline replay is not a new live execution |
-| `synthetic-lab` | Dedicated lab root template and activation manifests, domain, deterministic witness, clock, and RNG seed | May compare typed semantics, but proof-bound roots and statements must differ; supports `degraded-lab` only after both real destination transitions |
+| `synthetic-lab` | Dedicated lab root template and activation manifests, domain, deterministic witness, clock, and RNG seed | May compare typed semantics, but proof-bound roots and statements must differ; diagnostic only and never public `live-pass` evidence |
 
 A fixture record binds its kind, source bundle, root template and activation manifests, domain, clock,
 source fact, expected canonical statement digest, and provenance. A synthetic
@@ -1733,7 +1821,7 @@ relayers remain untrusted; the destination verifier is the acceptance boundary.
 
 The repository includes a non-activating reference slice under `reference/`.
 Rust and Go independently consume the same versioned fixture but share no codec
-or classifier library. Both reproduce the published 7,705-byte gate roster,
+or classifier library. Both reproduce the historical 7,705-byte `GateRosterV1`,
 validate a closed structural root schema and a closed
 `SourceEventIdentityV1`, topologically check a 15-node producer graph, encode
 typed deterministic CBOR, and compare complete hash preimages before comparing
@@ -1741,7 +1829,7 @@ digests. A cycle, missing producer, non-forward edge, post-domain dependency,
 unknown field, malformed typed value, or cross-language disagreement rejects.
 
 The diagnostic profile is `mcb.structural-lab.sha256-cbor.v1`. Its root,
-deployment-domain, continuity, and gate-record-set hashes use this framing:
+deployment-domain, continuity, and historical gate-record-set hashes use this framing:
 
 ```text
 u64_be(domain_byte_length) || UTF8(domain) ||
@@ -1755,8 +1843,8 @@ production profile owned by `CONS-DOMAIN-01`, and every report fixes
 The reset vector is a state-bearing continuity migration. Changing the fresh
 deployment instance id changes the root and domain while the same authenticated
 source event keeps one continuity key. The imported consumed set rejects that
-event and accepts an unrelated event. The base classifier joins 14 ordered
-status and evidence records to the exact roster, derives six open activation
+event and accepts an unrelated event. The historical V1 classifier joins 14
+ordered status and evidence records to the exact V1 roster, derives six open activation
 gates and eight unresolved consensus gates, and selects row 2. Synthetic vectors
 exercise all five classifier rows, but rows 4 and 5 never change the structural
 report's actual deployment outcome from `blocked`.
@@ -1810,8 +1898,8 @@ settlement id converge on one durable settlement record.
 
 | Current phase | Legal successor | Required durable evidence before transition | Failure and recovery |
 | --- | --- | --- | --- |
-| `received` | `roster-bound` | canonical query bytes and job id | malformed common framing -> `permanent-failure` |
-| `roster-bound` | `resolved` | exact published roster bytes/digest and active root context, stored before any preflight or source read | mismatch -> `permanent-failure`; unavailable destination state -> `retry-wait` |
+| `received` | `roster-set-bound` | canonical query bytes and job id | malformed common framing -> `permanent-failure` |
+| `roster-set-bound` | `resolved` | exact base and family-complete roster bytes and digests, base entry count, admitted matrix root, and active root context, stored before any preflight or source read | mismatch -> `permanent-failure`; unavailable destination state -> `retry-wait` |
 | `resolved` | `source-ready` | authenticated registry resolution and `ResolvedProofContextV1` | constraint or authorization mismatch -> `permanent-failure`; transport only -> `retry-wait` |
 | `source-ready` | `result-canonical` or `proving` | authenticated source bundle and witness manifest | transport -> `retry-wait`; source conflict -> source-evidence freeze path |
 | `proving` | `result-canonical` | attempt id, authorized artifact graph, witness digest, prover lease, produced proof held as unverified bytes | capacity/timeout -> `retry-wait`; deterministic synthesis failure -> `permanent-failure` |
@@ -1996,9 +2084,10 @@ setup, transcript, or curve-grammar selector. Those values exist only in the
 per-claim authenticated `ResolvedProofContextV1`. The validator follows this
 global order exactly:
 
-1. strictly decode bounded state and common records, bind the exact roster and
-   active `RootContextV1`, authenticate registry activation, resolve the query,
-   and construct `ResolvedProofContextV1`;
+1. strictly decode bounded state and common records, bind the exact base and
+   family-complete rosters, prefix and matrix values, and active
+   `RootContextV1`, authenticate registry activation, resolve the query, and
+   construct `ResolvedProofContextV1`;
 2. decode and canonically re-encode the typed result under its resolved schema;
 3. authorize the complete artifact graph and suite-native profile, parse their
    bounded native bytes, and reconstruct `claim_digest`, `pub`, and every public
@@ -2029,8 +2118,9 @@ SCLS anchor, protocol fingerprint, `RootContextV1`, and replay state. It stores
 no proof-suite, circuit-architecture, VK, SRS, setup, transcript, or curve-
 grammar selector. For every claim it follows the same global order:
 
-1. bind the roster and active root context, authenticate registry activation,
-   resolve the query, and construct `ResolvedProofContextV1`;
+1. bind both rosters, prefix and matrix values, and the active root context,
+   authenticate registry activation, resolve the query, and construct
+   `ResolvedProofContextV1`;
 2. decode and canonically re-encode the registered typed result;
 3. authorize the complete artifact graph and suite-native profile, then
    reconstruct the registered public statement from that result and resolved
@@ -2100,9 +2190,10 @@ OperationalProbeMetricProfileV1 = (
 ```
 
 The profile defines logical probe names and schemas, not concrete endpoints.
-`RunIntentV1` binds its digest, the required component-role set, and all timeout,
+`RunIntentV1` binds the `OperationalProbeMetricProfileV1` digest, the required
+component-role set, and all timeout,
 sampling, staleness, and retry policy values before preflight. Each successful
-`PreflightReceiptV1` binds that intent digest and one observed
+`ExecutionPreflightReceiptV1` binds that intent digest and one observed
 `ProbeDiscoveryV1` per deployed component. That record supplies the component
 instance, logical interface id, deployed transport and locator, access class,
 observation time rule, and redacted configuration digest. No observed discovery
@@ -2166,11 +2257,101 @@ Within a proof-of-concept deployment domain, these roots are immutable:
 - checkpoint digest and source/destination identities;
 - finality adapter, anchor profile, and source-protocol fingerprint policy;
 - proof-suite and artifact template graph;
-- all VK and SRS template manifests and setup transcript hashes;
+- all logical VK, SRS, setup, transcript, and evidence slots and policies;
 - semantic registry template root, registry activation, artifact authorization
   root, destination verifier or operation and ABI templates, deployment recipes,
   and destination ABI instances;
 - replay-domain definition and recovery-policy hash.
+
+The semantic registry and artifact templates contain typed logical artifact
+slots plus ABI-template and deployment-recipe references. Ceremony closure fills
+only the artifact slots with domain-bound `ArtifactAuthorizationV1` records; it
+never rewrites semantic registry bytes or template roots. S12 deployment
+observations later supply concrete destination ids and code hashes used to build
+`DestinationAbiInstanceV1` and `RootContextV1`.
+
+Repository execution is governed by `ProgramPlanV1` and one fenced controller
+broker running in a native SCM-compatible service host under a dedicated service
+SID. Its journal and canonical Git roots have ACLs that deny package workers
+write, delete, rename, ownership, and DACL access. Package and model children run
+with a stripped restricted token in full per-attempt clones with independent Git
+metadata. Each receives a private inherited channel and a capability bound to
+its package, lease, fence, snapshot, methods, expiry, and nonce sequence. The
+controller uses a non-exportable ECDSA P-256 identity whose public-key digest is
+in every snapshot. It assigns monotonic lease epochs, publishes immutable event
+objects atomically, validates clone trees, and serializes accepted segments into
+canonical Git. Every dependency uses a full package id and required state.
+The broker's empty Git store is seeded once from an authenticated operator bundle
+covering the planning baseline through the committed W05 supervisor. It verifies
+lineage, refs, remote, and every reachable object before issuing worker bundles.
+Every returned worker pack is parsed in a bounded no-execute quarantine and must
+pass strict object, delta, resource, platform-path, and package-allowlist checks
+before atomic import.
+
+Reviews bind `ProgramSnapshotV1`. `ClosureEnvelopeV1` can add only typed,
+digest-enumerated reader artifacts, dispositions, deterministic OpenSpec archive
+relocation, final event and state transitions, a deterministic raw wiki closure
+receipt, its source node and graph materialization, wiki log predicates,
+inventories, seal receipts, and the final classifier receipt only in PBT-S13. Any behavioral
+change requires a new snapshot and affected reviews. Accepted delta requirements
+sync into stable OpenSpec and pass strict validation in the reviewed candidate;
+after review, a relocation-only archive candidate is committed and validated
+before its receipt exists, so no receipt binds a tree containing itself. The
+envelope's typed object inventory excludes its own fixed path and blob. The
+validator checks that file separately and requires the complete closure delta to
+equal the inventory plus exactly
+`program/closures/<sprint-id>/closure-envelope-v1.json`. The envelope contains no
+own-blob, final-tree, closure-source-commit, or canonical-integration-commit
+digest. A separate schema-checked
+`RemoteConfirmationBundleV1`, not the in-tree envelope, confirms the pushed
+commit. The controller finalizes, validates, commits, and integrates the closure
+tree before publication and returns distinct source and canonical-integration
+commits, their byte-identical tree, external envelope digest, and integration
+receipt as a new immutable execution context. Publication targets only the
+integration commit and cannot reuse the earlier review context. The remote bundle's controller signature and
+snapshot-bound public key cover the
+immutable public credential-handle receipt, review, pre-fetch, and pre-sign probe
+receipts, pre-push fetch, ordered one or two push attempts, post-push fetch
+records, and every exact raw stream. The complete bundle is
+verified in a same-volume temporary directory, published by one non-replacing
+durable rename, and verified again before its event. A lost push response is
+resolved by a read-only fetch and never a blind retry. Before each package lease,
+the controller imports every missing byte-identical bundle in that package's
+cumulative transitive `[closed]` predecessor set and rejects extra or missing
+imports.
+
+Remote Git commands run without prompts under the service identity. An immutable
+opaque credential handle names a qualified provider, normalized remote, scopes,
+expiry, service identity, and creation event. Current revocation state comes from
+the append-only controller event log. Each probe is a separate signed
+`GitCredentialProbeReceiptV1`. The publication snapshot binds the review-time
+probe; the external confirmation bundle carries that receipt plus new pre-fetch
+and pre-sign probes. Credential bytes never enter argv, environment, captured
+streams, command records, or confirmation bundles.
+
+An unknown or semantic runtime or finality change, official-root change, network
+identity change, or public reset returns to PBT-S02 and invalidates dependent
+circuits, setup, deployment, and public receipts. Catalog-row or family drift
+returns to PBT-S03. Claim, encoding, registry, or replay semantics drift returns
+to PBT-S04. Circuit, public-input, setup-definition, setup-interface,
+KZG-binding-profile, ceremony-verifier, or constant-bound SRS drift returns to
+PBT-S07. Participant policy, concrete ceremony run, contribution transcript,
+beacon, sealed head, or authenticated-input ceremony output drift under the
+unchanged frozen interface returns to PBT-S08 and invalidates the affected setup
+authorization, deployment, and public-execution evidence. Deployed-copy or
+ABI-observation drift under unchanged authorized bytes returns to PBT-S11 and
+repeats affected public execution. Only endpoint drift or a
+fingerprint transition already authorized by the frozen runtime policy may
+re-enter at deployment or execution.
+
+The Sprint 0 `GateRosterV2` has `roster_stage=base` and is permanently ineligible
+by itself for execution, activation, or classification. PBT-S04-W06 publishes a
+family-complete roster whose first `base_entry_count` entries are the ordered,
+byte-identical base entries. It preserves the base digest, binds the admitted
+direction-family matrix root, and appends only admitted family rows. Public run
+intent binds both artifacts. The final classifier verifies prefix equality and
+evaluates every base and family gate; an omitted, altered, reordered, or
+unevaluated base gate rejects.
 
 Replacing any root, resetting a testnet, or changing an incompatible source
 fingerprint creates a new deployment domain. Old-domain proofs must fail under
@@ -2265,14 +2446,14 @@ ABI, freshness rule, or replay rule. Root replacement must use
 produce `NO_CHANGE` and cannot consume replay or move value.
 
 Evidence lifecycle uses two canonical records. `EvidenceSupersessionV1` binds
-roster digest, gate id, activation reference, old and replacement evidence
+entry-origin roster digest, entry digest, gate id, activation reference, old and replacement evidence
 digests, reason, old deadline, proposal and effective times, retention-policy
 digest, owner-policy digest, ordered approvals, and monotonic evidence sequence.
-It preserves the old bytes and audit path. `GateResumeV1` binds the same roster
-entry, current root context, prior gate-record digest and status, effective
+It preserves the old bytes and audit path. `GateResumeV1` binds the same logical
+entry, current root context, prior gate-evaluation digest and status, effective
 evidence or supersession digest, dependent-gate snapshot, resume time, owner
 policy, approvals, and expected/new gate sequence. The stable owners named in
-the published roster and the preauthorized deployment-governance threshold must
+the entry's origin roster and the preauthorized deployment-governance threshold must
 both approve. Supersession cannot become effective after the old deadline unless
 the gate first returns to `unresolved`. Resume occurs only after all replacement
 evidence is authenticated and unexpired. Compare-and-swap on gate and evidence
@@ -2343,7 +2524,7 @@ maximum proof and transaction sizes, proving RAM and latency limits, destination
 verification limits, fee limit, safety margin, and pass/fail comparison before a
 run. `PerformanceThresholdReceiptV1` binds that policy, suite and architecture,
 artifact hashes, run and hardware ids, raw-sample-set digest, computed metrics,
-threshold decisions, and independent reproduction. The roster requires these
+threshold decisions, and independent reproduction. The base roster requires these
 receipts for `S01-BLOCK-04/full-decider`,
 `S01-BLOCK-05/midnight-execution`, and
 `S01-BLOCK-06/cardano-execution`; an after-the-fact threshold or a verifier-only
@@ -2428,13 +2609,25 @@ or public-network gate.
 
 ## 23. Testnet deployment
 
-A deployment uses the root template, artifact template, activation, run-intent,
-run-evidence, and private operator layers from section 6. The immutable public
-`RunIntentV1` selects one Cardano and one Midnight endpoint policy and records
-identities, root-set and domain values, registry activation, artifact
-authorization, ABI instances, funded-role requirements, probe/metric,
-confirmation, and evidence-retention profiles, and declared evidence locations.
-It contains no preflight result. Secret references stay in the private overlay.
+A deployment uses the root template, artifact template, deployment-intent,
+activation, run-intent, run-evidence, and private operator layers from section 6.
+The immutable public `DeploymentIntentV1` selects expected Cardano and Midnight
+network and endpoint policies and records root-set and domain values, the
+registry-activation digest, artifact authorizations, ABI templates, deployment
+recipes, roster bindings, key and funded-role requirements, source implementation
+snapshot, confirmed predecessor remote SHA, authorization-event head, and stop
+rules. It contains no controller lease or fencing epoch, observed endpoint,
+deployment transaction, concrete instance, activation decision, or deployment
+receipt. After deployment observations, ABI-instance construction, activation,
+and initialization succeed under that intent, `RunIntentV1` binds their digests,
+the concrete root contexts, probe/metric and confirmation profiles,
+evidence-retention profile, and declared evidence locations. It contains no
+execution-preflight or proof result. Secret references stay in the private overlay.
+The predecessor remote SHA identifies the already published source snapshot; it
+is never the deployment result or a future self-commit. Each deployment command
+record binds its current controller fence and proves an unsuperseded event
+lineage from the intent's authorization head. Controller epochs do not enter
+`RootContextV1` or deployed state.
 Preview and Preprod endpoints are available for both systems; a network name
 alone is not a manifest.
 
@@ -2511,7 +2704,7 @@ independent-node agreement, and cannot authorize a deployment.
 
 ### Endpoint and preflight contract
 
-The Cardano `PreflightReceiptV1` records the immutable run-intent digest,
+The Cardano `ExecutionPreflightReceiptV1` records the immutable run-intent digest,
 endpoint id, public URL or redacted local socket descriptor, network magic,
 cryptographic genesis identity, node or API implementation and revision,
 supported query and submission interfaces, chain-sync observation, endpoint
@@ -2520,23 +2713,43 @@ results, and evidence digest. The Midnight receipt uses the same common fields
 plus the registered RPC and indexer roles. Credentials and secret handles remain
 in the operator overlay.
 
-Exact endpoint values and commands are deployment outputs. The operator owner
-publishes them as content-addressed run evidence; preflight tooling enforces them
+Exact endpoint values and commands are preflight observations, not intent
+fields. The operator owner publishes them as content-addressed run evidence;
+preflight tooling enforces them
 before source collection or submission; vectors cover wrong network/genesis,
 stale or unsynced endpoints, revision mismatch, missing interface, credential
 redaction, and restart; a run activates only when both endpoint profiles and
-preflight receipts pass. `RunIntentV1` binds
+execution-preflight receipts pass. `RunIntentV1` binds
 `OperationalProbeMetricProfileV1`, `EvidenceRetentionProfileV1`, required
 logical probe roles, and concrete policy durations before preflight.
-`PreflightReceiptV1` binds the observed `ProbeDiscoveryV1` records and results;
-`RunEvidenceManifestV1` lists the receipts. Preflight rejects missing discovery
+`ExecutionPreflightReceiptV1` binds the observed `ProbeDiscoveryV1` records and results;
+The next `RunEvidenceManifestV1` head lists the receipts. Preflight rejects missing discovery
 values, schema digests, or a receipt whose intent digest differs.
 
-Every preflight, job, proof, transaction, confirmation, and outcome receipt
-binds `run_intent_digest`. Mutating any intent field invalidates every receipt.
-The schema DAG has only `RunIntentV1 -> PreflightReceiptV1 ->
-RunEvidenceManifestV1`; neither receipt nor evidence-manifest digest is reachable
-from the intent preimage. A mechanical DAG vector rejects either back edge.
+Every deployment observation, ABI instance, root context, activation decision,
+and deployment receipt binds `deployment_intent_digest`. Deployment preflight
+also binds that digest. `RunIntentV1` then binds the deployment-intent,
+activation-decision, deployment-receipt, concrete-instance, and root-context
+digests. Every execution preflight, job, proof, transaction, confirmation, and
+outcome receipt binds `run_intent_digest`. Expected endpoint policies live in
+the deployment intent; observed concrete endpoints and commands live only in
+the two preflight receipt classes. The schema DAG is:
+
+```text
+DeploymentIntentV1 -> DeploymentPreflightReceiptV1
+DeploymentIntentV1 -> DeploymentObservationV1
+  -> DestinationAbiInstanceV1 -> RootContextV1
+  -> ActivationDecisionV1 -> DeploymentReceiptV1
+DeploymentIntentV1 + ActivationDecisionV1 + DeploymentReceiptV1
+  + RootContextV1 -> RunIntentV1
+RunIntentV1 -> execution and receipt records
+(predecessor manifest head, new record digests) -> successor RunEvidenceManifestV1 head
+terminal RunEvidenceManifestV1 head -> classifier and final outcome
+```
+
+No receipt or evidence-manifest digest is reachable from the intent whose result
+it records. Mechanical DAG vectors reject every reverse edge and cross-intent
+artifact reuse.
 
 ### Transaction construction, confirmation, and receipts
 
@@ -2548,14 +2761,20 @@ receipt binds:
 | Field group | Required evidence |
 | --- | --- |
 | Run identity | Schema version, run and correlation ids, direction, selected profile, and deployment domain |
-| Root identity | Root-set digest, domain, root template, artifact template, activation, run-intent, and run-evidence-manifest digests plus registry activation and artifact authorization roots |
+| Root identity | Root-set digest, domain, root template, artifact template, activation, and run-intent digests plus registry activation and artifact authorization roots; no current or future run-evidence-head digest |
 | Claim identity | Canonical query and claim digests, predicate id, suite id, and replay keys |
 | Transaction identity | Destination identity, transaction id, and canonical body digest |
 | Confirmation | Profile id and digest, inclusion point, observations, endpoint ids, and times |
 | Authorization | Destination ABI instance, verifier or operation instance, registry activation, and artifact authorization digests |
 | Atomic result | Predecessor and successor tracked/application/value/replay digests and action result |
 | Cost | Fee and measured resource record |
-| Reproduction | Raw receipt digest, evidence location, independent query command and revision, and result |
+| Reproduction | Raw chain-receipt or node-evidence digest, evidence location, independent query command and revision, and result |
+
+Receipts never bind a `RunEvidenceManifestV1` head. After a receipt is final, the
+evidence index creates a successor immutable manifest head that binds the prior
+head and the new receipt digest. The terminal classifier and final outcome bind
+the last head. This ordering prevents both receipt-to-manifest and manifest-to-
+receipt hash cycles.
 
 The Cardano extension records network magic and genesis, containing block hash
 and slot, consumed and produced bridge-state output references, validator hash,
@@ -2589,53 +2808,63 @@ operation/query name is inferred.
 
 ### Deterministic outcome
 
-The sole authoritative `GateRosterV1` is
-[`protocol/gate-roster-v1.json`](../../protocol/gate-roster-v1.json). Its roster
-member has RFC 8949 deterministic-CBOR SHA-256
-`2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f`;
-the byte-exact hexadecimal encoding is published beside it. It contains exactly
-the six `S01-BLOCK-*` entries and eight `CONS-*` entries. Stable owner,
-interface, evidence, and activation ids in that artifact are protocol values.
-This document does not restate or relabel them. `RunIntentV1` binds those
-bytes and digest before preflight, endpoint discovery, source collection, witness
-construction, or proving. Every listed key must occur exactly once and no
-unlisted key is accepted.
+[`protocol/gate-roster-v1.json`](../../protocol/gate-roster-v1.json) is the
+historical structural-harness roster. Its RFC 8949 deterministic-CBOR SHA-256 is
+`2f0383d6eb9f781d82550edd3918b28c428eb28e5945f7d04fe770d1fced528f`,
+and its byte-exact hexadecimal encoding is published beside it. Its six
+`S01-BLOCK-*` and eight `CONS-*` definitions enter the ordered base prefix of
+`GateRosterV2` without relabeling owner, interface, evidence, or activation ids.
+V1 is not sufficient for public execution or classification.
 
-`public-only` is the only allowed lab applicability for the public SCLS facet. It
-keeps that public dependency in the production-gap record without requiring it
-for a lab result. It is not `not-applicable`. All other roster entries are
-required in both profiles. In particular, `S01-BLOCK-01` is required for lab,
-and a lab root must still pass real certificate-to-SCLS mechanics under
-`CONS-CARDANO-01`. A lab run may replace only the named public source root. It
-may not mock a proof relation, verifier, transaction, transition, or receipt.
+PBT-S00 publishes an immutable `GateRosterV2` with `roster_stage=base` and every
+entry's `initial_state=unresolved`. Each entry also fixes whether it belongs to
+the predeployment activation subset and names its earliest activation stage.
+PBT-S04 publishes a separate immutable
+`roster_stage=family-complete` artifact. Its first `base_entry_count` entries are
+the byte-identical ordered base entries, and its appended entries cover only
+admitted direction-family gates. It binds the base digest and admitted matrix
+root. `RunIntentV1` binds both artifacts, both digests, the base entry count, and
+the matrix root before preflight. A base roster alone is permanently ineligible.
 
-`OutcomeClassifierV1` validates the exact roster before any outcome condition.
-It compares roster version and digest, the complete key set, uniqueness, owners,
-interfaces, applicability, evidence schemas, activation references, gate status,
-evidence digests, retention validity, and selected profile. It then selects the
-first matching row and stops:
+Current gate state comes from append-only `GateEvaluationV1` records, not from a
+roster rewrite. A base-prefix entry has one logical identity under its base
+origin digest and one effective current evaluation; its history may contain
+superseded or invalidated evaluations. Only an appended family entry uses the
+family-complete roster digest.
+Each evaluation binds the canonical entry digest, snapshot, evidence schema and
+digest, producer, command provenance, expiry, supersession, and invalidation
+scope. Expired or invalidated evidence reduces the gate to unresolved. The
+terminal classifier receipt is not a gate input. PBT-S12-W07 first produces a
+snapshot-bound `ClassifierReadinessV1` covering every other current roster
+evaluation, then uses that receipt to append the classifier-readiness gate's own
+`GateEvaluationV1`. PBT-S13 verifies the resulting complete evaluation set before
+classification.
+
+`OutcomeClassifierV2` validates the two artifacts, the complete current gate
+view, and the direct PBT-S13 Codex, council, and disposition inputs before any
+outcome condition. The final review artifacts are not roster gates. The
+classifier checks prefix byte equality, roster and entry digests, the admitted
+matrix root, uniqueness, owners, interfaces, evidence schemas, evaluation
+provenance, expiry, invalidation, exact coverage of every base entry plus every
+appended family entry, and zero-count final reviews. It then selects the first
+matching row and stops:
 
 | First-match row | Condition | Result |
 | ---: | --- | --- |
-| 1 | Roster or gate record is invalid, missing, duplicate, unknown, or uses unauthorized `not-applicable`; required outcome evidence is missing or expired | `blocked` |
-| 2 | Any selected-profile required gate status is not `passed`, including `unresolved`, `failed`, `mocked`, or evidence returned to unresolved after expiry | `blocked` |
-| 3 | Either proof direction lacks a real destination transition confirmed under its registered profile and independently read successor state | `blocked` |
-| 4 | Selected profile is `lab` | `degraded-lab` |
-| 5 | Selected profile is `public` | `live-pass` |
+| 1 | Either roster, prefix, matrix root, gate evaluation, or required PBT-S13 review is invalid, missing, duplicate, unknown, expired, unevaluated, or nonzero | `blocked` |
+| 2 | Any required gate evaluation is not `passed`, including `unresolved`, `failed`, or `mocked` | `blocked` |
+| 3 | Any admitted direction-family row lacks a real destination transition confirmed under its registered profile and independently read successor state | `blocked` |
+| 4 | The run uses a lab root, project-operated source, modified destination, unapproved network, or any profile other than the named public testnets | `blocked` |
+| 5 | Every prior condition is false and the immutable public run intent, receipts, and successor states reproduce | `live-pass` |
 
-Exactly one row is selected because evaluation stops at the first match. Later
-conditions may also be true and are not evaluated. The outcome record binds
-classifier version, roster digest, run id, profile, ordered gate records,
-evidence-retention profile, both direction receipts, selected row, and label.
-
-Classifier vectors include an overlapping bad-roster plus missing-transition
-case that selects row 1, a mocked lab gate that selects row 2, a lab run with
-only the named root substitution, real certificate-to-SCLS mechanics, and two
-real confirmed transitions that selects row 4, a complete public run that
-selects row 5, and missing, duplicate, unknown, and unauthorized
-`not-applicable` roster cases that select row 1. Evidence-expiry vectors prove
-that required outcome evidence yields `blocked` and expired unresolved-gate
-evidence returns the gate to `unresolved` before classification.
+Exactly one row is selected because evaluation stops at the first match. The
+outcome record binds classifier version, both roster digests, base entry count,
+matrix root, run id, ordered current evaluations, evidence-retention profile,
+terminal `RunEvidenceManifestV1` head digest and cumulative count, every
+direction-family receipt, selected row, and label. Vectors cover bad
+prefixes, omitted base and family entries, duplicate or wrong-origin
+evaluations, expiry and invalidation, missing transitions, lab substitutions,
+and a complete public run. No weaker outcome is a successful terminal state.
 
 No current probe is evidence of `live-pass`.
 
@@ -2654,12 +2883,17 @@ Six dependencies define the present implementation boundary:
 
 ### Activation artifact ledger
 
-The activation ledger is the ordered gate-record set whose keys and contract
-fields come directly from `protocol/gate-roster-v1.json`. Each
-`GateDeliverableV1` uses the roster's exact stable owner ids, affected-interface
-ids, evidence ids, applicability, and activation reference; prose cannot add a
-label or substitute an owner. `ActivationDecisionV1` binds the published roster
-digest and the digest of this ordered record set. Bridge hash and common-CBOR
+The activation ledger is the ordered current evaluation set for entries whose
+immutable roster definition has `activation_required=true` and an activation
+stage no later than predeployment. It excludes gates whose evidence is created
+by deployment, public execution, public receipts, PBT-S13 review, or the final
+classifier. Each `GateDeliverableV1` binds its entry origin roster and canonical
+entry digest, then uses the exact stable owner ids, affected-interface ids,
+evidence ids, applicability, and activation reference; prose cannot add a label
+or substitute an owner. `ActivationDecisionV1` binds both roster digests, base
+entry count, admitted matrix root, the canonical activation-subset digest, and
+the ordered current evaluations for exactly that subset. `OutcomeClassifierV2`
+later consumes the complete logical gate set. Bridge hash and common-CBOR
 vectors, aggregation profiles, destination confirmation profiles, and deployment
 manifests are required evidence under the roster entry that names their
 interface, not extra gates.

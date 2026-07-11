@@ -3,9 +3,10 @@ id: program-wiki.index
 type: overview
 title: Program wiki index
 status: active
-updated_at: 2026-07-10T15:02:07Z
+updated_at: 2026-07-11T04:35:12Z
 sources:
   - source.design-session.2026-07-10-program-rebaseline
+  - source.design-session.2026-07-10-implementation-planning
 ---
 
 # Program wiki index
@@ -26,6 +27,8 @@ sources:
 
 ## Components
 
+- [[components/program-control-plane]]: executable plan, event, command,
+  snapshot, review, and repository transaction boundary
 - [[components/mpc-ceremony]]: imported framework, agent hardening, and later
   human ceremony
 
