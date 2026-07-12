@@ -22,6 +22,7 @@ function Copy-RepositoryInputs {
     )
 
     $files = @(
+        (Join-Path $Source '.gitattributes'),
         (Join-Path $Source 'package.json'),
         (Join-Path $Source 'package-lock.json')
     )
@@ -42,6 +43,24 @@ function Copy-RepositoryInputs {
             New-Item -ItemType Directory -Force -Path $parent | Out-Null
         }
         Copy-Item -LiteralPath $sourcePath -Destination $destinationPath
+    }
+}
+
+function Initialize-TestRepository {
+    param([Parameter(Mandatory)] [string] $Root)
+
+    $git = (Get-Command git -ErrorAction Stop).Source
+    foreach ($arguments in @(
+        @('init', '--initial-branch=integration'),
+        @('config', 'user.name', 'reference-harness-contract'),
+        @('config', 'user.email', 'reference-harness-contract@example.invalid'),
+        @('add', '--', '.gitattributes', 'package.json', 'package-lock.json', 'openspec', 'protocol', 'reference', 'scripts'),
+        @('commit', '-m', 'Create late-failure fixture snapshot')
+    )) {
+        $output = & $git -C $Root @arguments 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            throw "fixture git command failed ($LASTEXITCODE): git $($arguments -join ' ')`n$(($output | Out-String).Trim())"
+        }
     }
 }
 
@@ -146,6 +165,7 @@ try {
         "import unittest`n`nclass SentinelTest(unittest.TestCase):`n    def test_passes(self):`n        self.assertTrue(True)`n",
         [Text.UTF8Encoding]::new($false)
     )
+    Initialize-TestRepository -Root $tempRoot
 
     $beforeStructuralHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $structuralPath).Hash
     $beforeConformanceHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $conformancePath).Hash
