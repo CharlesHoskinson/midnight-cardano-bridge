@@ -144,6 +144,7 @@ foreach ($pattern in @(
     Assert-NotMatches -Text $s00 -Pattern $pattern -Label 'Sprint 0 authority text'
 }
 Assert-NotMatches -Text $master -Pattern 'pending direct closure inputs' -Label 'master review authority'
+Assert-NotMatches -Text $master -Pattern 'reports 0 Blocking, 0 Major, and 0 Minor findings' -Label 'PBT-S13 Codex authority'
 Assert-NotMatches -Text $rebaseline -Pattern 'Fresh reviews pass the frozen public snapshot' -Label 'rebaseline review authority'
 Assert-NotMatches -Text $rebaseline -Pattern 'all fresh readers pass one program snapshot' -Label 'rebaseline Sprint 1 exit gate'
 Assert-NotMatches -Text $bridge -Pattern 'direct PBT-S13 Codex, council, and disposition inputs' -Label 'canonical classifier authority'
