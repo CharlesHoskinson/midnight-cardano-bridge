@@ -3,6 +3,11 @@
   "generation_id": "5e6513c04f354c478fdf60fcc59ec6bd",
   "structural_sha256": "54aecd12f33562fcc35f16316c07c0329c56f93b425e2305615abaada8d59f32",
   "conformance_sha256": "9887bc2b28182e1089d19529f74164a07460994a1bc98dd6f64c1fd4cc4ff8ac",
-  "structural_relative_path": "generations/5e6513c04f354c478fdf60fcc59ec6bd/structural-report-v1.json",
-  "conformance_relative_path": "generations/5e6513c04f354c478fdf60fcc59ec6bd/conformance-report-v1.json"
+  "structural_file": "structural-report-v1.json",
+  "conformance_file": "conformance-report-v1.json",
+  "report_roles": {
+    "structural": "payload",
+    "conformance": "envelope"
+  },
+  "published_at_utc": "2026-07-12T03:49:36.6862112Z"
 }
