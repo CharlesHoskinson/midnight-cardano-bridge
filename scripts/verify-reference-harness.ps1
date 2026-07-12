@@ -9,6 +9,7 @@ Set-StrictMode -Version Latest
 $script:CurrentCheck = 'initialization'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $runRoot = $null
+Import-Module (Join-Path $PSScriptRoot 'CommittedInputManifest.psm1') -Force
 
 $expectedVersions = [ordered]@{
     powershell = '7.6.3'
@@ -407,6 +408,7 @@ print(json.dumps({
 }
 
 function Get-ObservationDigests {
+    param([Parameter(Mandatory)] $InputHashes)
     $directory = Join-Path $repoRoot 'reference\evidence\observations'
     $expected = [ordered]@{
         'midnight-preview-unsigned.json' = [ordered]@{
@@ -481,7 +483,8 @@ function Get-ObservationDigests {
         } else {
             Assert-Equal -Actual $record.data.scls_profile_evaluation -Expected 'not-performed' -Message 'unsafe Mithril SCLS evaluation'
         }
-        $digests[$name] = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+        $relative = "reference/evidence/observations/$name"
+        $digests[$name] = $InputHashes[$relative]
     }
     return $digests
 }
@@ -538,28 +541,28 @@ function Assert-StructuralCandidate {
 }
 
 function Get-InputFileHashes {
-    $files = @(
-        (Join-Path $repoRoot 'package.json'),
-        (Join-Path $repoRoot 'package-lock.json')
+    param(
+        [Parameter(Mandatory)] [string] $GitPath,
+        [string] $Snapshot = 'HEAD'
     )
-    foreach ($directory in @('scripts', 'protocol', 'reference\rust', 'reference\go', 'reference\observers', 'reference\fixtures', 'reference\evidence\observations', 'openspec')) {
-        $path = Join-Path $repoRoot $directory
-        if (Test-Path -LiteralPath $path) {
-            $files += Get-ChildItem -LiteralPath $path -File -Recurse | Where-Object {
-                $_.FullName -notmatch '[\\/]reference[\\/]rust[\\/]target[\\/]' -and
-                $_.FullName -notmatch '[\\/]__pycache__[\\/]' -and
-                $_.Extension -notin @('.pyc', '.pyo')
-            } | Select-Object -ExpandProperty FullName
-        }
-    }
-    $relativePaths = @($files | ForEach-Object {
-        [IO.Path]::GetRelativePath($repoRoot, $_).Replace('\', '/')
-    } | Sort-Object -CaseSensitive -Unique)
-    $hashes = [ordered]@{}
-    foreach ($relative in $relativePaths) {
-        $hashes[$relative] = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $repoRoot $relative)).Hash.ToLowerInvariant()
-    }
-    return $hashes
+    return Get-CommittedInputManifest `
+        -RepositoryRoot $repoRoot `
+        -GitPath $GitPath `
+        -Snapshot $Snapshot `
+        -Pathspec @(
+            '.gitattributes',
+            'package.json',
+            'package-lock.json',
+            'scripts',
+            'protocol',
+            'reference/rust',
+            'reference/go',
+            'reference/observers',
+            'reference/fixtures',
+            'reference/evidence/bootstrap',
+            'reference/evidence/observations',
+            'openspec'
+        )
 }
 
 function Assert-HashManifestUnchanged {
@@ -941,7 +944,7 @@ try {
     if ($env:OPENSPEC_TELEMETRY -ne '0' -or $env:DO_NOT_TRACK -ne '1') {
         throw 'OpenSpec telemetry opt-out environment was not applied'
     }
-    $inputHashes = Get-InputFileHashes
+    $inputHashes = Get-InputFileHashes -GitPath $tools.git
     $script:CommandRecords = [System.Collections.Generic.List[object]]::new()
     $offlineEnv = [ordered]@{
         CARGO_NET_OFFLINE = 'true'
@@ -970,6 +973,9 @@ try {
                     -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
                 $null = Invoke-Recorded -LogicalTool 'pwsh-openspec-telemetry-contract' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
                     -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\openspec-telemetry.contract.ps1')) `
+                    -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
+                $null = Invoke-Recorded -LogicalTool 'pwsh-committed-input-manifest-contract' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
+                    -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\committed-input-manifest.contract.ps1')) `
                     -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
             }
         } else {
@@ -1009,7 +1015,7 @@ try {
         Write-Output 'check=roster-publication state=PASS'
 
         $script:CurrentCheck = 'independent-cbor'
-        $cborInlineSha = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $repoRoot 'scripts\verify-reference-harness.ps1')).Hash.ToLowerInvariant()
+        $cborInlineSha = $inputHashes['scripts/verify-reference-harness.ps1']
         $cborSummary = Invoke-ThirdCborCheck -Python $tools.python -Cbor2Version $toolVersions.cbor2 -StructuralCandidate $structuralCandidatePath
         $script:CommandRecords.Add((New-CommandRecord -LogicalTool 'independent-cbor2' -Executable $tools.python -Cwd $repoRoot `
             -Argv @('-B', '-c', '<independent-cbor-check-source-bound>') -PinnedVersion $toolVersions.cbor2 `
@@ -1018,7 +1024,7 @@ try {
         Write-Output 'check=independent-cbor state=PASS'
 
         $script:CurrentCheck = 'unsigned-observations'
-        $observationDigests = Get-ObservationDigests
+        $observationDigests = Get-ObservationDigests -InputHashes $inputHashes
         Write-Output 'check=unsigned-observations state=PASS'
 
         $script:CurrentCheck = 'bootstrap-qualification'
@@ -1036,7 +1042,7 @@ try {
         if ($bootstrap.network.offline_default_verification -ne $true) {
             throw 'bootstrap receipt must declare offline default verification'
         }
-        $bootstrapSha = (Get-FileHash -Algorithm SHA256 -LiteralPath $bootstrapReceipt).Hash.ToLowerInvariant()
+        $bootstrapSha = $inputHashes['reference/evidence/bootstrap/clean-checkout-qualification-v1.json']
         Write-Output 'check=bootstrap-qualification state=PASS'
 
         $script:CurrentCheck = 'structural-candidate'
@@ -1054,7 +1060,7 @@ try {
         }
 
         $script:CurrentCheck = 'input-stability'
-        Assert-HashManifestUnchanged -Before $inputHashes -After (Get-InputFileHashes)
+        Assert-HashManifestUnchanged -Before $inputHashes -After (Get-InputFileHashes -GitPath $tools.git)
         Write-Output 'check=input-stability state=PASS'
 
         $commandRecords = @($script:CommandRecords | ForEach-Object { $_ })
@@ -1066,15 +1072,15 @@ try {
             verifier_revision = $inputHashes['scripts/verify-reference-harness.ps1']
             tool_versions = $toolVersions
             python_distribution_versions = $pythonDistributionVersions
-            python_lock_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $pythonLockPath).Hash.ToLowerInvariant()
-            python_hash_lock_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $pythonHashLockPath).Hash.ToLowerInvariant()
+            python_lock_sha256 = $inputHashes['reference/observers/requirements.lock.txt']
+            python_hash_lock_sha256 = $inputHashes['reference/observers/requirements.hashes.txt']
             commands = $commandRecords
             input_file_sha256 = $inputHashes
             structural_report_sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $structuralCandidatePath).Hash.ToLowerInvariant()
             structural_payload_role = 'payload-bound-by-hash'
             bootstrap_qualification_sha256 = $bootstrapSha
             verified_components = @(
-                'control-tests-setup-compare-late-failure-telemetry',
+                'control-tests-setup-compare-late-failure-telemetry-committed-inputs',
                 'rust-structural-harness-tests',
                 'go-structural-harness-tests',
                 'go-vet',

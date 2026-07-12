@@ -8,13 +8,17 @@ sources:
   - source.design-session.2026-07-10-program-rebaseline
   - source.external.proof-zk-recovery-mpc.2026-07-10
   - source.external.gnark-bsb22-mpc.2026-07-10
+  - source.external.proof-zk-recovery-mpc.2026-07-12
+  - source.external.gnark-bsb22-mpc.2026-07-12
   - docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md
   - docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md
 ---
 
 # Groth16 MPC framework and ceremony
 
-Sprint 7 imports a reviewed subset of the `proof-zk-recovery` ceremony branch.
+Sprint 7 may import a provenance-pinned candidate subset of the local
+`proof-zk-recovery` ceremony branch after `PBT-S07-W01` confirms its upstream
+identity and license.
 Useful inputs include the BLS12-381 BGM17 wrappers, commitment-aware Phase 2,
 hash-linked transcripts, contribution verification, golden VK vectors, and the
 pinned gnark memory patch.
@@ -29,6 +33,18 @@ Agents simulate contributor behavior to test the code. Actual ceremony trust
 comes later, after the exact circuits and toolchains freeze. Sprint 8 waits for
 independently controlled human entropy, verifies the full transcript, derives
 the keys, and checks that every deployed VK copy matches the transcript output.
+
+Before enrollment, `PBT-S08-W01` must publish
+`ContributorIndependencePolicyV1`. It freezes numeric human and organization
+thresholds, accepted public identity anchors, separate recovery and
+administration domains, environment-diversity evidence, two adjudicators from
+different control domains, and an appeal path. Its failure conditions include a
+duplicate identity anchor, shared credential or recovery control, a shared
+entropy seed, an agent or coordinator key in the counted set, missing or
+contradictory environment evidence, insufficient organization diversity, and
+any unresolved Sybil indicator. A failure records `waiting-external`; the
+coordinator cannot waive it or lower the frozen count. Agent simulations can
+exercise this policy but never satisfy it.
 
 The pinned commitment-aware gnark suite contributes `tau`, `alpha`, and `beta`
 in Phase 1. Every circuit-specific Phase 2 contributes `delta` plus one `sigma`
@@ -49,7 +65,7 @@ set, sealed head, acknowledgements, and public anchor. The schedule key is the
 complete tuple of setup kind, stable transcript id, SRS-profile id, phase, and
 circuit id or no-circuit sentinel. A sealed historical KZG SRS instead requires
 `HistoricalCeremonyQualificationV1`, which verifies its original precommitment,
-chronology, beacon, transcript algebra, public anchors, and exact final bytes.
+chronology, beacon, contributor policy, transcript algebra, public anchors, and exact final bytes.
 The bridge cannot add a new beacon to old bytes. Missing historical evidence
 blocks or forces a rebaseline when the destination requires those constant
 bytes. Each counted human contribution needs

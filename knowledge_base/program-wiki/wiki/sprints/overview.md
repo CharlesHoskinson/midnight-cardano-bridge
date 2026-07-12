@@ -3,7 +3,7 @@ id: program.sprints
 type: sprint
 title: Sprint map
 status: active
-updated_at: 2026-07-11T05:16:21Z
+updated_at: 2026-07-12T02:20:00Z
 sources:
   - docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md
   - docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md
@@ -14,7 +14,7 @@ sources:
 
 | Sprint | Packages | Scope |
 | --- | ---: | --- |
-| PBT-S00 | 12 | Controller, runlogs, command supervisor, snapshots, Git safety, agent lanes, program wiki, GateRosterV2 |
+| PBT-S00 | 18 | Controller, runlogs, command supervisor, snapshots, Git safety, agent lanes, program wiki, GateRosterV2 |
 | PBT-S01 | 6 | Current structural harness closure |
 | PBT-S02 | 9 | Official roots, chain tools, SCLS, BEEFY/MMR event proof, verifier surfaces, full decider |
 | PBT-S03 | 8 | All-94 predicate recovery and admission |
@@ -28,7 +28,7 @@ sources:
 | PBT-S11 | 6 | Public-testnet readiness |
 | PBT-S12 | 7 | Public deployment and all-family execution |
 | PBT-S13 | 5 | Independent public closure |
-| Total | 100 | |
+| Total | 106 | |
 
 Dependency summary:
 

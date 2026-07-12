@@ -20,8 +20,9 @@ okf_version: '1.0'
 # Midnight zero-knowledge proof model (Halo2/Plonkish)
 
 This page summarizes Midnight's official concept documentation on zero-knowledge
-proofs and draws out the implications for a recursive, trustless
-Midnight<->Cardano bridge. See the [sources index](/sources/index.md) (`src-0007`)
+proofs and draws out the implications for a recursive Midnight<->Cardano bridge.
+Here, `trustless` applies only to a profile whose proof, setup, official-root,
+governance, and destination-verifier assumptions are explicit and satisfied. See the [sources index](/sources/index.md) (`src-0007`)
 and the [knowledge base index](/index.md) for related material.
 
 > Scope note: the cited source is a high-level concept page. It establishes that
@@ -88,8 +89,8 @@ Cardano imposes concrete constraints documented elsewhere in this KB:
 - the Plutus-side verification mechanics in
   [Groth16 verifier on Plutus](/cardano/groth16-verifier-plutus.md).
 
-The commitment-Groth16 BSB22 wrapper uses reusable Phase 1 material followed by
-a circuit-specific Phase 2 that yields proving and verification keys. Both
+The commitment-Groth16 BSB22 wrapper uses reusable Groth16 Phase 1 (Powers of Tau)
+material followed by a circuit-specific commitment-aware Phase 2 that yields proving and verification keys. Both
 directions inherit the KZG SRS trust assumption. The Midnight -> Cardano path
 adds the BSB22 Phase 2 assumption for each distinct wrapper circuit; the reverse
 leg is not transparent.
@@ -98,9 +99,9 @@ leg is not transparent.
 
 - Resolved by the specific implementation sources: the selected Midnight stack
   is Plonk/Halo2 with KZG over BLS12-381 and a universal/updatable trusted SRS.
-- Does Midnight support **proof recursion / composition** (needed to keep a
-  recursive bridge's verification cost bounded)? Not addressed by this source.
+- Specific implementation sources also resolve recursion: the pinned Midnight
+  proof-stack material documents the selected recursive composition path. The
+  high-level concept source summarized here does not establish that fact alone.
 - Where does proving run (client-side witness generation, proof server), and
   what are the resulting proof-size / verification-cost figures a Cardano
   on-chain Groth16 verifier and a Midnight verifier must budget for?
-

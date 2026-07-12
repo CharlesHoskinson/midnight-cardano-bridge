@@ -1,6 +1,6 @@
 ---
 type: Concept
-title: Proof-system fundamentals: NIZK, SNARKs, soundness, zero-knowledge
+title: 'Proof-system fundamentals: NIZK, SNARKs, soundness, zero-knowledge'
 timestamp: '2026-07-09T14:19:48Z'
 description: Shared proof-system vocabulary (statement, witness, soundness, knowledge
   soundness, zero knowledge, SNARK) grounding both directions of the recursive Midnight<->Cardano

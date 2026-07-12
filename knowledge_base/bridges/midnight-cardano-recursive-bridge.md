@@ -26,7 +26,7 @@ okf_version: '1.0'
 This page is the canonical readable design for the bridge program. The active
 [public-testnet program rebaseline](../../docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md)
 sets the approved proof paths and program boundaries. The
-[100-package implementation register](../../docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md)
+[106-package implementation register](../../docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md)
 and the [PBT-S00 control-plane plan](../../docs/superpowers/plans/2026-07-10-pbt-s00-program-control-plane.md)
 govern execution. Each sprint owns its own validated OpenSpec change; no active
 Sprint 1 artifact has standing authority over the rebaselined program. These
@@ -48,9 +48,9 @@ future BLS finality adapter are production candidates. They are not substitutes
 for either selected proof-of-concept path under the same suite id. The six named
 foundation blockers in section 24 remain open. Every closure snapshot receives a
 fresh Codex audit plus proof, consensus, operator, and security reader scopes.
-Each scope must report zero Blocking, zero Major, and zero Minor findings against
-the same `ProgramSnapshotV1`; a fix creates a new snapshot and repeats affected
-readers. Git history, OpenSpec, runlogs, and the program wiki carry the process
+Reader outputs are advisory quality evidence and never a closure input. Accepted
+issues become failing deterministic contracts; closure rests on reproducible
+contract suites and external receipts. Git history, OpenSpec, runlogs, and the program wiki carry the process
 record. The body below describes only the current system and evidence.
 
 ## 2. Purpose and scope
@@ -64,7 +64,7 @@ destination accept a false claim.
 The program covers:
 
 - a shared query, claim, proof-response, and typed-result protocol;
-- checkpoint and genesis bootstrap profiles for both source chains;
+- official-genesis bootstrap profiles and official-root-derived acceleration checkpoints for both source chains;
 - exactly 42 Cardano predicate records and 52 Midnight predicate records once the
   missing source catalogs are recovered;
 - a registry that binds predicates to anchors, proof suites, circuit
@@ -434,7 +434,7 @@ ArtifactAuthorizationV1 = (
   registry_activation_digest, artifact_template_root,
   artifact_template_digest, graph_slot, canonical_encoding_profile_id,
   content_length, content_hash, authorization_evidence_manifest_digest,
-  independent_verification_set_digest, lifecycle_status
+  independent_verification_set_digest, approval_policy_digest, lifecycle_status
 )
 
 DeploymentObservationV1 = (
@@ -495,8 +495,8 @@ to the per-claim `ResolvedProofContextV1` in section 7. The deployment controlle
 produces `ActivationDecisionV1` only after it verifies both rosters, prefix and
 matrix bindings, every current evaluation in the roster-defined predeployment
 activation subset, and the approval threshold fixed by the pre-domain activation
-policy. Post-deployment execution, public-receipt, final-review, and classifier
-gates are excluded from that subset and cannot block the deployment that will
+policy. Post-deployment execution, public-receipt, and classifier gates are
+excluded from that subset and cannot block the deployment that will
 produce their evidence.
 The chain-specific deployer first deploys the approved template and recipe. Two
 chain observers reproduce `DeploymentObservationV1` from the confirmed deployment
@@ -598,13 +598,15 @@ consensus roots, proof roots, and policy roots:
 
 | Destination | Foreign consensus and bootstrap roots | Proof roots | Policy roots |
 | --- | --- | --- | --- |
-| Cardano | Midnight genesis or checkpoint, current and next BEEFY authority commitments, finality-adapter version | Authorized inner and aggregation VKs, wrapper VK, trusted KZG SRS, Groth16 setup and transcript | Predicate registry, verifier hash, deployment policy, recovery policy |
-| Midnight | Cardano identity, Mithril genesis verification key or certificate checkpoint, current and next AVKs and protocol parameters, anchor-profile version | Halo2 operation and aggregation VKs, trusted Midnight KZG SRS | Predicate registry, operation hash, deployment policy, recovery policy |
+| Cardano | Exact Midnight public genesis and official chain rules, genesis-derived current and next BEEFY authority commitments, finality-adapter version | Authorized inner and aggregation VKs, wrapper VK, trusted KZG SRS, Groth16 setup and transcript | Predicate registry, verifier hash, deployment policy, recovery policy |
+| Midnight | Exact Cardano public identity and genesis configurations, Mithril genesis verification key, genesis-derived current and next AVKs and protocol parameters, anchor-profile version | Halo2 operation and aggregation VKs, trusted Midnight KZG SRS | Predicate registry, operation hash, deployment policy, recovery policy |
 
 The trust roots therefore extend beyond source consensus and abstract proof
-soundness. They include checkpoint approval, the independent Mithril genesis key,
-both setup systems, verifier-key authorization, source-protocol fingerprints,
-registry contents, destination code, and recovery policy.
+soundness. They include the independently verified official genesis and finality
+roots, both setup systems, verifier-key authorization, source-protocol
+fingerprints, registry contents, destination code, and recovery policy. A
+checkpoint approval policy authorizes an acceleration artifact only after its
+official-root derivation verifies; the approval set is not a source-chain root.
 
 Relayers, RPC servers, indexers, Mithril aggregators, and proof services are data
 providers. A dishonest provider can censor, delay, equivocate at the transport
@@ -631,9 +633,15 @@ Groth16 assumptions, all hash-to-field reductions, and every setup ceremony.
 
 ## 6. Bootstrap and roots of trust
 
-The proof of concept uses approved checkpoint manifests. This is a
-weak-subjectivity choice. Reproducing a checkpoint from independent nodes detects
-operator mistakes but does not turn the checkpoint into a consensus-derived root.
+The public proof of concept bootstraps from exact public genesis material,
+official chain rules, and independently verified official finality roots. A
+project approval set cannot create a qualifying source root. An
+official-root-derived acceleration checkpoint may shorten replay only when its
+checkpoint body and all retained state are proven from those official roots.
+A checkpoint without that derivation proof is lab-only, activation-ineligible,
+and classification-ineligible. Reproduction by independent nodes detects
+operator mistakes but does not turn a project-approved checkpoint into a
+consensus-derived root.
 
 Every recursive base, step, terminal role, and outer statement carries the exact
 `RootContextV1` defined in section 4. That byte-level definition includes
@@ -799,6 +807,8 @@ GenesisBootstrapInstanceV1 = (
 CertificateCheckpointInstanceV1 = (
   rule_profile_digest,
   cardano_identity_digest,
+  official_root_derivation_receipt_digest,
+  retained_state_commitment,
   terminal_certificate_hash,
   terminal_certificate_epoch,
   terminal_signed_entity_type,
@@ -810,9 +820,11 @@ CertificateCheckpointInstanceV1 = (
 ```
 
 Genesis mode terminates at the independently provisioned Mithril genesis key and
-verifies the full chain and terminal genesis signature. Checkpoint mode terminates
-at the manifest-approved certificate state, verifies only post-checkpoint
-linkage, and never reports the omitted history as genesis-verified. Each step
+verifies the full chain and terminal genesis signature. Public checkpoint mode is
+only an acceleration profile: before using its terminal certificate, the verifier
+checks `official_root_derivation_receipt_digest` and proves the retained state
+from the same official genesis and finality roots. A manifest-approved checkpoint
+without that proof verifies only post-checkpoint linkage and is lab-only. Each step
 checks the exact previous certificate, epoch and era rule, selected verification
 material, signed protocol message, and successor AVK and parameters. Cross-profile
 splicing fails.
@@ -825,13 +837,19 @@ freshness and recovery policies, and replay root. `CONS-BOOT-01` contains the na
 transition adapter, rule profiles, base and step vectors, and independent
 reproduction receipts. The consensus profile owner publishes it, the recursive
 base and Midnight operation enforce it, and activation requires a valid
-base-to-step vector for both genesis and checkpoint profiles. This gate does not
+base-to-step vector for genesis and official-root-derived acceleration profiles. This gate does not
 close public SCLS availability.
 
 ### Nonrecursive checkpoint manifest
 
 Approver authority is a preauthorized root and cannot be selected by the body it
 approves. Canonical checkpoint objects have these layers:
+
+Approval authorizes an acceleration artifact; it does not establish source-chain
+truth. Public qualification also requires the official-root derivation
+receipt and exact retained-state commitment described above. Without both, the
+same manifest may be used for lab testing but cannot enter activation or the
+public outcome classifier.
 
 ```text
 CheckpointApprovalPolicyV1 = (
@@ -1040,8 +1058,8 @@ digests and field elements. Boundary vectors cover integer and length limits,
 map ordering, duplicate fields, alternate forms, unknown critical fields, and
 trailing bytes. Hash-to-field vectors identify the exact domain separator,
 canonical bytes, intermediate digest, conversion rule, and field element. The
-wire profile remains a source-dependent Sprint 3 gate; no language may choose an
-encoding while it is absent.
+wire profile remains owned by `PBT-S04-W01`; no language may choose an encoding
+before that package closes.
 
 The golden corpus contains byte-exact `QueryV1`, resolution, and resolved-proof-
 context records for both
@@ -1306,12 +1324,13 @@ separately from full catalog conformance.
 The selected proof-of-concept anchor is a Mithril-certified Standard Canonical
 Ledger State artifact. It is a hard gate, not a deployed public-testnet fact.
 
-Mithril certificates form a chain under the selected genesis or certificate
-checkpoint profile in section 6. Validation is not one aggregate pairing check.
+Mithril certificates terminate at the official genesis profile in section 6.
+An acceleration checkpoint may skip replayed steps only after its derivation
+from that same official root has verified. Validation is not one aggregate pairing check.
 A verifier must check certificate hashing and previous-certificate linkage,
 authenticate the aggregate verification key and protocol-parameter transitions,
 verify the signed message under the certificate suite, enforce epoch and era
-rules, and terminate at that profile's exact approved terminal
+rules, and terminate at the exact official root or its proven acceleration state
 ([Mithril certificates](../cardano/mithril-bls-certificates.md), `src-0042`).
 The aggregator transports and combines signatures; it is not itself trusted.
 
@@ -2282,18 +2301,20 @@ in every snapshot. It assigns monotonic lease epochs, publishes immutable event
 objects atomically, validates clone trees, and serializes accepted segments into
 canonical Git. Every dependency uses a full package id and required state.
 The broker's empty Git store is seeded once from an authenticated operator bundle
-covering the planning baseline through the committed W05 supervisor. It verifies
+covering the planning baseline through the committed W16 entrypoint. It verifies
 lineage, refs, remote, and every reachable object before issuing worker bundles.
 Every returned worker pack is parsed in a bounded no-execute quarantine and must
 pass strict object, delta, resource, platform-path, and package-allowlist checks
 before atomic import.
 
-Reviews bind `ProgramSnapshotV1`. `ClosureEnvelopeV1` can add only typed,
-digest-enumerated reader artifacts, dispositions, deterministic OpenSpec archive
+Advisory reviews bind `ProgramSnapshotV1`. `ClosureEnvelopeV1` can add only typed,
+digest-enumerated optional reader artifacts, dispositions, deterministic OpenSpec archive
 relocation, final event and state transitions, a deterministic raw wiki closure
 receipt, its source node and graph materialization, wiki log predicates,
-inventories, seal receipts, and the final classifier receipt only in PBT-S13. Any behavioral
-change requires a new snapshot and affected reviews. Accepted delta requirements
+inventories, redaction receipts, seal receipts, and the final classifier receipt only in PBT-S13. Reader
+artifacts remain advisory and cannot change package, sprint, gate, or classifier state. Any
+behavioral change requires a new snapshot and the affected deterministic checks; it also
+invalidates optional reader artifacts whose declared scope changed. Accepted delta requirements
 sync into stable OpenSpec and pass strict validation in the reviewed candidate;
 after review, a relocation-only archive candidate is committed and validated
 before its receipt exists, so no receipt binds a tree containing itself. The
@@ -2841,17 +2862,18 @@ evaluation, then uses that receipt to append the classifier-readiness gate's own
 classification.
 
 `OutcomeClassifierV2` validates the two artifacts, the complete current gate
-view, and the direct PBT-S13 Codex, council, and disposition inputs before any
-outcome condition. The final review artifacts are not roster gates. The
+view, the deterministic closure records, and the public receipts before any
+outcome condition. Optional Codex, council, and disposition artifacts are advisory
+attachments and are excluded from classifier inputs. The
 classifier checks prefix byte equality, roster and entry digests, the admitted
 matrix root, uniqueness, owners, interfaces, evidence schemas, evaluation
 provenance, expiry, invalidation, exact coverage of every base entry plus every
-appended family entry, and zero-count final reviews. It then selects the first
+appended family entry, and deterministic closure integrity. It then selects the first
 matching row and stops:
 
 | First-match row | Condition | Result |
 | ---: | --- | --- |
-| 1 | Either roster, prefix, matrix root, gate evaluation, or required PBT-S13 review is invalid, missing, duplicate, unknown, expired, unevaluated, or nonzero | `blocked` |
+| 1 | Either roster, prefix, matrix root, gate evaluation, deterministic closure record, or required public receipt is invalid, missing, duplicate, unknown, expired, or unevaluated | `blocked` |
 | 2 | Any required gate evaluation is not `passed`, including `unresolved`, `failed`, or `mocked` | `blocked` |
 | 3 | Any admitted direction-family row lacks a real destination transition confirmed under its registered profile and independently read successor state | `blocked` |
 | 4 | The run uses a lab root, project-operated source, modified destination, unapproved network, or any profile other than the named public testnets | `blocked` |
@@ -3043,7 +3065,7 @@ named OpenSpec requirements and work-package ids:
 | Design sections | OpenSpec capability or work package |
 | --- | --- |
 | 2 to 5 | `bridge-system`: Bidirectional typed claims |
-| 6 | `bootstrap-trust`: Deployment-bound checkpoint |
+| 6 | `bootstrap-trust`: Official roots and root-derived acceleration checkpoint |
 | 7 | `claim-protocol`: Canonical claim digest |
 | 8 to 10 | `predicate-registry`: Authorized proof semantics; `S01-T03-W01` |
 | 11 | `cardano-anchor`: Named Cardano trust profile; `S01-BLOCK-02` |

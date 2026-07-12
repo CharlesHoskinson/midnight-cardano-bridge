@@ -1,7 +1,7 @@
 # Public-testnet proof bridge program rebaseline
 
 Date: 2026-07-10
-Status: approved design
+Status: approved only as the exact candidate blob named by the later blob-bound review
 Target branch: `resolve-checklist-full-sweep`
 Execution target: public Cardano and Midnight testnet `live-pass`
 
@@ -37,16 +37,21 @@ that namespace. Existing ids such as `S02-RH-W01` keep their historical meaning.
 | MPC participation | Agents test the framework but never count as independent ceremony contributors. |
 | Testnet identities | Create disposable testnet-only identities outside Git. Mainnet use is prohibited. |
 | Execution | Use one program controller and a fresh bounded Grok packet for each sprint. |
-| Review | Bind every closure review to a complete program snapshot rather than only a Git commit. |
+| Review | Bind every advisory review to a complete program snapshot rather than only a Git commit. |
 | Knowledge retention | Maintain a source-backed program wiki and append-only knowledge-graph event log. |
 
 ## Current state
 
 The historical harness closure target is
-`78bd432af06c9ef68e006ab2147da68fce29af6d`. The approved design source commit is
-`3db35fa9a7e7257359f5def4bb216c60356643b8`. Neither value is the Sprint 0
-execution base. The controller records the later committed planning baseline at
-execution start.
+`78bd432af06c9ef68e006ab2147da68fce29af6d`. Commit
+`3db35fa9a7e7257359f5def4bb216c60356643b8` contains the initial design-session
+baseline, not these revised bytes. The operative revision is the exact Git blob
+and candidate commit named by
+`docs/superpowers/reviews/2026-07-12-public-testnet-proof-bridge-remediation-review.md`,
+which is committed after the reviewed candidate. Neither historical value is
+the Sprint 0 execution base. Before W01, an operator records the intended
+planning baseline in an external `ProgramBaselinePrecommitmentV1`; W01 verifies
+that record instead of self-designating the current HEAD.
 
 At design approval, the canonical worktree carried unfinished changes to
 `README.md`, `docs/grok-4.5-handoff.xml`, and `runlogs/`. Sprint 0 inventories
@@ -138,7 +143,7 @@ evaluation; their history may contain superseded or invalidated evaluations.
 Only appended family entries use the family-complete roster origin. Each definition fixes
 `activation_required` and its earliest activation stage. `ActivationDecisionV1`
 consumes only the canonical predeployment subset; it cannot require deployment,
-execution, public-receipt, final-review, or classifier evidence before those
+execution, public-receipt, or classifier evidence before those
 events occur. PBT-S12-W07 produces nonterminal
 classifier-readiness evidence. The terminal classifier receipt is not an input
 gate.
@@ -183,8 +188,8 @@ uses a normal non-force push. It records another fetch after the push and verifi
 the remote SHA. A concurrent human or agent commit cancels the lease and forces
 reconciliation.
 
-The empty broker repository is seeded once after W05 from an operator-created
-bundle that contains the committed planning baseline through the W05 supervisor
+The empty broker repository is seeded once after W16 from an operator-created
+bundle that contains the committed planning baseline through the W16 entrypoint
 commit. The authenticated administrative channel streams bytes and a complete
 object manifest; the service never opens the user's repository. The broker
 verifies lineage, refs, remote, object inventory, and a signed initialization
@@ -216,6 +221,8 @@ Proof, consensus, operator, security, and Codex readers name the same snapshot.
 Any change to a field within a reader's declared scope invalidates that review.
 Dispositions never alter reader-authored findings or counts.
 
+Reader outputs are advisory quality evidence and never a closure input. Closure rests on deterministic contract suites, signed operator records, externally reproducible source and chain receipts, and the remote-confirmation bundle. A model count cannot change package state.
+
 ### Specification lifecycle
 
 Each sprint owns one OpenSpec change with requirements, design, tasks, package
@@ -232,11 +239,11 @@ numbered sections. Sprints update its current system state and evidence but do
 not add revision narration to the canonical text. Historical decisions stay in
 OpenSpec archives and the program wiki.
 
-A reviewed implementation snapshot cannot contain its own reader outputs.
-`ClosureEnvelopeV1` binds that immutable snapshot to later review, disposition,
-archive, final-event, deterministic raw wiki closure receipt, source-node and
-graph materialization updates, wiki-log, inventory, seal, and, only in PBT-S13,
-classifier receipts. Its typed delta enumerates allowed object digests, event and
+A frozen implementation snapshot cannot contain its own reader outputs.
+`ClosureEnvelopeV1` binds that immutable snapshot to optional later advisory review,
+disposition, archive, final-event, deterministic raw wiki closure receipt,
+source-node and graph materialization updates, wiki-log, inventory, redaction receipts,
+seal receipts, and, only in PBT-S13, classifier receipts. Its typed delta enumerates allowed object digests, event and
 state transitions, source digests, wiki predicates, and inventory additions. It
 excludes its own fixed path and blob. The validator checks that file separately
 and requires the full tree delta to equal the inventory plus exactly
@@ -252,7 +259,9 @@ receipt. `Publish` accepts only the returned context and targets the integration
 commit.
 No receipt binds a tree that contains itself. Any code, stable requirement,
 design, registry, proof artifact, ABI, or deployment change creates a new
-snapshot and repeats affected reviews. Successor sprints require a valid closure
+snapshot and repeats the affected deterministic checks. Advisory readers may be
+rerun for quality review, but their findings and counts do not authorize successor
+readiness. Successor sprints require a valid closure
 envelope, OpenSpec archive receipt, and a separately schema-checked immutable
 `RemoteConfirmationBundleV1`. Its signed receipt binds the envelope, remote,
 branch, fence, immutable public credential-handle receipt, review-probe receipt,
@@ -455,6 +464,16 @@ unique tuple for a new KZG transcript, Groth16 Phase 1, or per-circuit Phase 2 h
 its own precommitment, close point, domain, future resolution, sealed head,
 counted contributor set, acknowledgements, and public anchor.
 
+For `new-or-update` mode, the frozen policy selects a beacon from a public,
+independently operated allowlist. A qualifying source publishes authenticated,
+timestamped outputs, remains unpredictable until a resolution point after the
+contribution close, has a stable public archive, and has an independently
+implemented verification rule. The schedule binds the source class, instance,
+resolution height or time, output verification key, domain separator, and
+minimum close-to-resolution delay. If no allowed source meets those properties,
+the ceremony remains `waiting-external`. Historical qualification never adds a
+new beacon to old bytes.
+
 A sealed historical KZG SRS follows a separate `historical-qualified` path.
 `HistoricalCeremonyQualificationV1` verifies the ceremony's original
 precommitment, contribution chronology, post-contribution beacon, public anchors,
@@ -479,6 +498,26 @@ toolchain, proof profiles, circuit hashes, and verifier manifests. Sprint 8 then
 enters `waiting-external` for independently controlled human contributions.
 Human independence means separate control of entropy and operational
 environments, not distinct names or agent processes.
+
+`ContributorIndependencePolicyV1` is the gated deliverable of `PBT-S08-W01`,
+before enrollment or contribution keys exist. It freezes the minimum human and
+independent-organization counts, allowed identity-anchor classes, adjudicators,
+appeal path, privacy-preserving public commitments, and these failure
+conditions:
+
+- each counted human has a unique public identity or organizational attestation and signs enrollment with a unique contribution key;
+- no counted pair shares a recovery authority, administrator, coordinator-controlled credential, entropy seed, or declared operational environment;
+- environment receipts expose enough committed attributes to detect the same host, virtual-machine image, hardware attestation, network administration domain, or credential custodian without publishing secrets;
+- organizational and control-domain diversity meet the frozen numeric thresholds, not merely the participant-name count;
+- every contributor independently confirms the final transcript head and the inclusion of that contributor's accepted update;
+- agents, scripted personas, coordinator keys, unverifiable identities, duplicate anchors, contradictory declarations, missing evidence, or an unresolved conflict of control fail the policy and cannot be waived by the coordinator.
+
+Two named adjudicators from different control domains evaluate the evidence. A
+disagreement or unresolved Sybil indicator records `waiting-external`; it never
+reduces the minimum count. Agent sessions may exercise every acceptance and
+failure condition, but their receipts are marked `simulation` and cannot enter
+the counted contributor set. Any policy or threshold change after enrollment
+invalidates enrollment and restarts `PBT-S08-W01`.
 
 The accepted setup binds every contribution, transcript chain, curve and
 subgroup check, beacon derivation, KZG inventory, Groth16 phase, proving key, and
@@ -543,13 +582,13 @@ feasibility work originally described as Sprint 2 maps to `PBT-S02`. Later
 legacy sprint descriptions supply requirements and prior analysis, but their
 old numbers and completion state are not reused.
 
-The rebaseline has 14 sprints and 100 work packages. A package is measured by
+The rebaseline has 14 sprints and 106 work packages. A package is measured by
 artifacts, tests, and receipts rather than elapsed time.
 
 | Sprint | Packages | Scope | Exit gate |
 | --- | ---: | --- | --- |
-| PBT-S00 | 12 | Program control, runlogs, command supervision, snapshots, Git and line-ending safety, Grok/Codex lanes, program wiki, GateRosterV2 | Crash, retry, secret, drift, concurrency, and review negative suites pass in a clean smoke run. |
-| PBT-S01 | 6 | Current reference-harness closure | A clean detached checkout and all fresh readers pass one program snapshot. |
+| PBT-S00 | 18 | Program control, runlogs, command supervision, snapshots, Git and line-ending safety, Grok/Codex lanes, program wiki, GateRosterV2 | Crash, retry, secret, drift, concurrency, and review negative suites pass in a clean smoke run. |
+| PBT-S01 | 6 | Current reference-harness closure | A clean detached checkout reproduces the committed evidence and passes every deterministic closure contract for one program snapshot. |
 | PBT-S02 | 9 | Public roots, toolchains, SCLS, BEEFY/MMR event path, execution surfaces, full-decider feasibility | Every public surface is `demonstrated`; any absent surface blocks the public program. |
 | PBT-S03 | 8 | Predicate recovery and admission | Exactly 42 Cardano and 52 Midnight rows pass count, uniqueness, schema, provenance, and family mapping. |
 | PBT-S04 | 6 | Query, claim, registry, artifact, replay, and failure protocols | Two codecs reproduce canonical bytes and reject mutation, substitution, and cross-domain vectors. |
@@ -561,7 +600,7 @@ artifacts, tests, and receipts rather than elapsed time.
 | PBT-S10 | 7 | All-94 conformance, faults, security, and performance | All rows, families, mutations, faults, and thresholds pass against frozen artifacts. |
 | PBT-S11 | 6 | Public-testnet identities, funding, environments, roots, reset and deployment readiness | Clean readiness qualification reports no capability, funding, secret, root, freshness, or deployment gap. |
 | PBT-S12 | 7 | Public deployment and all-family execution | Public receipts cover every direction and family, drills pass, and the evidence snapshot is frozen. |
-| PBT-S13 | 5 | Independent closure | Fresh reviews pass the frozen public snapshot and the strict classifier returns `live-pass`. |
+| PBT-S13 | 5 | Independent closure | Deterministic closure checks and public receipts pass on the frozen snapshot; advisory reviews do not feed the classifier. |
 
 The dependency graph is:
 
@@ -597,10 +636,25 @@ Every work package declares:
 - stop, retry, external-wait, and invalidation rules;
 - required reader scopes.
 
-A package cannot close because its implementation exists. It closes when the
-controller validates its outputs and the required review snapshot passes.
+A package cannot close because its implementation exists. It closes only when
+the controller validates its deterministic outputs and all required external
+receipts against the frozen snapshot. Advisory review artifacts may identify
+work but cannot authorize the state transition.
 
 ## Failure and re-entry
+
+<!-- re-entry-contract:v2:start -->
+| Drift class | Required re-entry |
+| --- | --- |
+| network identity, official-root, finality, or runtime-semantic drift | `PBT-S02`; invalidate dependent circuits, setup, deployment, and public receipts |
+| catalog or proof-template-family drift | `PBT-S03` |
+| claim, encoding, registry, or validation-semantics drift | `PBT-S04` |
+| circuit, verifier, setup-interface, or ceremony-verifier drift | `PBT-S07` |
+| human policy, contribution, beacon, or transcript drift under an unchanged frozen interface | `PBT-S08` |
+| endpoint-only drift under unchanged authenticated network and runtime identities | `PBT-S11` |
+| fingerprint transition already authorized by the frozen runtime policy | the affected `PBT-S12` package |
+| deployed-copy or ABI-observation drift under unchanged authorized bytes | `PBT-S11`, then repeat affected public execution in `PBT-S12` |
+<!-- re-entry-contract:v2:end -->
 
 An external capability failure records `blocked` or `waiting-external` with its
 reproducer, owner, affected packages, and resume condition. It does not create a
@@ -616,9 +670,10 @@ only reviews whose declared scope changed.
 
 Each sprint has proof, consensus, operator, security, and Codex scopes selected
 from its risk. Readers work from committed snapshots and write immutable round
-artifacts. Closure requires zero Blocking, Major, and Minor findings. A finding
-may be rejected only with a technical disposition that the original reader
-accepts in a fresh round.
+artifacts. Their reports are advisory and their counts are not closure fields.
+Accepted technical findings become failing deterministic contracts before a
+fix. Rejected findings receive a technical disposition without requiring the
+model that authored the finding to approve it.
 
 The final council also checks that:
 

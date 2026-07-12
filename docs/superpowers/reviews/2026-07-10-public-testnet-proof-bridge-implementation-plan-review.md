@@ -2,9 +2,19 @@
 
 **Date:** 2026-07-10
 
-**Source baseline:** `3db35fa9a7e7257359f5def4bb216c60356643b8`
+Classification: pre-control-plane bootstrap review
+
+**Historical design-session baseline:** `3db35fa9a7e7257359f5def4bb216c60356643b8`
+
+**Landing snapshot:** `9f5445659d1927510c6c29f0285a405ecda30767`
 
 **Program:** `mcb.public-testnet-livepass.v2`
+
+The historical baseline does not contain the plans described below. The review
+and reviewed content arrived together in the landing snapshot, so this record
+does not bind a prior candidate tree and does not authorize Sprint 0. It is an
+advisory bootstrap review. The later blob-bound remediation review replaces it
+as provenance for the revised plan.
 
 ## Scope
 
@@ -35,10 +45,10 @@ entropy.
 | Setup ordering | Sprint 8 derives the root and domain, produces `RegistryActivationV1`, then produces domain-bound artifact authorizations. Concrete ABI instances begin with Sprint 12 deployment observations. |
 | Intent ordering | `DeploymentIntentV1` precedes deployment and excludes controller leases and fences. Deployment observations, ABI instances, root contexts, activation, and receipts precede `RunIntentV1`. |
 | Receipt ordering | Destination state does not contain the digest of the receipt that authenticates it. Execution receipts bind the run intent; later immutable evidence heads index receipt digests; the classifier binds the terminal head. |
-| Gate ordering | Activation uses only the roster-defined predeployment subset. Classifier readiness covers every other evaluation before its own gate evaluation is appended. Final Sprint 13 reviews are direct classifier inputs. |
+| Gate ordering | Activation uses only the roster-defined predeployment subset. Classifier readiness covers every other evaluation before its own gate evaluation is appended. This review's proposal to make final Sprint 13 reviews direct classifier inputs is superseded; current plans treat those artifacts as advisory. |
 | Proof authority | The Groth16 R1CS recomputes the full KZG decision. VK, commitment-key, registry, authorization, ABI, and deployed-verifier checks compare like-typed bytes or hashes. |
 
-## Final council result
+## Advisory council result
 
 | Reader | Blocking | Major | Minor | Verdict |
 | --- | ---: | ---: | ---: | --- |
@@ -46,9 +56,12 @@ entropy.
 | Proof systems and MPC | 0 | 0 | 0 | pass |
 | Governance, consensus, and hash DAG | 0 | 0 | 0 | pass |
 
-Consensus: **0 blocking, 0 major, 0 minor; pass**.
+Recorded model counts: **0 blocking, 0 major, 0 minor**. These counts are
+historical quality signals, not closure evidence.
 
-## Mechanical evidence
+## Historical mechanical evidence
+
+The following values describe the landing snapshot before the Fable remediation:
 
 - 14 sprints, 100 unique packages, 206 dependency edges, and a 100-node
   topological ordering
@@ -64,7 +77,7 @@ Consensus: **0 blocking, 0 major, 0 minor; pass**.
 
 ## Remaining boundary
 
-This review approves the implementation plan, not a deployed bridge. The six
+This review does not approve the implementation plan or a deployed bridge. The six
 `S01-BLOCK-*` gates, eight `CONS-*` gates, exact source-backed 42/52 predicate
 catalogs, public chain receipts, destination verifier surfaces, and human setup
 evidence remain execution work. Mainnet is outside the program. Only a Cardano

@@ -1,13 +1,15 @@
 {
   "schema_version": 1,
   "generated_from": {
-    "event_count": 273,
-    "last_event_id": "kge-0273"
+    "event_count": 298,
+    "last_event_id": "kge-0298"
   },
   "edges": [
     { "subject": "component.mpc-ceremony", "predicate": "human-gate", "object": "sprint.s8-human-ceremony" },
     { "subject": "component.mpc-ceremony", "predicate": "sourced-from", "object": "source.external.gnark-bsb22-mpc.2026-07-10" },
+    { "subject": "component.mpc-ceremony", "predicate": "sourced-from", "object": "source.external.gnark-bsb22-mpc.2026-07-12" },
     { "subject": "component.mpc-ceremony", "predicate": "sourced-from", "object": "source.external.proof-zk-recovery-mpc.2026-07-10" },
+    { "subject": "component.mpc-ceremony", "predicate": "sourced-from", "object": "source.external.proof-zk-recovery-mpc.2026-07-12" },
     { "subject": "component.program-control-plane", "predicate": "defined-by", "object": "source.design-session.2026-07-10-implementation-planning" },
     { "subject": "decision.program-outcome", "predicate": "verified-by", "object": "sprint.s13-public-closure" },
     { "subject": "package.pbt-s00-w01", "predicate": "part-of", "object": "sprint.pbt-s00" },
@@ -22,6 +24,12 @@
     { "subject": "package.pbt-s00-w10", "predicate": "part-of", "object": "sprint.pbt-s00" },
     { "subject": "package.pbt-s00-w11", "predicate": "part-of", "object": "sprint.pbt-s00" },
     { "subject": "package.pbt-s00-w12", "predicate": "part-of", "object": "sprint.pbt-s00" },
+    { "subject": "package.pbt-s00-w13", "predicate": "part-of", "object": "sprint.pbt-s00" },
+    { "subject": "package.pbt-s00-w14", "predicate": "part-of", "object": "sprint.pbt-s00" },
+    { "subject": "package.pbt-s00-w15", "predicate": "part-of", "object": "sprint.pbt-s00" },
+    { "subject": "package.pbt-s00-w16", "predicate": "part-of", "object": "sprint.pbt-s00" },
+    { "subject": "package.pbt-s00-w17", "predicate": "part-of", "object": "sprint.pbt-s00" },
+    { "subject": "package.pbt-s00-w18", "predicate": "part-of", "object": "sprint.pbt-s00" },
     { "subject": "package.pbt-s01-w01", "predicate": "part-of", "object": "sprint.pbt-s01" },
     { "subject": "package.pbt-s01-w02", "predicate": "part-of", "object": "sprint.pbt-s01" },
     { "subject": "package.pbt-s01-w03", "predicate": "part-of", "object": "sprint.pbt-s01" },
@@ -135,6 +143,7 @@
     { "subject": "program.public-testnet-proof-bridge", "predicate": "uses", "object": "component.program-control-plane" },
     { "subject": "program.wiki", "predicate": "uses-pattern", "object": "source.external.karpathy-llm-wiki.2026-07-10" },
     { "subject": "risk.midnight-event-path", "predicate": "owned-by", "object": "sprint.s2-public-feasibility" },
+    { "subject": "risk.predicate-catalogs", "predicate": "owned-by", "object": "package.pbt-s03-w01" },
     { "subject": "risk.public-scls", "predicate": "owned-by", "object": "sprint.s2-public-feasibility" },
     { "subject": "sprint.s0-control-plane", "predicate": "alias-of", "object": "sprint.pbt-s00" },
     { "subject": "sprint.s0-control-plane", "predicate": "delivers", "object": "component.program-control-plane" },

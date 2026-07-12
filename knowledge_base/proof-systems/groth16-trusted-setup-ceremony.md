@@ -1,7 +1,7 @@
 ---
 type: Concept
 title: Groth16 trusted-setup ceremony (per-circuit MPC)
-timestamp: '2026-07-09T14:27:04Z'
+timestamp: '2026-07-12T02:09:54Z'
 description: Why Groth16 needs a per-circuit MPC trusted setup (Powers of Tau + circuit-specific
   phase 2), its 1-of-N honest-participant trust assumption and toxic-waste risk, and
   what that means for the Midnight to Cardano proof direction.
@@ -14,6 +14,9 @@ tags:
 - ceremony
 - trust-assumption
 source: src-0014
+source_receipts:
+- source.external.gnark-bsb22-mpc.2026-07-12
+- source.external.proof-zk-recovery-mpc.2026-07-12
 status: researched
 okf_version: '1.0'
 ---
@@ -31,18 +34,22 @@ from the Halo2/KZG side's universal SRS. It is grounded in a design note for
 the ZK recovery circuit (gnark Groth16, BLS12-381, 3,450,403 constraints →
 domain size N = 2^22). See the [knowledge base index](/index.md) and the
 [sources index](/sources/index.md). The commitment-aware setup details below are
-bound to the [exact gnark MPC source receipt](../program-wiki/raw/source-receipts/gnark-bsb22-mpc-2026-07-10.md).
+bound to the [fresh gnark MPC source receipt](../program-wiki/raw/source-receipts/gnark-bsb22-mpc-2026-07-12.md).
+
+No bridge ceremony has run. This page separates behavior observed in pinned
+source from controls the bridge must implement before any human contribution can
+count.
 
 ## Two phases: Powers of Tau, then a per-circuit phase 2
 
 The setup is a **two-phase MPC**. The bridge pins the commitment-aware BSB22
-implementation in the reviewed gnark fork, so its setup variables and checks
+implementation in a pinned, not yet reviewed gnark fork, so its setup variables and checks
 must be described exactly rather than inferred from vanilla Groth16:
 
-- **Phase 1 (Powers of Tau)** is **circuit-independent**: a single Phase 1 of
+- **Groth16 Phase 1 (Powers of Tau)** is **circuit-independent**: a single Phase 1 of
   size N is *reusable* for any future circuit up to that size, so it is paid for
   once.
-- **Phase 2** is **circuit-specific**. This is the sense in which "Groth16 needs
+- **commitment-aware (BSB22) Phase 2** is **circuit-specific**. This is the sense in which "Groth16 needs
   a per-circuit trusted setup": every distinct circuit requires its own fresh
   phase-2 ceremony (which consumes the shared phase-1 output). Change the circuit
   and phase 2 must be
@@ -76,24 +83,31 @@ participant of a phase. This is why ceremonies recruit dozens of diverse,
 jurisdictionally-independent contributors: the goal is to make "all of them are
 malicious" implausible.
 
-Two structural safeguards back this up:
+The pinned prototype does not yet provide the bridge safeguards below: it
+accepts a caller-supplied beacon and its example path compiles a mini circuit.
+The bridge requires:
 
-- Each distinct transcript has its own precommitted future **randomness beacon**
+- In `new-or-update` mode, each distinct transcript must have its own precommitted future **randomness beacon**
   applied after that transcript's last human contribution. The KZG ceremony,
   Groth16 Phase 1, and every circuit-specific Phase 2 use separate domains,
   close points, beacon resolutions, sealed heads, acknowledgements, and public
-  anchors. A beacon disclosed for one transcript cannot seal a later one.
+  anchors. The policy must select a publicly verifiable, independently operated
+  source with authenticated timestamped output, unpredictability until a
+  post-close resolution point, a stable archive, and an independent verifier. A
+  beacon disclosed for one transcript cannot seal a later one. Historical
+  qualification verifies the original beacon and never attaches a new one to
+  old bytes.
 - The **coordinator** can censor or abort the ceremony but, by BGM17, **cannot
   break soundness** because it never holds a secret. The worst it can do is force a
   re-run.
 
 ## Verifiability
 
-The ceremony is designed to be **publicly re-verifiable**, which is what lets a
+The bridge ceremony must be **publicly re-verifiable**, which is what lets a
 bridge treat the resulting verifying key as trustworthy without trusting the
 operators:
 
-- **Anyone can re-verify the whole ceremony** by replaying `VerifyPhase1` and
+- **Any independent verifier must be able to re-verify the whole ceremony** by replaying `VerifyPhase1` and
   `VerifyPhase2` over the public transcripts, including every delta and sigma
   update and PoK.
 - The **per-contribution PoK + hash chain** means reordering, inserting, or
@@ -116,8 +130,8 @@ Both proof directions inherit KZG SRS trust. The extra setup cost lies on the
 Midnight-to-Cardano path:
 
 - **Midnight → Cardano (Groth16):** depends on the Halo2/KZG SRS used by the
-  inner proof and also carries a separate reusable BSB22 Phase 1 plus a
-  **per-circuit commitment-Groth16 Phase 2 trust assumption**. Soundness rests on
+  inner proof and also carries a separate reusable Groth16 Phase 1 (Powers of Tau) plus a
+  **per-circuit commitment-aware (BSB22) Phase 2 trust assumption**. Soundness rests on
   the required 1-of-N honesty for each setup transcript plus correct deployment.
   Every circuit revision incurs a fresh Phase 2 ceremony. The result is a small
   pairing-checkable proof that Cardano can verify.
@@ -128,7 +142,7 @@ Midnight-to-Cardano path:
   and qualification requirements.
 
 The asymmetry is a KZG universal SRS versus that same KZG trust plus a separate
-reusable BSB22 Phase 1 and per-circuit BSB22 Phase 2, not trusted setup versus no
+reusable Groth16 Phase 1 (Powers of Tau) and per-circuit commitment-aware (BSB22) Phase 2, not trusted setup versus no
 trusted setup. Both paths require an authenticated, qualified KZG SRS. Midnight
 to Cardano also requires independently verified commitment-Groth16
 ceremonies and byte-equal deployment of their VK and commitment keys.

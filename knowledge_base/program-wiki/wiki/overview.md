@@ -3,7 +3,7 @@ id: program.overview
 type: overview
 title: Public-testnet proof bridge program
 status: blocked
-updated_at: 2026-07-10T15:02:07Z
+updated_at: 2026-07-12T02:20:00Z
 sources:
   - source.design-session.2026-07-10-program-rebaseline
   - docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md
@@ -22,6 +22,6 @@ and gate definitions. It does not have the public source roots, complete proof
 relations, deployed destination verifiers, or transactions needed for
 `live-pass`.
 
-Execution uses 14 sprints and 100 work packages. [[sprints/overview]] records the
+Execution uses 14 sprints and 106 work packages. [[sprints/overview]] records the
 boundaries. [[risks/public-chain-gates]] records the public capabilities that can
 stop the program before expensive circuit and deployment work.

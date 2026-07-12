@@ -3,11 +3,12 @@ id: program.contradictions
 type: risk
 title: Active contradictions
 status: active
-updated_at: 2026-07-10T15:02:07Z
+updated_at: 2026-07-12T02:20:00Z
 sources:
   - README.md
   - openspec/changes/sprint-02-reference-harness-poc/tasks.md
   - openspec/changes/sprint-02-reference-harness-poc/review.md
+  - source.design-session.2026-07-12-fable-audit-remediation
 ---
 
 # Active contradictions

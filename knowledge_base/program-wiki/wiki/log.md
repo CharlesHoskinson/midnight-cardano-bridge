@@ -3,11 +3,16 @@ id: program-wiki.log
 type: log
 title: Program wiki log
 status: active
-updated_at: 2026-07-11T05:16:21Z
+updated_at: 2026-07-12T02:20:00Z
 sources:
   - source.design-session.2026-07-10-program-rebaseline
   - source.design-session.2026-07-10-implementation-planning
   - source.external.gnark-bsb22-mpc.2026-07-10
+  - source.design-session.2026-07-11-executable-trust-boundaries
+  - source.design-session.2026-07-11-acyclic-authority-evidence
+  - source.design-session.2026-07-12-fable-audit-remediation
+  - source.external.gnark-bsb22-mpc.2026-07-12
+  - source.external.proof-zk-recovery-mpc.2026-07-12
   - docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md
   - docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md
   - docs/superpowers/plans/2026-07-10-pbt-s00-program-control-plane.md
@@ -18,18 +23,19 @@ sources:
 
 ## [2026-07-10] ingest | Public-testnet program rebaseline
 
-Recorded the approved public-only outcome, 14-sprint and 100-package execution
+Recorded the initial public-only outcome, 14-sprint and 100-package execution
 model, all-94 predicate scope, public direction-family coverage, agent control
 model, imported MPC boundary, later human ceremony, council corrections, and
 known public-chain gates. Added the Karpathy LLM Wiki source receipt and initial
-maintained pages.
+maintained pages. The 2026-07-12 entry supersedes the package count.
 
 ## [2026-07-10] plan | Executable program and Sprint 0
 
-Published a 100-package master register with dependencies, artifacts, and stop
+Published the initial 100-package master register with dependencies, artifacts, and stop
 evidence. Added the code-level 12-package Sprint 0 plan for the controller,
 runlogs, command supervision, snapshots, repository transactions, agent lanes,
-wiki validation, and `GateRosterV2`. Later code-level sprint plans now require
+wiki validation, and `GateRosterV2`. The 2026-07-12 split replaces those counts
+with 106 packages and 18 Sprint 0 packages. Later code-level sprint plans require
 their closed predecessor snapshot and admitted interfaces.
 
 The executable plan uses full package dependency ids and states, atomic event
@@ -85,3 +91,21 @@ ABI instances to deployment observations. Destination state no longer contains
 the digest of the receipt that authenticates it. Execution receipts bind the run
 intent, later evidence heads index those receipts, and the classifier binds the
 terminal head.
+
+## [2026-07-12] remediate | Fable audit corrections
+
+Split the three oversized Sprint 0 packages into six additional packages while
+preserving every published id. The active register now contains 14 sprints, 106
+packages, and 18 Sprint 0 packages. The master, Sprint 0, and rebaseline
+documents share one re-entry table.
+
+Reader reports are advisory rather than closure authority. Sprint closure now
+rests on deterministic suites, signed operator records, external source and
+chain receipts, and remote confirmation. W01 also requires an external planning
+baseline precommitment.
+
+Unified public bootstrap on official genesis, official rules, and official
+finality roots. A checkpoint qualifies only as an official-root-derived
+acceleration artifact. Defined a falsifiable contributor-independence policy and
+recorded fresh gnark and local proof-zk-recovery source observations. Added the
+missing raw records for both 2026-07-11 log entries.

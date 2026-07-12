@@ -9,7 +9,7 @@ This repository contains the full design document at [`knowledge_base/bridges/mi
 ## Program documents
 
 - The [canonical living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md) is the current, source-linked system description with exactly 25 numbered sections.
-- The [council-reviewed program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) defines the 11-sprint, 62-work-package execution program and its proof-of-concept boundaries.
+- The [public-testnet rebaseline](docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md) and [implementation register](docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md) define the active 14-sprint, 106-package program and its proof-of-concept boundaries.
 - The [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) records the blocked 42 Cardano plus 52 Midnight catalog gate, searched locations, and row-admission rules without inventing entries.
 - The [machine-readable gate roster](protocol/gate-roster-v1.json) is the byte-exact source for all six implementation blockers and eight consensus evidence gates.
 - The [reference harness](reference/README.md) independently checks structural contracts in Rust and Go, parses the bounded BSB22 layout, and captures unsigned testnet observations through Scrapling.
@@ -57,7 +57,7 @@ No public Cardano validator consumes the raw `RelayChainProof` with native ECDSA
 
 ## The Cardano-side anchor for the reverse leg
 
-For Cardano to Midnight, [CIP-0165](knowledge_base/standards/cip-0165.md) proposes the Standard Canonical Ledger State: a deterministic CBOR snapshot with a two-level Merkle root pinned to a slot and a UTxO namespace that supports membership and non-membership proofs. The preferred public profile would verify the complete Mithril certificate chain for that exact SCLS signed entity, including the genesis trust anchor, AVK evolution and protocol parameters, before checking a ledger path. CIP-0165 remains Proposed, and the sampled public Preview aggregator did not expose SCLS certificates, so this profile is a hard gate. A project-operated signer profile can exercise the mechanics only as `degraded-lab` evidence.
+For Cardano to Midnight, [CIP-0165](knowledge_base/standards/cip-0165.md) proposes the Standard Canonical Ledger State: a deterministic CBOR snapshot with a two-level Merkle root pinned to a slot and a UTxO namespace that supports membership and non-membership proofs. The preferred public profile would verify the complete Mithril certificate chain for that exact SCLS signed entity, including the genesis trust anchor, AVK evolution and protocol parameters, before checking a ledger path. CIP-0165 remains Proposed, and the sampled public Preview aggregator did not expose SCLS certificates, so this profile is a hard gate. A project-operated signer can exercise lab mechanics, but that evidence is classifier-ineligible and leaves the outcome `blocked`.
 
 ## How the knowledge base was built
 
@@ -69,7 +69,7 @@ Sources include the Cardano CIPs (0381, 0133, 0140 Peras, 0165), the Midnight re
 
 ## How to read this repository
 
-Start with the [canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md). It is the synthesis, and it links down into everything else. Use the [program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md) for work-package ordering, the [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) for the 94-record gate, and [OpenSpec](openspec/config.yaml) for normative requirements and review state.
+Start with the [canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md). It is the synthesis, and it links down into everything else. Use the [public-testnet implementation register](docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md) for work-package ordering, the [predicate catalog status](knowledge_base/proof-claims/predicate-catalog-status.md) for the 94-record gate, and [OpenSpec](openspec/config.yaml) for normative requirements and review state.
 
 From a clean checkout, first run `pwsh -NoProfile -File scripts/setup-reference-harness.ps1`, then run `pwsh -NoProfile -File scripts/verify-reference-harness.ps1`. Setup fetches lockfile-controlled Node, Rust, and Windows/Python 3.14 dependencies but no public-chain data; verification is offline and read-only. A clean run reports `structural-pass` and deployment outcome `blocked`. The committed reports are input-bound golden evidence rather than last-run status. The result covers reproducible encodings, parser boundaries, and unsigned observation provenance. It does not claim proof verification or testnet settlement.
 
@@ -87,8 +87,8 @@ The knowledge base is organized by domain:
 
 ## Handoff state
 
-One sprint is complete and archived. Sprint 2 is implemented and under final
-review; nine later sprints remain in the 11-sprint program. Commit `4d985a7`
+The active execution authority is the 14-sprint, 106-package public-testnet
+program. Its chain and deployment gates remain unresolved. Commit `4d985a7`
 is the last baseline whose complete offline verifier passed with byte-identical
 golden evidence. The council reports are recorded under
 `openspec/changes/sprint-02-reference-harness-poc/review-evidence/`.
@@ -97,10 +97,12 @@ The first remediation wave is committed in `54e8d36` and binds source-event
 indices and normalized observations to their preserved bytes. The proof-vector
 wave is committed in `cee2bd2` and adds the explicit CBOR type manifest plus
 parser-only sentinel coverage.
-Do not update the golden reports until the remaining operator and proof review
-items are resolved. Then run the full verifier with `-UpdateEvidence`, rerun it
-read-only, and mark Sprint 2 task 6 only after a fresh proof, consensus, and
-operator reread reports zero Blocking and zero unresolved Major findings.
+Golden reports are updated only from a committed candidate whose tracked input
+blobs match `HEAD`. Run the full verifier with `-UpdateEvidence`, commit the new
+generation, then rerun it read-only from both the working repository and a fresh
+Windows checkout. Deterministic contracts and reproducible receipts authorize
+closure. Proof, consensus, and operator reports remain advisory and their finding
+counts cannot change package or deployment state.
 
 The current PoC still does not prove a Cardano or Midnight bridge transaction.
 The six `S01-BLOCK-*` gates and eight `CONS-*` gates remain open. A continuation

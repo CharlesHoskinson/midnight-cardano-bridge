@@ -3,16 +3,17 @@ id: component.program-control-plane
 type: component
 title: Program control plane
 status: active
-updated_at: 2026-07-11T05:16:21Z
+updated_at: 2026-07-12T02:20:00Z
 sources:
   - source.design-session.2026-07-10-implementation-planning
   - docs/superpowers/plans/2026-07-10-pbt-s00-program-control-plane.md
+  - source.design-session.2026-07-12-fable-audit-remediation
 ---
 
 # Program control plane
 
 The control plane turns the approved sprint graph into recoverable repository
-work. It is implemented by the 12 packages in `PBT-S00`.
+work. It will be implemented by the 18 packages in `PBT-S00`.
 
 Its source of truth is a canonical machine plan plus controller-owned immutable
 event objects. A native SCM-compatible broker runs under a dedicated Windows
@@ -26,11 +27,12 @@ leases and fencing epochs, command starts and results, artifact publication,
 invalidation, reviews, deployments, and classifier results remain part of the
 event history.
 
-The first five Sprint 0 packages run inside a bounded bootstrap window. W05
-commits the supervisor before using it. The operator then streams a one-time Git
+Nine Sprint 0 packages run inside a bounded bootstrap window: W01-W05 and
+W13-W16. W05 commits the supervisor before W15 adds quarantine and W16 publishes
+the entrypoint. The operator then streams a one-time Git
 bundle and complete object manifest through the authenticated administrative
-channel. The broker verifies the planning-through-W05 lineage before seeding its
-canonical repository. A clean detached replay emits five package-scoped receipts
+channel. The broker verifies the planning-through-W16 lineage before seeding its
+canonical repository. A clean detached replay emits nine package-scoped receipts
 and closes the bootstrap window permanently. All later work runs through one
 package entrypoint. Returned worker packs pass bounded no-execute quarantine,
 strict object validation, platform-path checks, and package allowlists before
@@ -43,7 +45,7 @@ the complete process tree, checks required outputs, and records the terminal
 result. Unsanitized captures stay in external scratch storage until a
 deterministic secret scan permits publication.
 
-Each review binds a complete program snapshot. Codex and the four persona
+Each advisory review binds a complete program snapshot. Codex and the four persona
 readers run as separately supervised processes in full disposable clones with
 unique writable scratch and separate JSONL and stderr captures. Reader reports
 and failed rounds are immutable. OpenSpec relocation is committed as an
@@ -86,4 +88,5 @@ classification ineligible by itself. PBT-S04 must publish a family-complete
 roster with every ordered base entry as a byte-identical prefix, then append only
 admitted family rows. Public execution binds both artifacts, and the classifier
 evaluates every logical base and family gate. PBT-S12-W07 supplies nonterminal
-classifier readiness; final PBT-S13 reviews are direct closure inputs.
+classifier readiness. Final PBT-S13 reader reports remain advisory; deterministic
+contracts and external chain receipts authorize closure.

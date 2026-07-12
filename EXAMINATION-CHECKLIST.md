@@ -2,7 +2,7 @@
 
 This checklist records examined evidence and open work against the
 [canonical 25-section design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md),
-the [11-sprint program design](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md),
+the [14-sprint, 106-package public-testnet program](docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md),
 the [archived Sprint 1 OpenSpec change](openspec/changes/archive/2026-07-10-sprint-01-foundation/proposal.md),
 and the [active Sprint 2 harness change](openspec/changes/sprint-02-reference-harness-poc/proposal.md).
 `RESEARCH-PLAN.md` remains the source-corpus and evidence ledger.
@@ -24,7 +24,7 @@ Each item: *what to examine — where (repo/file/source) — the question it ans
 | Gate | Current evidence | Program effect |
 | --- | --- | --- |
 | `S01-BLOCK-01`: 94 source-backed predicate records | Blocked. Searches found none of the three recorded source files. | Blocks registry population and 94-record conformance. |
-| `S01-BLOCK-02`: public Mithril SCLS profile | Blocked. A dated official Preview aggregator sample exposed transaction and database entities, not SCLS. | A project signer can support only a separate lab profile and at most `degraded-lab`. |
+| `S01-BLOCK-02`: public Mithril SCLS profile | Blocked. A dated official Preview aggregator sample exposed transaction and database entities, not SCLS. | A project signer can support lab diagnostics only; those results are classifier-ineligible. |
 | `S01-BLOCK-03`: authenticated Midnight event-to-header-to-MMR path | Blocked. The current relay object omits the event and MMR-leaf proof. | Blocks authenticated Midnight predicate inclusion. |
 | `S01-BLOCK-04`: full Halo2/KZG decider inside BSB22 | Blocked. The gnark BSB22 stack and Midnight IVC example pass locally, but the bridge full-decider wrapper and invalid-accumulator rejection do not exist. | Blocks the selected Midnight-to-Cardano proof path. |
 
@@ -45,12 +45,10 @@ The final two gates cover the destination execution boundaries:
 
 Program evidence is labeled `live-pass` only when both selected public testnets
 accept claim-authorized transactions under the named public trust profiles.
-`degraded-lab` requires both directions to execute but permits a declared fixture
-or project-operated root. `blocked` records an incomplete relation, path,
+`blocked` records an incomplete relation, path,
 execution surface, catalog gate, or public dependency with its reproducer, owner,
 affected interface, and resume evidence. The current structural run assigns
-deployment outcome `blocked`; the open gates prohibit `degraded-lab` and
-`live-pass` claims.
+deployment outcome `blocked`; the open gates prohibit a `live-pass` claim.
 
 Cloned repos live in ignored `_external/`: `midnight-zk`, `midnight-docs`, `midnight-ledger`,
 `midnight-node`, `mithril`, `partner-chains`, `CIPs`, `plutus`, `cardano-ledger`,
@@ -172,7 +170,7 @@ captured as a deep-research-toolkit run under `research-runs/`.
 ## M. Cross-cutting design decisions to LOCK
 
 - [x] Direction-A proof-of-concept landing: **full-decider BSB22 commitment-Groth16 is fixed.** Native ECDSA or direct Halo2/KZG requires a separate measured production decision.
-- [~] Direction-B certificate: **Mithril/ATMS over the proposed SCLS artifact** is the selected gated profile. Public SCLS certification has not been observed; a project-operated profile caps the result at `degraded-lab`.
+- [~] Direction-B certificate: **Mithril/ATMS over the proposed SCLS artifact** is the selected gated profile. Public SCLS certification has not been observed; a project-operated profile is a classifier-ineligible lab diagnostic.
 - [x] Proof format on Cardano: **the proof of concept uses BSB22 commitment-Groth16.** Current BEEFY-ECDSA remains a production alternative, not an automatic fallback.
 - [x] Abstract **"finality certificate" interface** so a source-backed future finality change can use a new adapter without changing predicate semantics (design §§13 and 20). No BABE migration is assumed.
 - [x] Recursion boundary: use Midnight IVC/aggregation for Cardano-side certificates/claims; give Cardano a native verifier or one wrapped proof, not per-step header replay.
@@ -183,17 +181,17 @@ captured as a deep-research-toolkit run under `research-runs/`.
 The bridge substrate we design proves a **finality certificate**; this report specifies the
 **typed-claim layer that rides on top of the resulting cross-chain anchor** (94 predicates:
 42 Cardano + 52 Midnight). They compose — the bridge makes a foreign anchor *trustworthy*;
-predicates are claims *against* that anchor. Directly relevant, especially §31 (bridges).
+predicates are claims *against* that anchor. Directly relevant, especially source-report section 31 (bridges).
 
 **⇒ Immediate next actions (committed):**
 - [x] **Read the report** — done (948 lines).
-- [x] **Ingested report §8/§9/§31** → `proof-claims/{claim-envelope,anchor-trust-models,bridge-claim-requirements}.md` (src-0036/0037/0035; 21+16+15 claims).
+- [x] **Ingested source-report sections 8, 9, and 31** → `proof-claims/{claim-envelope,anchor-trust-models,bridge-claim-requirements}.md` (src-0036/0037/0035; 21+16+15 claims).
 - [x] **Ingested `claim-interface-schema.md`** → `proof-claims/claim-interface-schema.md` (src-0038, 13 claims). *(remaining catalogs: `verified-claim-catalog-42.md`, `midnight-proof-claim-catalog-52.md`, `cardano-prior-epoch-zk-proof-categories.md`.)*
 - [x] **⭐ Pulled CIP-0165 (SCLS)** → `standards/cip-0165.md` (src-0034, 12 claims). The Proposed artifact is selected for the gated Direction-B anchor profile; public Mithril SCLS certification has not been observed. Folded into design §11.
 - [x] **Claim envelope (§8) as the bridge message format** — locked as the outer typed message. Current `RelayChainProof` is a raw finality artifact and must be wrapped/bound by envelope fields before production settlement.
-- [x] **Bridge message identity (§31)** — deterministic message hash locked as required replay key input.
-- [x] **Finality-rule binding (§31)** — locked: the envelope names the accepted rule and parameters, such as `midnight-beefy-ecdsa-equal-weight` or `mithril-scls`. A future rule needs a source-backed adapter, suite, fingerprint and deployment domain before admission.
-- [x] **Asset identity (§31)** — locked: Cardano asset tuple + Midnight unshielded/shielded token identity; **DUST = non-bridgeable** fee resource.
+- [x] **Bridge message identity (design §§7 and 17):** deterministic message hash locked as required replay key input.
+- [x] **Finality-rule binding (design §§6 and 7):** the envelope names the accepted rule and parameters, such as `midnight-beefy-ecdsa-equal-weight` or `mithril-scls`. A future rule needs a source-backed adapter, suite, fingerprint and deployment domain before admission.
+- [x] **Asset identity (design §§7 and 8):** Cardano asset tuple + Midnight unshielded/shielded token identity; **DUST = non-bridgeable** fee resource.
 - [x] **Replay: two distinct records** — locked: ZK nullifier and consumed bridge-message set are separate.
 - [x] **Anchor/trust taxonomy (§9)** — mapped to current options: BEEFY signed MMR root, Mithril cert, SCLS root, Zswap/DUST/contract roots, and indexer commitments as untrusted unless certified.
 - [x] **Nonmembership / absence** — SCLS ordered-neighbor nonmembership and ledger nullifier/intent sets are the relevant complete-set mechanisms.

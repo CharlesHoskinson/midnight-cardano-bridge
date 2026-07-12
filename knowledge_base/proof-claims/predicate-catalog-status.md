@@ -15,7 +15,7 @@ do not reveal predicate meanings and cannot be used to reconstruct rows.
 
 This status applies to the [canonical 25-section bridge design](../bridges/midnight-cardano-recursive-bridge.md),
 the [public-testnet program design](../../docs/superpowers/specs/2026-07-10-public-testnet-proof-bridge-program-rebaseline-design.md),
-and the [100-package execution plan](../../docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md).
+and the [106-package execution plan](../../docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md).
 
 ## Required catalog
 

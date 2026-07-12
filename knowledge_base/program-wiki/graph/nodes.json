@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "generated_from": {
-    "event_count": 273,
-    "last_event_id": "kge-0273"
+    "event_count": 298,
+    "last_event_id": "kge-0298"
   },
   "nodes": [
     { "id": "component.mpc-ceremony", "type": "component" },
@@ -22,6 +22,12 @@
     { "id": "package.pbt-s00-w10", "type": "package" },
     { "id": "package.pbt-s00-w11", "type": "package" },
     { "id": "package.pbt-s00-w12", "type": "package" },
+    { "id": "package.pbt-s00-w13", "type": "package" },
+    { "id": "package.pbt-s00-w14", "type": "package" },
+    { "id": "package.pbt-s00-w15", "type": "package" },
+    { "id": "package.pbt-s00-w16", "type": "package" },
+    { "id": "package.pbt-s00-w17", "type": "package" },
+    { "id": "package.pbt-s00-w18", "type": "package" },
     { "id": "package.pbt-s01-w01", "type": "package" },
     { "id": "package.pbt-s01-w02", "type": "package" },
     { "id": "package.pbt-s01-w03", "type": "package" },
@@ -110,7 +116,7 @@
     { "id": "package.pbt-s13-w03", "type": "package" },
     { "id": "package.pbt-s13-w04", "type": "package" },
     { "id": "package.pbt-s13-w05", "type": "package" },
-    { "id": "program.public-testnet-proof-bridge", "type": "program", "package_count": 100, "sprint_count": 14 },
+    { "id": "program.public-testnet-proof-bridge", "type": "program", "package_count": 106, "sprint_count": 14 },
     { "id": "program.wiki", "type": "knowledge-base" },
     { "id": "risk.midnight-event-path", "type": "risk" },
     { "id": "risk.predicate-catalogs", "type": "risk" },
@@ -118,9 +124,14 @@
     { "id": "source.design-session.2026-07-10-graph-event-v2-transition", "type": "design-session" },
     { "id": "source.design-session.2026-07-10-implementation-planning", "type": "design-session" },
     { "id": "source.design-session.2026-07-10-program-rebaseline", "type": "design-session" },
+    { "id": "source.design-session.2026-07-11-acyclic-authority-evidence", "type": "design-session" },
+    { "id": "source.design-session.2026-07-11-executable-trust-boundaries", "type": "design-session" },
+    { "id": "source.design-session.2026-07-12-fable-audit-remediation", "type": "design-session" },
     { "id": "source.external.gnark-bsb22-mpc.2026-07-10", "type": "source-receipt" },
+    { "id": "source.external.gnark-bsb22-mpc.2026-07-12", "type": "source-receipt" },
     { "id": "source.external.karpathy-llm-wiki.2026-07-10", "type": "source-receipt" },
     { "id": "source.external.proof-zk-recovery-mpc.2026-07-10", "type": "source-receipt" },
+    { "id": "source.external.proof-zk-recovery-mpc.2026-07-12", "type": "source-receipt" },
     { "id": "sprint.pbt-s00", "type": "sprint" },
     { "id": "sprint.pbt-s01", "type": "sprint" },
     { "id": "sprint.pbt-s02", "type": "sprint" },

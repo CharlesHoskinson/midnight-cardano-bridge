@@ -73,11 +73,14 @@ new directory under the system temporary directory. A failure publishes no
 The files under `reference/evidence/` are input-bound golden evidence, not a
 mutable status file for the last invocation. The structural report is the
 structural payload. The conformance report is the envelope: it binds the
-structural payload by SHA-256, every deterministic input hash, verifier
-revision, structured command records (logical tool, resolved executable, cwd,
-argv, offline environment, exit code), tool versions, and exit semantics. A
-successful default run requires regenerated candidates to be byte-identical to
-the current generation and its mirrored copies.
+structural payload by SHA-256, every deterministic input's committed Git blob
+hash, verifier revision, structured command records (logical tool, resolved
+executable, cwd, argv, offline environment, exit code), tool versions, and exit
+semantics. The verifier rejects semantic tracked changes and untracked files in
+its input roots before running. Git checkout filters may materialize LF or CRLF,
+but cannot change the recorded input digest. A successful default run requires
+regenerated candidates to be byte-identical to the current generation and its
+mirrored copies.
 
 Publication is generation-based. `-UpdateEvidence` stages an immutable
 generation under `reference/evidence/generations/<id>/` on the repository
@@ -87,8 +90,9 @@ hash-mismatched generations. Python dependencies install from
 `requirements.hashes.txt` with `pip --require-hashes --only-binary=:all:` for
 Windows CPython 3.14 artifacts.
 
-After reviewing an intentional input change, update evidence only with a fully
-successful run:
+After reviewing an intentional input change, commit the input change first.
+Evidence cannot bind an uncommitted source tree. Then update evidence only with
+a fully successful run:
 
 ```powershell
 pwsh -NoProfile -File scripts/verify-reference-harness.ps1 -UpdateEvidence

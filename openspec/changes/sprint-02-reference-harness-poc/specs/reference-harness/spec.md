@@ -51,6 +51,22 @@ Readers SHALL select the current generation only through
 `reference/evidence/current-generation.json` and SHALL reject missing, mixed, or
 hash-mismatched generations.
 
+Input-file digests SHALL hash the committed Git blob bytes at the named source
+snapshot, never a platform-specific working-tree representation. The verifier
+SHALL reject semantic tracked changes or untracked files under an evidence input
+root. Repository attributes SHALL materialize text with LF on new checkouts, but
+input identity remains the committed blob digest even when an existing checkout
+contains CRLF bytes.
+
+#### Scenario: Checkout line endings do not change evidence identity
+
+- **WHEN** two clean checkouts of the same source snapshot materialize different
+  platform line endings
+- **THEN** both verifiers record identical input-file digests and reproduce the
+  same conformance candidate
+- **AND** a semantic tracked change or an untracked input file rejects before
+  evidence comparison or publication
+
 #### Scenario: A golden digest is mutated
 - **WHEN** the conformance command encounters a fixture whose expected digest differs from either implementation
 - **THEN** it SHALL fail and SHALL NOT emit a deployment outcome label

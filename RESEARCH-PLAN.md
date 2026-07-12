@@ -7,7 +7,7 @@ as each source moves through: `fetch → run → extract → gate → page`.
 ## Current program frame
 
 Research feeds the [canonical 25-section living design](knowledge_base/bridges/midnight-cardano-recursive-bridge.md),
-the [council-reviewed 11-sprint, 62-work-package program](docs/superpowers/specs/2026-07-09-midnight-cardano-proof-bridge-program-design.md),
+the [14-sprint, 106-package public-testnet program](docs/superpowers/plans/2026-07-10-public-testnet-proof-bridge-program.md),
 and the [OpenSpec requirements workflow](openspec/config.yaml). Active Sprint 1
 deltas are under [`openspec/changes/sprint-01-foundation/`](openspec/changes/sprint-01-foundation/README.md);
 accepted capability requirements publish to [`openspec/specs/`](openspec/specs/)
@@ -55,8 +55,7 @@ current Windows host, so Compact and the proof server remain unavailable there.
 
 The program reports `live-pass` only when both selected public testnets accept
 claim-authorized transactions under their named public trust profiles. It reports
-`degraded-lab` when both directions execute but at least one uses a declared lab
-root. It reports `blocked` when a required relation, authenticated path, execution
+`blocked` when a required relation, authenticated path, execution
 surface, catalog gate, or public dependency cannot complete. No deployment
 outcome is assigned from the current research or toolchain probes.
 
@@ -199,7 +198,7 @@ live in OpenSpec.
   vs keyset_commitment + stake≥2/3 + MMR root); **Cardano-side on-chain verifier NOT in
   midnight-node (redemption.ak = vesting skeleton) — #1 gap.**
 - 2026-07-09: **Proof-claim layer batch (src-0034..0038, 77 claims):** ingested proof-claim
-  report §8/§9/§31 + claim-interface-schema + **CIP-0165 SCLS**. **38 sources / 534 claims /
+  source-report sections 8, 9, and 31 + claim-interface-schema + **CIP-0165 SCLS**. **38 sources / 534 claims /
   41 pages.** Design doc gained §8a (typed-claim application layer) + Direction-B **inclusion
   anchor = Mithril-cert over CIP-0165 SCLS root** (membership/nonmembership, no header replay).
 - 2026-07-09: **Validator-set sizing follow-up (src-0049, 5 claims):** DRT-gated public
