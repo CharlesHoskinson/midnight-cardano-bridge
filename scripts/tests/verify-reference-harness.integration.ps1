@@ -54,6 +54,7 @@ function Initialize-TestRepository {
         @('init', '--initial-branch=integration'),
         @('config', 'user.name', 'reference-harness-contract'),
         @('config', 'user.email', 'reference-harness-contract@example.invalid'),
+        @('config', 'core.longpaths', 'true'),
         @('add', '--', '.gitattributes', 'package.json', 'package-lock.json', 'openspec', 'protocol', 'reference', 'scripts'),
         @('commit', '-m', 'Create late-failure fixture snapshot')
     )) {
