@@ -28,6 +28,9 @@ try {
     if (-not (Test-Path -LiteralPath $candidatePath)) {
         throw 'comparison did not write the requested candidate path'
     }
+    if ([IO.File]::ReadAllBytes($candidatePath) -contains 13) {
+        throw 'comparison candidate contains noncanonical CR bytes'
+    }
     $candidate = Get-Content -Raw -LiteralPath $candidatePath | ConvertFrom-Json
     foreach ($field in @(
         'root_set_cbor_hex',

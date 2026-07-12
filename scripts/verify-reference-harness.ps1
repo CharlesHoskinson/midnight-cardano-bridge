@@ -10,6 +10,7 @@ $script:CurrentCheck = 'initialization'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $runRoot = $null
 Import-Module (Join-Path $PSScriptRoot 'CommittedInputManifest.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'CanonicalJson.psm1') -Force
 
 $expectedVersions = [ordered]@{
     powershell = '7.6.3'
@@ -582,8 +583,7 @@ function Write-JsonFile {
         [Parameter(Mandatory)] $Value
     )
 
-    $json = $Value | ConvertTo-Json -Depth 30
-    [IO.File]::WriteAllText($Path, $json + "`n", [Text.UTF8Encoding]::new($false))
+    Write-CanonicalJsonFile -Path $Path -Value $Value -Depth 30
 }
 
 function Assert-ByteIdentical {
@@ -977,6 +977,9 @@ try {
                 $null = Invoke-Recorded -LogicalTool 'pwsh-committed-input-manifest-contract' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
                     -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\committed-input-manifest.contract.ps1')) `
                     -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
+                $null = Invoke-Recorded -LogicalTool 'pwsh-canonical-json-contract' -Executable (Get-Command pwsh).Source -Cwd $repoRoot `
+                    -Argv @('-NoProfile', '-File', (Join-Path $repoRoot 'scripts\tests\canonical-json.contract.ps1')) `
+                    -PinnedVersion $toolVersions.powershell -OfflineEnvironment $offlineEnv
             }
         } else {
             Write-Output 'check=control-tests state=SKIPPED-NON-RECURSIVE'
@@ -1080,7 +1083,7 @@ try {
             structural_payload_role = 'payload-bound-by-hash'
             bootstrap_qualification_sha256 = $bootstrapSha
             verified_components = @(
-                'control-tests-setup-compare-late-failure-telemetry-committed-inputs',
+                'control-tests-setup-compare-late-failure-telemetry-committed-inputs-canonical-json',
                 'rust-structural-harness-tests',
                 'go-structural-harness-tests',
                 'go-vet',

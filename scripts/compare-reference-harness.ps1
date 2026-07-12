@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+Import-Module (Join-Path $PSScriptRoot 'CanonicalJson.psm1') -Force
 $fixturePath = Join-Path $repoRoot 'reference\fixtures\structural-v1.json'
 $publishedPath = [IO.Path]::GetFullPath((Join-Path $repoRoot 'reference\evidence\structural-report-v1.json'))
 if (-not [IO.Path]::IsPathFullyQualified($EvidencePath)) {
@@ -169,8 +170,7 @@ $evidence = [ordered]@{
 foreach ($field in @($rust.PSObject.Properties.Name)) {
     $evidence[$field] = $rust.$field
 }
-$json = $evidence | ConvertTo-Json -Depth 12
-[IO.File]::WriteAllText($evidencePath, $json + "`n", [Text.UTF8Encoding]::new($false))
+Write-CanonicalJsonFile -Path $evidencePath -Value $evidence -Depth 12
 
 $global:LASTEXITCODE = 0
 Write-Output "cross_language_structural=PASS evidence=$evidencePath"
