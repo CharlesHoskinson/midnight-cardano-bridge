@@ -245,7 +245,10 @@ circuit (§11); the fallback is IOG's
 wrap, no per-circuit setup, the same trade the
 [bridge design](midnight-cardano-recursive-bridge.md) weighs for its
 Midnight-to-Cardano landing). On Midnight, both proofs verify natively and no
-wrap exists at all.
+wrap exists at all. Both wrappers must be frozen circuits so their Groth16
+trusted setup is a once-ever event rather than a per-change one; §9.5 works
+through how the fold's era-specific and claim-specific logic stays inside the
+recursion so the wrap constraint system never changes.
 
 ### 3.4 Layer 4: self-checkpointing (closing the "time of commitment")
 
@@ -755,6 +758,91 @@ Four clocks run at different speeds:
    5-day burst, and a checkpoint transaction at whatever cadence consumers
    pay for.
 
+### 9.5 Trusted-setup cadence
+
+There is a fifth clock, the slowest of all: how often the Groth16 landing
+needs a trusted-setup ceremony. This is worth stating precisely because the
+naive answer, "Groth16 needs a per-circuit ceremony," makes the system sound
+far more fragile than it is. The right target, and an achievable one, is a
+ceremony that runs once and re-runs only on a deliberate proof-system change,
+on the same cadence and with the same coordination as a Cardano hard fork.
+
+**What actually triggers a ceremony.** Groth16 setup has two phases with
+different triggers, and the split is verified at the code level in gnark's
+`mpcsetup`. Phase 1 (Powers of Tau, secrets tau/alpha/beta) is
+circuit-independent: you never run it, you inherit an existing public
+transcript such as the Perpetual Powers of Tau (good to 2^28 constraints) or
+the Filecoin and Midnight lineages, and it is reusable for any circuit under
+its degree bound. Phase 2 (secrets delta and sigma) binds to the exact
+constraint system: gnark's `Phase2.Initialize` iterates every constraint, and
+snarkjs's `zkey verify` checks the key against the circuit. So the only event
+that forces a fresh ceremony is a change to the landing circuit's own
+constraint system. Nothing else does: not a new Ω digest, not a new claim,
+not a new epoch, not more proofs.
+
+**Why you cannot remove this with a different Groth16.** Groth16's reference
+string is irreducibly circuit-specific. The updatable-SRS impossibility
+result (Groth, Kohlweiss, Maller, Meiklejohn, Miers, 2018) shows that a
+proof system with private relation-dependent polynomials in its reference
+string cannot be made universal or updatable, and Groth16 has exactly those.
+Universality lives in the Plonk, Marlin, and Sonic family, not in Groth16.
+So a rare ceremony cannot come from a smarter Groth16. It comes from freezing
+the one circuit that gets the ceremony.
+
+**The fix: a frozen wrap, changes absorbed by the recursion.** The Omega
+landing already has the right shape. The Groth16 wrapper proves "a valid
+Halo2 chain-fold proof for Ω exists," with a single public input
+`pub = H(envelope ‖ Ω)`. Everything that changes over Cardano's life must
+enter the wrap only through that value, never as new circuit wires: the Ω
+digest each checkpoint, which of the 42 claims, which epoch, and most of all
+which era's rules the fold applied. The era-dispatch logic lives inside the
+Halo2 fold, whose verifying key can change freely because Halo2 needs no
+ceremony at all. As long as the Halo2 proof's interface stays fixed (one
+public input, a fixed committed-instance layout, a fixed SRS degree bound),
+the wrap's constraint system is fixed and its verifying key is invariant.
+
+This is not a hope; it is the production pattern behind RISC Zero, which
+verifies unbounded, ever-changing programs against one fixed Groth16 circuit
+and one verifying key. Its security model states the property directly: the
+identifier of the allowed inner logic (the "control root") is passed as a
+public input, "allowing for updates to our RISC-V Prover without requiring a
+new trusted setup ceremony." A router contract keeps even the caller-facing
+verifier address fixed while dispatching to versioned verifiers, so an
+eventual wrap change need not break consumers. RISC Zero ran its ceremony
+once (a public multi-contributor Phase 2 on top of a reused Phase 1), not
+once per program.
+
+**The resulting cadence.** With the wrap frozen this way:
+- new checkpoint, new claim, new epoch, more proofs: no ceremony;
+- a Cardano hard fork that adds an era: no ceremony, because the new era's
+  rules are new logic inside the fold, absorbed as witness and public-input
+  data, not a change to the wrap;
+- a new ceremony only when the wrap's own constraint system changes, which
+  means a proof-system upgrade, a pairing change, or a landing redesign. That
+  is a deliberate, coordinated event you would schedule exactly like a hard
+  fork.
+
+**The zero-ceremony alternative remains on the table.** Landing via the
+direct [Halo2-Plutus verifier](../cardano/halo2-plutus-verifier.md) over the
+[CIP-0381](../standards/cip-0381.md) builtins removes the Groth16 wrap
+entirely. Halo2 rides a universal KZG setup, which for the Midnight side is
+already done once and for all (the Midnight ceremony to 2^25, finalized
+December 2025), so this route needs no Groth16 ceremony ever. The precedent
+is Zcash, which eliminated per-upgrade ceremonies outright when it moved to
+Halo2 at NU5. The trade is on-chain cost: MSM-dominated verification that the
+[CIP-0133](../standards/cip-0133.md) multi-scalar-multiplication builtin is
+designed to bring down. This is the same landing choice weighed in §11; the
+ceremony analysis does not decide it, because both endpoints reach
+hard-fork-or-rarer cadence. The frozen Groth16 wrap gets there with the
+cheapest on-chain verification; the direct Halo2 landing gets there with no
+ceremony at all.
+
+The practical instruction that falls out: treat the wrap circuit as a frozen
+artifact with the same "one relation, four descriptions" discipline the
+recovery circuit uses, because its immutability is now a security-relevant
+property rather than mere hygiene, and run its one ceremony the way RISC Zero
+did, inheriting Phase 1 and running a public Phase 2 once.
+
 ## 10. Roadmap
 
 - **Phase 0, header-circuit spike: done** (§6). Real K for S_block: 22
@@ -831,3 +919,14 @@ Four clocks run at different speeds:
   [midnight-proofs recursion](../midnight/midnight-proofs-recursion.md),
   [halo2-plonkish](../proof-systems/halo2-plonkish.md),
   [CIP-0381](../standards/cip-0381.md), [CIP-0165](../standards/cip-0165.md).
+- Trusted-setup cadence (§9.5), from a multi-agent literature and repo
+  review, 2026-07-15: the two-phase MPC ceremony (Bowe, Gabizon, Miers,
+  eprint 2017/1050) and its code realization in gnark `mpcsetup` and
+  iden3/snarkjs; the amortization and 4x phase-2 cost figures and formal
+  security (eprint 2025/064 SoK on powers-of-tau setups; eprint 2021/219
+  Snarky Ceremonies); the updatable-SRS impossibility for Groth16 (eprint
+  2018/280) and universality of Sonic/Marlin/Plonk (eprint 2019/099,
+  2019/1047, 2019/953); the fixed-wrap production pattern (RISC Zero
+  security model and verifier docs, SP1); real-system ceremony cadence
+  (Zcash NU5/Halo2, Filecoin, Ethereum KZG, Aztec Ignition); and the
+  Midnight universal KZG setup to 2^25 finalized December 2025.
