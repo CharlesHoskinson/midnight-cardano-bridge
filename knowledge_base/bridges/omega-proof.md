@@ -105,7 +105,8 @@ Two consequences shape the whole design:
   all claims forever.
 - **History is finite and known.** Mainnet at epoch 643 (2026-07-15):
   13,681,784 blocks, split into 4.49M Byron headers and 9.19M Shelley-family
-  (Praos) headers, across 435 Shelley-family epochs, roughly 220 GB of chain,
+  headers (TPraos through epoch 364, then Praos), across 435 Shelley-family
+  epochs, roughly 220 GB of chain,
   about 122.4M transactions, about 2,900 active SPOs, and about 1.35M
   delegators. These numbers bound the one-time backfill (§6).
 
@@ -291,6 +292,10 @@ inside the fold and amortized over every claim forever.
 | 26 to 32 | Stake, delegation, pools | `stake_*`, `pool_root` | maintained anyway; the VRF check needs them |
 | 33 to 37 | Rewards, deposits, treasury, MIR | `reward_root`, `reward_event_mmr` | catalog grade "hard; spans epochs" becomes a natural byproduct of S_epoch's mandatory reward fold |
 | 38 to 42 | Governance (CIP-1694) | `gov_root` plus epoch-boundary bundles | ratification/expiry/enactment are epoch-boundary state transitions the fold already executes |
+
+This 42-claim catalog is the Cardano half of a two-sided bridge. The Midnight
+half, the 52 predicates provable about Midnight's own state, is catalogued in
+§12, where the key point is that Midnight needs no accumulator like Ω at all.
 
 ## 5. Security models: full replay vs consensus-anchored
 
@@ -782,10 +787,13 @@ not a new epoch, not more proofs.
 
 **Why you cannot remove this with a different Groth16.** Groth16's reference
 string is irreducibly circuit-specific. The updatable-SRS impossibility
-result (Groth, Kohlweiss, Maller, Meiklejohn, Miers, 2018) shows that a
-proof system with private relation-dependent polynomials in its reference
-string cannot be made universal or updatable, and Groth16 has exactly those.
-Universality lives in the Plonk, Marlin, and Sonic family, not in Groth16.
+result (Groth, Kohlweiss, Maller, Meiklejohn, Miers, 2018, eprint 2018/280)
+shows that a proof system with private secret-dependent polynomials in its
+reference string cannot be updatable, and updatability is the route to
+universality, so a string with those polynomials cannot be universal either.
+Groth16 has exactly those polynomials. Universality lives instead in the
+Plonk, Marlin, and Sonic family, whose reference strings use only
+secret-dependent monomials.
 So a rare ceremony cannot come from a smarter Groth16. It comes from freezing
 the one circuit that gets the ceremony.
 
@@ -898,7 +906,90 @@ did, inheriting Phase 1 and running a public Phase 2 once.
    is permissionless but not yet self-funding; products need a stated cost
    model before they can price their own UX.
 
-## 12. Provenance
+## 12. The Midnight side: proving Midnight facts needs no fold
+
+A bridge has two directions, and this report has so far described only one:
+proving Cardano facts on Midnight. The reverse direction, proving Midnight
+facts on Cardano, is the easier half, and the reason is a clean structural
+asymmetry.
+
+**Cardano forces the fold; Midnight hands you the roots.** The whole Omega
+accumulator exists because a Cardano header commits no ledger-state root
+(§2), so the only way to prove a historical Cardano fact is to re-derive the
+state from genesis. Midnight is the structural opposite. Its ledger keeps
+every subsystem as an authenticated Merkle structure and commits the roots as
+first-class ledger state, so proving a Midnight fact is a membership proof
+against a committed root plus a finality certificate for the block that
+published it. No genesis replay, no accumulator. Confirmed committed roots,
+from the midnight-ledger specification:
+
+- the **Zswap coin-commitment tree root**, with a rolling root-history window
+  (`commitment_tree_history`), so membership validates against any recent
+  root;
+- **two DUST roots**, the UTxO commitment tree and the generation-info tree,
+  each with a root history;
+- **contract public-state roots**, since each contract's state is a Merklized
+  trie with a native `root` operation, exposed to Compact as `MerkleTree` and
+  `HistoricMerkleTree` with a `checkRoot` predicate;
+- the **ledger and system parameters** (including DUST parameters) committed
+  per block;
+- the **replay-protection intent-history root**;
+- a single **whole-ledger `state_hash`** over the content-addressed
+  `LedgerState` DAG (parameters, Zswap, contract, UTxO, replay protection,
+  DUST, pools), which every honest node computes identically.
+
+One honest caveat: these roots are defined and committed as ledger state in
+the ledger specification, and the indexer surfaces them per block and per
+transaction, but the exact consensus block-header field that pins
+`state_hash` lives in the node and Substrate layer outside the ledger spec
+set. The roots exist and are committed; the header-level binding is strongly
+implied by the deterministic `state_hash` and the parent-hash threading, and
+confirming the precise field is a small follow-up.
+
+Because Midnight is a Halo2/Plonkish chain over KZG on BLS12-381 with native
+in-circuit recursion and proof aggregation (the same
+[midnight-proofs recursion](../midnight/midnight-proofs-recursion.md) the
+Cardano fold reuses), these membership statements are themselves provable and
+composable in-circuit with no external accumulator. A Midnight fact lands on
+Cardano through the bridge's Cardano-to-Midnight leg described in the
+[recursive bridge design](midnight-cardano-recursive-bridge.md); the same
+[claim envelope](../proof-claims/claim-envelope.md) carries it, with the
+anchor being a Midnight committed root and a Midnight finality certificate
+rather than the Ω digest.
+
+### 12.1 What can be proven about Midnight
+
+The Midnight predicate catalog counts 52 first-class claim predicates across
+eight groups. All 52 were validated against the midnight-ledger specification;
+each names a real Midnight mechanism. Two senses of "prove" coexist on
+Midnight and the catalog spans both: a **native ZK proof**, where a
+Compact/ZKIR, Zswap, DUST, or aggregation circuit proves a statement under a
+verifier key and public inputs, and a **historical or public-chain claim**, a
+fact about a block, transaction, contract state, or committed root that
+becomes succinct only when anchored to an authenticated root or finality
+certificate.
+
+| Group | Predicates | What it proves | Committed root or surface |
+|---|---|---|---|
+| Chain and indexer anchors | 1 to 6 | block existence and parent link, protocol version, ledger and system parameters, Zswap and DUST roots and end indexes, transaction inclusion and identity, transaction result and fee | block header, `ledgerParameters`, Zswap and DUST root histories |
+| Transaction and intent validity | 7 to 13 | intent presence and hash, TTL liveness, transaction binding commitment and proof of exponent, unshielded-input signatures, canonical ordering and disjointness, segment sequencing, replay protection | intent history root, binding commitment |
+| Contract state and calls | 14 to 23 | deployment address and zero initial balance, public state at an offset, registered verifier key per entry point, update authority, call proof and communication commitment, guaranteed versus fallible transcript, call context, and effect matching for Zswap, child calls, and mints | contract public-state root, `ContractState.operations` |
+| Compact private predicates | 24 to 30 | private-state possession, secret-derived authorization, selective disclosure, range and threshold rules over hidden data, signature-backed off-chain attestation verified in-circuit, ledger ADT transitions, contract-local Merkle or historic-tree membership | native ZK, no on-chain anchor needed |
+| Zswap shielded tokens | 31 to 39 | coin commitment from coin info and owner, inclusion in a historical root, nullifier derivation, nullifier nonmembership at apply time, spend authorization, output receive and ciphertext binding, Pedersen value-commitment correctness, per-segment balance conservation, transient create-and-spend | Zswap commitment tree root, nullifier set |
+| Unshielded and NIGHT | 40 to 43 | transparent UTxO membership and unspent status, spend signature and intent binding, output creation and metadata time, unshielded token or contract balance and mint | UTxO state |
+| DUST | 44 to 50 | registration signed, NIGHT-to-DUST delegation, generation-info membership and uniqueness, DUST commitment and non-double-spend, time-decayed available value from generation, cap, decay, and time, spend and same-owner rollover, fee payment within the grace period | DUST commitment and generation roots, DUST parameters |
+| Aggregation and infrastructure | 51 to 52 | multiple inner statements verified under known verifier keys, and partner-chain committee, SPO, stake, or epoch-performance facts | midnight-zk aggregation crate, indexer partner-chain surface |
+
+The DUST group is the one with no Cardano analogue. DUST is Midnight's fee
+resource, and its value is not a fixed balance but a curve over time driven by
+the backing NIGHT, a generation rate, a cap, a decay rate, and a grace period,
+so a DUST claim binds to the DUST parameters and the declared action time, not
+just to a root. The Compact private-predicate group is the other one with no
+Cardano parallel, because it proves statements over private local state that
+never touches any chain, which is the whole point of Midnight's
+selective-disclosure model.
+
+## 13. Provenance
 
 - Measured circuit numbers: `spikes/omega-header-circuit/RESULTS.md`
   (2026-07-15, gnark v0.15.0, reusing proof-zk-recovery gadgets; private
@@ -930,3 +1021,20 @@ did, inheriting Phase 1 and running a public Phase 2 once.
   security model and verifier docs, SP1); real-system ceremony cadence
   (Zcash NU5/Halo2, Filecoin, Ethereum KZG, Aztec Ignition); and the
   Midnight universal KZG setup to 2^25 finalized December 2025.
+- Midnight predicate catalog (§12): the 52-predicate catalog validated
+  against the midnight-ledger specification (`spec/zswap.md`, `dust.md`,
+  `intents-transactions.md`, `contracts.md`, `night.md`, `onchain-runtime.md`)
+  and the indexer GraphQL schema; committed-root inventory from
+  `LedgerState.state_hash` and the Zswap, DUST, and contract Merkle
+  structures; Midnight proof-system context from the midnight-zk `proofs` and
+  `aggregation` crates. All 52 mechanisms confirmed real; framing confirmed
+  that Midnight commits state roots natively, unlike Cardano.
+- Fact-check pass (2026-07-15): every measured circuit number in this report
+  was reconciled against `spikes/omega-header-circuit/RESULTS.md` and the
+  proof-zk-recovery README and matched exactly; the Cardano chain statistics
+  were reconfirmed against live Koios and the ledger CDDL; the §9.5 ceremony
+  claims were reconfirmed against their primary sources. Corrections applied:
+  the §2 Shelley-family header label now distinguishes TPraos from Praos, and
+  the §9.5 statement of the updatable-SRS impossibility result now matches the
+  paper's exact wording (secret-dependent polynomials, impossibility of
+  updatability).
