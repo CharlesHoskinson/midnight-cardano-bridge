@@ -1440,6 +1440,14 @@ consensus.
 certifies the exact registered SCLS entity and a complete positive and negative
 certificate-chain verification is reproducible.
 
+A further research direction beyond the selected anchors is the
+[Omega proof](omega-proof.md): a genesis-anchored recursive accumulator that
+re-derives Cardano ledger state in-circuit, replacing snapshot anchors with a
+single digest that provably spans every epoch from genesis to the commitment
+point, with measured per-block circuit costs (K=22 R1CS for the full Praos
+header check). It is a research design, not a selected anchor for the proof of
+concept, and it does not close any gate.
+
 ## 12. Cardano to Midnight proof path
 
 This path uses the registered Midnight Halo2/Plonkish stack over BLS12-381. Its

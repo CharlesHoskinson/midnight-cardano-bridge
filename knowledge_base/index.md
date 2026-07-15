@@ -69,6 +69,7 @@ Organized by domain: `cardano/`, `midnight/`, `proof-systems/`, `standards/`,
 - [ZK recovery architecture (prover → validator)](bridges/zk-recovery-architecture.md) — reusable pattern: validator reconstructs its own public input, pinned VK, spent-map.
 - [Cardano→Midnight system transactions (CMST)](bridges/cardano-system-transactions.md) — the current **trusted-at-launch** observation interface the trustless bridge replaces.
 - **[→ Recursive trustless bridge design](bridges/midnight-cardano-recursive-bridge.md):** the canonical 25-section living design.
+- **[→ The Omega proof](bridges/omega-proof.md)** — genesis-anchored accumulator proving any of the 42 Cardano claims against all epochs; measured per-block circuit K=22 (R1CS) / K=24 (PLONKish).
 
 ## Proof-claim / predicate layer (application layer atop the bridge anchor)
 - [Bridge claim requirements](proof-claims/bridge-claim-requirements.md) — finality, message identity, replay, asset identity, authorization (report §31).
